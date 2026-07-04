@@ -45,6 +45,16 @@ export function userCanAccessApplication(user, applicationId) {
   return user.applications.some((app) => app._id.toString() === applicationId.toString())
 }
 
+// Stricter than userCanAccessApplication: true only for SuperAdmin (any application)
+// or a WebSiteAdmin assigned to applicationId — excludes ContentCreator/WebsiteUser.
+// Use for actions reserved to app admins (delete, publish/unpublish, remove translation).
+export function userIsAppAdmin(user, applicationId) {
+  if (user.role === ROLES.SUPER_ADMIN) return true
+  if (user.role !== ROLES.WEBSITE_ADMIN) return false
+  if (!applicationId) return false
+  return user.applications.some((app) => app._id.toString() === applicationId.toString())
+}
+
 // Allows SuperAdmin (any application) or a staff user assigned to the :id application.
 export function requireAppAccess(req, res, next) {
   if (!userCanAccessApplication(req.user, req.params.id)) {

@@ -2,6 +2,7 @@ import Application from "../models/application/Application.js";
 import ApplicationSetting from "../models/application/ApplicationSetting.js";
 import User from "../models/User.js";
 import { saveApplicationLogo } from "../utils/logoUpload.js";
+import { LANGUAGE_VALUES } from "../constants/languages.js";
 
 export async function getApplications(req, res) {
   const { status } = req.query;
@@ -15,7 +16,11 @@ export async function getApplications(req, res) {
 export async function getApplication(req, res) {
   const app = await Application.findById(req.params.id);
   if (!app) return res.status(404).json({ message: "Application not found" });
-  res.json(app);
+
+  const settings = await ApplicationSetting.findOne({
+    application: app._id,
+  }).select("languages");
+  res.json({ ...app.toObject(), languages: settings?.languages ?? LANGUAGE_VALUES });
 }
 
 export async function createApplication(req, res) {
@@ -113,7 +118,7 @@ export async function getApplicationSettings(req, res) {
 }
 
 export async function upsertApplicationSettings(req, res) {
-  const { domain, aiApiKey, googleAnalyticsScript } = req.body;
+  const { domain, aiApiKey, googleAnalyticsScript, languages } = req.body;
   const appId = req.params.id;
 
   const appExists = await Application.exists({ _id: appId });
@@ -125,6 +130,18 @@ export async function upsertApplicationSettings(req, res) {
   if (aiApiKey !== undefined) update.aiApiKey = aiApiKey;
   if (googleAnalyticsScript !== undefined)
     update.googleAnalyticsScript = googleAnalyticsScript;
+  if (languages !== undefined) {
+    const isValid =
+      Array.isArray(languages) &&
+      languages.length > 0 &&
+      languages.every((l) => LANGUAGE_VALUES.includes(l));
+    if (!isValid) {
+      return res.status(400).json({
+        message: `languages must be a non-empty array containing only: ${LANGUAGE_VALUES.join(", ")}`,
+      });
+    }
+    update.languages = languages;
+  }
 
   const settings = await ApplicationSetting.findOneAndUpdate(
     { application: appId },

@@ -146,11 +146,11 @@ export default function AppUsers() {
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
                       <StatusToggle
-                        status={u.status}
+                        checked={u.status === 'active'}
                         disabled={togglingId === u._id}
                         onToggle={() => handleToggleStatus(u)}
-                        activeLabel="Deactivate user"
-                        inactiveLabel="Activate user"
+                        offLabel="Deactivate user"
+                        onLabel="Activate user"
                       />
                       <span className="text-xs" style={{ color: u.status === 'active' ? theme.success : theme.textTertiary }}>
                         {u.status === 'active' ? 'Active' : 'Inactive'}

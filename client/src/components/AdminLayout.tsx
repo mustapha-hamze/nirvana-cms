@@ -6,15 +6,7 @@ import { api } from '../api/client'
 import { theme } from '../theme'
 import { BackIcon, LogoutIcon } from './icons'
 import Sidebar from './Sidebar'
-
-export type Application = {
-  _id: string
-  name: string
-  description: string
-  logo: string | null
-  status: 'active' | 'inactive'
-  createdAt: string
-}
+import type { Application } from '../types/application'
 
 export type AdminOutletContext = { app: Application | null }
 

@@ -4,11 +4,13 @@ import { api } from '../api/client'
 import type { AdminOutletContext } from '../components/AdminLayout'
 import { theme } from '../theme'
 import { PlusIcon, EditIcon, TrashIcon } from '../components/icons'
-import CreateContentModal from '../components/CreateContentModal'
-import EditContentModal from '../components/EditContentModal'
+import ContentModal from '../components/ContentModal'
 import EmptyState from '../components/ui/EmptyState'
 import SkeletonTable from '../components/ui/SkeletonTable'
 import ConfirmModal from '../components/ui/ConfirmModal'
+import { useAppSelector } from '../store/hooks'
+import { selectUser } from '../store/authSlice'
+import { isAppAdmin } from '../utils/permissions'
 import { LANGUAGE_VALUES, LANGUAGE_LABELS, type ContentItem, type ContentDetail } from '../types/content'
 
 function getPreviewDetail(content: ContentItem): ContentDetail | undefined {
@@ -21,6 +23,8 @@ function getPreviewDetail(content: ContentItem): ContentDetail | undefined {
 
 export default function Contents() {
   const { app } = useOutletContext<AdminOutletContext>()
+  const user = useAppSelector(selectUser)
+  const canManage = !!app && isAppAdmin(user, app._id)
   const [contents, setContents] = useState<ContentItem[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
@@ -81,6 +85,12 @@ export default function Contents() {
               <tr style={{ borderBottom: `1px solid ${theme.border}` }}>
                 <th className="text-left font-semibold px-5 py-3" style={{ color: theme.textTertiary }}>Title</th>
                 <th className="text-left font-semibold px-5 py-3" style={{ color: theme.textTertiary }}>Languages</th>
+                {canManage && (
+                  <th className="text-left font-semibold px-5 py-3" style={{ color: theme.textTertiary }}>Categories</th>
+                )}
+                {canManage && (
+                  <th className="text-left font-semibold px-5 py-3" style={{ color: theme.textTertiary }}>Tags</th>
+                )}
                 <th className="text-left font-semibold px-5 py-3" style={{ color: theme.textTertiary }}>Created</th>
                 <th className="text-right font-semibold px-5 py-3" style={{ color: theme.textTertiary }}>Actions</th>
               </tr>
@@ -117,6 +127,44 @@ export default function Contents() {
                         ))}
                       </div>
                     </td>
+                    {canManage && (
+                      <td className="px-5 py-3">
+                        {content.categories.length === 0 ? (
+                          <span style={{ color: theme.textTertiary }}>—</span>
+                        ) : (
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {content.categories.map((cat) => (
+                              <span
+                                key={cat._id}
+                                className="text-[11px] font-semibold px-2 py-1 rounded-full"
+                                style={{ background: theme.accentBg, color: theme.accent }}
+                              >
+                                {cat.title}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                    )}
+                    {canManage && (
+                      <td className="px-5 py-3">
+                        {content.tags.length === 0 ? (
+                          <span style={{ color: theme.textTertiary }}>—</span>
+                        ) : (
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {content.tags.map((tag) => (
+                              <span
+                                key={tag._id}
+                                className="text-[11px] font-semibold px-2 py-1 rounded-full"
+                                style={{ background: 'rgba(255,255,255,0.05)', color: theme.textSecondary }}
+                              >
+                                {tag.title}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                    )}
                     <td className="px-5 py-3" style={{ color: theme.textTertiary }}>
                       {new Date(content.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
@@ -139,23 +187,25 @@ export default function Contents() {
                         >
                           <EditIcon />
                         </button>
-                        <button
-                          onClick={() => setDeleteContent(content)}
-                          title="Delete"
-                          aria-label="Delete"
-                          className="p-2 rounded-lg transition-all"
-                          style={{ color: theme.danger }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.color = theme.dangerHover
-                            e.currentTarget.style.background = theme.dangerBgHover
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.color = theme.danger
-                            e.currentTarget.style.background = 'transparent'
-                          }}
-                        >
-                          <TrashIcon />
-                        </button>
+                        {canManage && (
+                          <button
+                            onClick={() => setDeleteContent(content)}
+                            title="Delete"
+                            aria-label="Delete"
+                            className="p-2 rounded-lg transition-all"
+                            style={{ color: theme.danger }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color = theme.dangerHover
+                              e.currentTarget.style.background = theme.dangerBgHover
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = theme.danger
+                              e.currentTarget.style.background = 'transparent'
+                            }}
+                          >
+                            <TrashIcon />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -166,17 +216,12 @@ export default function Contents() {
         </div>
       )}
 
-      {showCreate && app && (
-        <CreateContentModal
+      {(showCreate || editContent) && app && (
+        <ContentModal
           applicationId={app._id}
-          onClose={() => setShowCreate(false)}
-          onCreated={fetchContents}
-        />
-      )}
-      {editContent && (
-        <EditContentModal
+          allowedLanguages={app.languages ?? LANGUAGE_VALUES}
           content={editContent}
-          onClose={() => setEditContent(null)}
+          onClose={() => { setShowCreate(false); setEditContent(null) }}
           onSaved={fetchContents}
         />
       )}

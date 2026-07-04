@@ -2,15 +2,9 @@ import { useNavigate } from 'react-router-dom'
 import { theme } from '../theme'
 import { GearIcon, TrashIcon, LoginIcon } from './icons'
 import StatusToggle from './ui/StatusToggle'
+import type { Application } from '../types/application'
 
-export type Application = {
-  _id: string
-  name: string
-  description: string
-  logo: string | null
-  status: 'active' | 'inactive'
-  createdAt: string
-}
+export type { Application }
 
 export default function AppCard({
   app,
@@ -69,8 +63,8 @@ export default function AppCard({
             {app.status}
           </span>
           <StatusToggle
-            status={app.status} disabled={toggling} onToggle={onToggleStatus}
-            activeLabel="Deactivate application" inactiveLabel="Activate application"
+            checked={app.status === 'active'} disabled={toggling} onToggle={onToggleStatus}
+            offLabel="Deactivate application" onLabel="Activate application"
           />
         </div>
       </div>

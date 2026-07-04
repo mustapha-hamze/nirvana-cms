@@ -3,19 +3,14 @@ import { api, uploadLogo } from '../api/client'
 import { theme } from '../theme'
 import { EyeIcon, EyeOffIcon, Spinner } from './icons'
 import { Backdrop, ModalHeader, ErrorBanner } from './ui/Modal'
-
-type Application = {
-  _id: string
-  name: string
-  description: string
-  logo: string | null
-  status: 'active' | 'inactive'
-}
+import type { Application } from '../types/application'
+import { LANGUAGE_VALUES, LANGUAGE_LABELS, type LangKey } from '../types/content'
 
 type AppSettings = {
   domain: string
   aiApiKey: string
   googleAnalyticsScript: string
+  languages: LangKey[]
 }
 
 type Props = {
@@ -35,7 +30,7 @@ export default function ApplicationSettingsModal({ app, onClose, onSaved }: Prop
   const [logoPreview, setLogoPreview] = useState<string | null>(app.logo)
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [appForm, setAppForm] = useState({ name: app.name, description: app.description })
-  const [settings, setSettings] = useState<AppSettings>({ domain: '', aiApiKey: '', googleAnalyticsScript: '' })
+  const [settings, setSettings] = useState<AppSettings>({ domain: '', aiApiKey: '', googleAnalyticsScript: '', languages: LANGUAGE_VALUES })
   const [showApiKey, setShowApiKey] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -47,6 +42,7 @@ export default function ApplicationSettingsModal({ app, onClose, onSaved }: Prop
         domain: s.domain ?? '',
         aiApiKey: s.aiApiKey ?? '',
         googleAnalyticsScript: s.googleAnalyticsScript ?? '',
+        languages: s.languages?.length ? s.languages : LANGUAGE_VALUES,
       }))
       .catch(() => {/* no settings yet */})
       .finally(() => setLoading(false))
@@ -57,6 +53,17 @@ export default function ApplicationSettingsModal({ app, onClose, onSaved }: Prop
     if (!file) return
     setLogoFile(file)
     setLogoPreview(URL.createObjectURL(file))
+  }
+
+  function toggleLanguage(lang: LangKey) {
+    setSettings((p) => {
+      const has = p.languages.includes(lang)
+      if (has && p.languages.length === 1) return p
+      return {
+        ...p,
+        languages: has ? p.languages.filter((l) => l !== lang) : [...p.languages, lang],
+      }
+    })
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -165,6 +172,29 @@ export default function ApplicationSettingsModal({ app, onClose, onSaved }: Prop
                       style={inputStyle}
                       onFocus={focusBorder} onBlur={blurBorder}
                     />
+                  </Field>
+
+                  <Field label="Languages" required>
+                    <div className="flex flex-wrap gap-2">
+                      {LANGUAGE_VALUES.map((lang) => {
+                        const active = settings.languages.includes(lang)
+                        return (
+                          <button
+                            key={lang} type="button" onClick={() => toggleLanguage(lang)}
+                            className="px-3.5 py-2 rounded-xl text-sm font-medium transition"
+                            style={active
+                              ? { background: theme.accentBg, border: '1px solid rgba(124,58,237,0.5)', color: theme.accent }
+                              : { ...inputStyle, color: theme.textSecondary }
+                            }
+                          >
+                            {LANGUAGE_LABELS[lang]}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    <p className="text-xs mt-1.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                      Content for this application can only be created in these languages.
+                    </p>
                   </Field>
                 </section>
 

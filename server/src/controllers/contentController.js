@@ -1,13 +1,80 @@
 import Content from "../models/content/Content.js";
 import ContentDetails from "../models/content/ContentDetails.js";
 import Application from "../models/application/Application.js";
-import { userCanAccessApplication } from "../middleware/auth.js";
+import ApplicationSetting from "../models/application/ApplicationSetting.js";
+import Category from "../models/Category.js";
+import Tag from "../models/Tag.js";
+import { userCanAccessApplication, userIsAppAdmin } from "../middleware/auth.js";
 import { LANGUAGE_VALUES } from "../constants/languages.js";
+import { slugify } from "../utils/slugify.js";
 
 const STATUS_VALUES = ContentDetails.schema.path("status").enumValues;
 
 function isValidStatus(status) {
   return STATUS_VALUES.includes(status);
+}
+
+async function getAllowedLanguages(applicationId) {
+  const settings = await ApplicationSetting.findOne({
+    application: applicationId,
+  }).select("languages");
+  return settings?.languages?.length ? settings.languages : LANGUAGE_VALUES;
+}
+
+// Auto-derived slugs (title unspecified by the caller) disambiguate silently on
+// collision — e.g. "weekly-update" -> "weekly-update-2" — like WordPress/Drupal,
+// since duplicate titles are routine and shouldn't block a content creator.
+// Explicit, caller-provided slugs are NOT resolved here — a collision on those
+// stays a hard validation error, since the creator deliberately chose that slug.
+// Checks soft-deleted rows too: they still occupy the unique index.
+async function findAvailableSlug({ application, langKey, baseSlug }) {
+  let slug = baseSlug;
+  let suffix = 2;
+  while (
+    await ContentDetails.exists({
+      application,
+      langKey,
+      slug,
+      isDeleted: { $in: [true, false] },
+    })
+  ) {
+    slug = `${baseSlug}-${suffix++}`;
+  }
+  return slug;
+}
+
+// categories/tags are shared across every language of a Content item (see model
+// comment), so they must all belong to the same application as the content.
+async function validateIdsInApplication(Model, ids, applicationId) {
+  if (!Array.isArray(ids)) return false;
+  if (ids.length === 0) return true;
+  const uniqueCount = new Set(ids.map(String)).size;
+  const found = await Model.countDocuments({
+    _id: { $in: ids },
+    application: applicationId,
+  });
+  return found === uniqueCount;
+}
+
+function validateCategoryIds(categoryIds, applicationId) {
+  return validateIdsInApplication(Category, categoryIds, applicationId);
+}
+
+function validateTagIds(tagIds, applicationId) {
+  return validateIdsInApplication(Tag, tagIds, applicationId);
+}
+
+// Applies only the metadata subfields the caller actually sent, so a partial
+// update (e.g. just `author`) doesn't wipe out keywords/description.
+function applyMetadata(detail, metadata) {
+  if (!metadata || typeof metadata !== "object") return;
+  if (metadata.keywords !== undefined) {
+    detail.metadata.keywords = Array.isArray(metadata.keywords)
+      ? metadata.keywords.map((k) => String(k).trim()).filter(Boolean)
+      : [];
+  }
+  if (metadata.author !== undefined) detail.metadata.author = String(metadata.author).trim();
+  if (metadata.description !== undefined) detail.metadata.description = String(metadata.description).trim();
 }
 
 async function attachDetails(contents, { langKey, status } = {}) {
@@ -63,12 +130,17 @@ export async function getContents(req, res) {
     };
   }
 
-  const contents = await Content.find(filter).sort({ createdAt: -1 });
+  const contents = await Content.find(filter)
+    .sort({ createdAt: -1 })
+    .populate("categories", "title parentId")
+    .populate("tags", "title");
   res.json(await attachDetails(contents, { langKey, status }));
 }
 
 export async function getContent(req, res) {
-  const content = await Content.findById(req.params.id);
+  const content = await Content.findById(req.params.id)
+    .populate("categories", "title parentId")
+    .populate("tags", "title");
   if (!content) return res.status(404).json({ message: "Content not found" });
   if (!userCanAccessApplication(req.user, content.application)) {
     return res.status(403).json({ message: "Insufficient permissions" });
@@ -81,7 +153,7 @@ export async function getContent(req, res) {
 }
 
 export async function createContent(req, res) {
-  const { application, details } = req.body;
+  const { application, details, categories = [], tags = [] } = req.body;
 
   if (!application)
     return res.status(400).json({ message: "application is required" });
@@ -96,12 +168,29 @@ export async function createContent(req, res) {
       .status(400)
       .json({ message: "at least one language in details is required" });
   }
+  if (!(await validateCategoryIds(categories, application))) {
+    return res
+      .status(400)
+      .json({ message: "categories must reference existing categories in the same application" });
+  }
+  if (!(await validateTagIds(tags, application))) {
+    return res
+      .status(400)
+      .json({ message: "tags must reference existing tags in the same application" });
+  }
+  // Assigning categories/tags is admin-only, same as their own endpoints.
+  if ((categories.length > 0 || tags.length > 0) && !userIsAppAdmin(req.user, application)) {
+    return res.status(403).json({
+      message: "Only a SuperAdmin or WebSite Admin can assign categories or tags to content",
+    });
+  }
+  const allowedLanguages = await getAllowedLanguages(application);
   for (const d of details) {
-    if (!d.langKey || !LANGUAGE_VALUES.includes(d.langKey)) {
+    if (!d.langKey || !allowedLanguages.includes(d.langKey)) {
       return res
         .status(400)
         .json({
-          message: `langKey must be one of: ${LANGUAGE_VALUES.join(", ")}`,
+          message: `langKey must be one of: ${allowedLanguages.join(", ")}`,
         });
     }
     if (!d.title)
@@ -115,38 +204,96 @@ export async function createContent(req, res) {
           message: `status must be one of: ${STATUS_VALUES.join(", ")}`,
         });
     }
+    // Setting a non-default status (e.g. publishing right away) is an app-admin
+    // action; a plain staff/content-creator can only create content as a draft.
+    if (
+      d.status !== undefined &&
+      d.status !== "draft" &&
+      !userIsAppAdmin(req.user, application)
+    ) {
+      return res.status(403).json({
+        message: "Only a SuperAdmin or WebSite Admin can set content status to " + d.status,
+      });
+    }
   }
 
-  const content = await Content.create({ application });
+  const content = await Content.create({ application, categories, tags });
 
   try {
     // create() (not insertMany) so the pre('save') hook stamps publishedAt when created as published.
     const created = await Promise.all(
-      details.map((d) =>
-        ContentDetails.create({
+      details.map(async (d) => {
+        const slug = d.slug
+          ? slugify(d.slug)
+          : await findAvailableSlug({ application, langKey: d.langKey, baseSlug: slugify(d.title) });
+        const detail = new ContentDetails({
           content: content._id,
+          application,
           langKey: d.langKey,
           title: d.title,
+          slug,
           headline: d.headline,
           abstract: d.abstract,
           status: d.status,
-        }),
-      ),
+        });
+        applyMetadata(detail, d.metadata);
+        return detail.save();
+      }),
     );
+    await content.populate("categories", "title parentId");
+    await content.populate("tags", "title");
     res.status(201).json({ ...content.toObject(), details: created });
   } catch (err) {
     await Content.findByIdAndDelete(content._id);
     if (err.code === 11000) {
-      return res.status(409).json({ message: "Duplicate language in details" });
+      const message = err.keyPattern?.slug
+        ? "Duplicate slug in details — each language's slug must be unique within this application"
+        : "Duplicate language in details";
+      return res.status(409).json({ message });
     }
     throw err;
   }
 }
 
+// Parent-level fields only — categories/tags today. Per-language fields (title,
+// metadata, status, ...) go through upsertContentDetails instead. Assigning
+// categories/tags is admin-only, same as their own endpoints.
+export async function updateContent(req, res) {
+  const { categories, tags } = req.body;
+
+  const content = await Content.findById(req.params.id);
+  if (!content) return res.status(404).json({ message: "Content not found" });
+  if (!userIsAppAdmin(req.user, content.application)) {
+    return res.status(403).json({ message: "Insufficient permissions" });
+  }
+
+  if (categories !== undefined) {
+    if (!(await validateCategoryIds(categories, content.application))) {
+      return res
+        .status(400)
+        .json({ message: "categories must reference existing categories in the same application" });
+    }
+    content.categories = categories;
+  }
+  if (tags !== undefined) {
+    if (!(await validateTagIds(tags, content.application))) {
+      return res
+        .status(400)
+        .json({ message: "tags must reference existing tags in the same application" });
+    }
+    content.tags = tags;
+  }
+
+  await content.save();
+  await content.populate("categories", "title parentId");
+  await content.populate("tags", "title");
+  res.json(content);
+}
+
 export async function deleteContent(req, res) {
   const content = await Content.findById(req.params.id);
   if (!content) return res.status(404).json({ message: "Content not found" });
-  if (!userCanAccessApplication(req.user, content.application)) {
+  if (!userIsAppAdmin(req.user, content.application)) {
     return res.status(403).json({ message: "Insufficient permissions" });
   }
 
@@ -162,15 +309,8 @@ export async function deleteContent(req, res) {
 
 export async function upsertContentDetails(req, res) {
   const { id, langKey } = req.params;
-  const { title, headline, abstract, status } = req.body;
+  const { title, slug, headline, abstract, status, metadata } = req.body;
 
-  if (!LANGUAGE_VALUES.includes(langKey)) {
-    return res
-      .status(400)
-      .json({
-        message: `langKey must be one of: ${LANGUAGE_VALUES.join(", ")}`,
-      });
-  }
   if (status !== undefined && !isValidStatus(status)) {
     return res
       .status(400)
@@ -182,19 +322,70 @@ export async function upsertContentDetails(req, res) {
   if (!userCanAccessApplication(req.user, content.application)) {
     return res.status(403).json({ message: "Insufficient permissions" });
   }
+
+  const allowedLanguages = await getAllowedLanguages(content.application);
+  if (!allowedLanguages.includes(langKey)) {
+    return res
+      .status(400)
+      .json({
+        message: `langKey must be one of: ${allowedLanguages.join(", ")}`,
+      });
+  }
   if (!title) return res.status(400).json({ message: "title is required" });
 
   // Fetch-then-save (not findOneAndUpdate) so the pre('save') publishedAt hook fires.
-  let detail = await ContentDetails.findOne({ content: id, langKey });
-  if (!detail) detail = new ContentDetails({ content: id, langKey });
+  // Look up including soft-deleted rows: a previously removed translation still
+  // occupies the {content, langKey} unique index, so re-adding it must revive
+  // that row instead of inserting a new one (which would hit a duplicate key error).
+  let detail = await ContentDetails.findOne({ content: id, langKey, isDeleted: { $in: [true, false] } });
+  const isNew = !detail;
+  const currentStatus = isNew || detail.isDeleted ? "draft" : detail.status;
+  if (isNew) {
+    detail = new ContentDetails({ content: id, application: content.application, langKey });
+  } else if (detail.isDeleted) {
+    detail.isDeleted = false;
+  }
+
+  // Actually changing status (draft <-> published) is an app-admin action; a plain
+  // staff/content-creator can still edit title/headline/abstract on this translation.
+  if (
+    status !== undefined &&
+    status !== currentStatus &&
+    !userIsAppAdmin(req.user, content.application)
+  ) {
+    return res.status(403).json({
+      message: "Only a SuperAdmin or WebSite Admin can change content status",
+    });
+  }
 
   detail.title = title;
+  // Slug is auto-derived from the title only when first created; once set, it's
+  // stable across title edits unless explicitly changed, so published links don't break.
+  if (slug !== undefined) {
+    detail.slug = slugify(slug);
+  } else if (isNew) {
+    detail.slug = await findAvailableSlug({
+      application: content.application,
+      langKey,
+      baseSlug: slugify(title),
+    });
+  }
   if (headline !== undefined) detail.headline = headline;
   if (abstract !== undefined) detail.abstract = abstract;
   if (status !== undefined) detail.status = status;
+  applyMetadata(detail, metadata);
 
-  await detail.save();
-  res.json(detail);
+  try {
+    await detail.save();
+    res.json(detail);
+  } catch (err) {
+    if (err.code === 11000 && err.keyPattern?.slug) {
+      return res.status(409).json({
+        message: "Duplicate slug — this slug is already used by another content item in this application",
+      });
+    }
+    throw err;
+  }
 }
 
 export async function deleteContentDetails(req, res) {
@@ -202,7 +393,7 @@ export async function deleteContentDetails(req, res) {
 
   const content = await Content.findById(id);
   if (!content) return res.status(404).json({ message: "Content not found" });
-  if (!userCanAccessApplication(req.user, content.application)) {
+  if (!userIsAppAdmin(req.user, content.application)) {
     return res.status(403).json({ message: "Insufficient permissions" });
   }
 

@@ -12,8 +12,8 @@ export default function EmptyState({
   icon: ReactNode
   title: string
   description: string
-  actionLabel: string
-  onAction: () => void
+  actionLabel?: string
+  onAction?: () => void
 }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -29,14 +29,16 @@ export default function EmptyState({
       <p className="text-sm mb-6 max-w-xs" style={{ color: theme.textSecondary }}>
         {description}
       </p>
-      <button
-        onClick={onAction}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
-        style={{ background: theme.accentGradient, boxShadow: '0 2px 16px rgba(124,58,237,0.3)' }}
-      >
-        <PlusIcon />
-        {actionLabel}
-      </button>
+      {actionLabel && onAction && (
+        <button
+          onClick={onAction}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
+          style={{ background: theme.accentGradient, boxShadow: '0 2px 16px rgba(124,58,237,0.3)' }}
+        >
+          <PlusIcon />
+          {actionLabel}
+        </button>
+      )}
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { softDeletePlugin } from "../../utils/softDeletePlugin.js";
+import { LANGUAGE_VALUES } from "../../constants/languages.js";
 
 const applicationSettingSchema = new mongoose.Schema(
   {
@@ -13,6 +14,10 @@ const applicationSettingSchema = new mongoose.Schema(
     // Sensitive — excluded from query results by default; use .select('+aiApiKey') to include
     aiApiKey: { type: String, trim: true, default: "", select: false },
     googleAnalyticsScript: { type: String, default: "" },
+    languages: {
+      type: [{ type: String, enum: LANGUAGE_VALUES }],
+      default: LANGUAGE_VALUES,
+    },
   },
   { timestamps: true },
 );

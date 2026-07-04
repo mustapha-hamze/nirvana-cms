@@ -8,6 +8,8 @@ import SuperAdmins from './pages/SuperAdmins'
 import Dashboard from './pages/Dashboard'
 import AppUsers from './pages/AppUsers'
 import Contents from './pages/Contents'
+import Categories from './pages/Categories'
+import Tags from './pages/Tags'
 import ComingSoonPage from './pages/ComingSoonPage'
 import AdminLayout from './components/AdminLayout'
 
@@ -79,8 +81,22 @@ export default function App() {
           />
           <Route path="contents" element={<Contents />} />
           <Route path="pages" element={<ComingSoonPage title="Pages" description="Manage the pages that make up this application's site." />} />
-          <Route path="categories" element={<ComingSoonPage title="Categories" description="Organize content into categories." />} />
-          <Route path="tags" element={<ComingSoonPage title="Tags" description="Manage tags used to label content." />} />
+          <Route
+            path="categories"
+            element={
+              <ProtectedRoute roles={['SuperAdmin', 'WebSiteAdmin']}>
+                <Categories />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="tags"
+            element={
+              <ProtectedRoute roles={['SuperAdmin', 'WebSiteAdmin']}>
+                <Tags />
+              </ProtectedRoute>
+            }
+          />
         </Route>
         <Route path="/" element={<RootRedirect />} />
         <Route path="*" element={<Navigate to="/login" replace />} />

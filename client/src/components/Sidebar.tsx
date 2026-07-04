@@ -1,20 +1,27 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useLocation, Link } from 'react-router-dom'
 import { useAppSelector } from '../store/hooks'
-import { selectUserRole } from '../store/authSlice'
+import { selectUser, selectUserRole } from '../store/authSlice'
+import { isAppAdmin } from '../utils/permissions'
 import { theme } from '../theme'
 import { DashboardIcon, ContentIcon, ChevronIcon, UsersIcon, GridIcon } from './icons'
 
-const CONTENT_MANAGEMENT_ITEMS = [
+const ALL_CONTENT_MANAGEMENT_ITEMS = [
   { label: 'Contents', segment: 'contents' },
   { label: 'Pages', segment: 'pages' },
-  { label: 'Categories', segment: 'categories' },
-  { label: 'Tags', segment: 'tags' },
+  { label: 'Categories', segment: 'categories', adminOnly: true },
+  { label: 'Tags', segment: 'tags', adminOnly: true },
 ]
 
 export default function Sidebar({ appId }: { appId: string }) {
   const role = useAppSelector(selectUserRole)
+  const user = useAppSelector(selectUser)
+  const isAppAdminUser = isAppAdmin(user, appId)
   const location = useLocation()
+
+  const CONTENT_MANAGEMENT_ITEMS = ALL_CONTENT_MANAGEMENT_ITEMS.filter(
+    (item) => !item.adminOnly || isAppAdminUser,
+  )
 
   const contentPaths = CONTENT_MANAGEMENT_ITEMS.map((item) => `/applications/${appId}/${item.segment}`)
   const isContentSectionActive = contentPaths.includes(location.pathname)
