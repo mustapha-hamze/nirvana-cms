@@ -3,6 +3,7 @@ import { api } from '../api/client'
 import { Backdrop, ModalPanel, ModalHeader, ModalFooter, ErrorBanner, CancelButton, PrimaryButton } from './ui/Modal'
 import { TextField } from './ui/FormField'
 import StatusToggle from './ui/StatusToggle'
+import { useToast } from './ui/useToast'
 import { theme } from '../theme'
 import type { Tag } from '../types/tag'
 
@@ -22,6 +23,7 @@ export default function TagModal({
   const [active, setActive] = useState(tag?.status !== 'inactive')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const { showToast } = useToast()
 
   async function handleSave() {
     setError('')
@@ -37,6 +39,7 @@ export default function TagModal({
       } else {
         await api.post('/tags', { application: applicationId, ...payload })
       }
+      showToast(isEdit ? 'Tag updated' : 'Tag created')
       onSaved()
       onClose()
     } catch (err) {

@@ -3,6 +3,7 @@ import { api } from '../api/client'
 import { Backdrop, ModalPanel, ModalHeader, ModalFooter, ErrorBanner, CancelButton, PrimaryButton } from './ui/Modal'
 import { TextField, SelectField } from './ui/FormField'
 import StatusToggle from './ui/StatusToggle'
+import { useToast } from './ui/useToast'
 import { theme } from '../theme'
 import type { Category } from '../types/category'
 
@@ -44,6 +45,7 @@ export default function CategoryModal({
   const [active, setActive] = useState(category?.status !== 'inactive')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const { showToast } = useToast()
 
   const excluded = excludedIds(category, categories)
   const parentOptions = [
@@ -65,6 +67,7 @@ export default function CategoryModal({
       } else {
         await api.post('/categories', { application: applicationId, ...payload })
       }
+      showToast(isEdit ? 'Category updated' : 'Category created')
       onSaved()
       onClose()
     } catch (err) {

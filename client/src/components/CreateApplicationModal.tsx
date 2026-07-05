@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { api } from '../api/client'
 import { Backdrop, ModalPanel, ModalHeader, ModalFooter, ErrorBanner, CancelButton, PrimaryButton } from './ui/Modal'
 import { TextField, TextAreaField } from './ui/FormField'
+import { useToast } from './ui/useToast'
 
 type Props = {
   onClose: () => void
@@ -13,6 +14,7 @@ export default function CreateApplicationModal({ onClose, onCreated }: Props) {
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const { showToast } = useToast()
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -20,6 +22,7 @@ export default function CreateApplicationModal({ onClose, onCreated }: Props) {
     setLoading(true)
     try {
       await api.post('/applications', { name, description })
+      showToast('Application created')
       onCreated()
       onClose()
     } catch (err) {

@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { LANGUAGE_VALUES } from "../../constants/languages.js";
 import { softDeletePlugin } from "../../utils/softDeletePlugin.js";
+import { sectionSchema } from "./Section.js";
 
 const contentDetailsSchema = new mongoose.Schema(
   {
@@ -32,6 +33,18 @@ const contentDetailsSchema = new mongoose.Schema(
       keywords: { type: [{ type: String, trim: true }], default: [] },
       author: { type: String, trim: true, default: "" },
       description: { type: String, trim: true, default: "" },
+    },
+    // Ordered page body — array position IS the display order, no separate
+    // `order` field. No `isDeleted` at this granularity either: sections are
+    // only ever edited as part of saving this whole document (see
+    // upsertContentDetails), so removing one from the array on save is enough.
+    sections: {
+      type: [sectionSchema],
+      default: [],
+      validate: {
+        validator: (arr) => arr.length <= 40,
+        message: "A content body may have at most 40 sections",
+      },
     },
   },
   { timestamps: true },

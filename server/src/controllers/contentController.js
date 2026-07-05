@@ -6,7 +6,9 @@ import Category from "../models/Category.js";
 import Tag from "../models/Tag.js";
 import { userCanAccessApplication, userIsAppAdmin } from "../middleware/auth.js";
 import { LANGUAGE_VALUES } from "../constants/languages.js";
+import { SECTION_TYPE_VALUES, SECTION_LAYOUTS } from "../constants/sectionTypes.js";
 import { slugify } from "../utils/slugify.js";
+import { saveContentImage } from "../utils/contentImageUpload.js";
 
 const STATUS_VALUES = ContentDetails.schema.path("status").enumValues;
 
@@ -75,6 +77,61 @@ function applyMetadata(detail, metadata) {
   }
   if (metadata.author !== undefined) detail.metadata.author = String(metadata.author).trim();
   if (metadata.description !== undefined) detail.metadata.description = String(metadata.description).trim();
+}
+
+// Checks the one thing the Mongoose schema can't express: that each section's
+// `type` is a known layout and its `elements` match that layout's slots (see
+// SECTION_LAYOUTS) in count, type, and order. Per-field checks (required/
+// maxlength on text/url/alt/etc.) are intentionally NOT duplicated here — the
+// schema's own discriminators already enforce those and surface as a Mongoose
+// ValidationError on .save().
+function validateSections(sections) {
+  if (sections === undefined) return { valid: true };
+  if (!Array.isArray(sections)) {
+    return { valid: false, message: "sections must be an array" };
+  }
+  if (sections.length > 40) {
+    return { valid: false, message: "A content body may have at most 40 sections" };
+  }
+  for (let i = 0; i < sections.length; i++) {
+    const section = sections[i];
+    const layout = SECTION_LAYOUTS[section?.type];
+    if (!layout) {
+      return {
+        valid: false,
+        message: `sections[${i}]: type must be one of: ${SECTION_TYPE_VALUES.join(", ")}`,
+      };
+    }
+    const elements = Array.isArray(section.elements) ? section.elements : [];
+    const expectedCount = layout.slots.reduce((sum, slot) => sum + slot.count, 0);
+    if (elements.length !== expectedCount) {
+      return {
+        valid: false,
+        message: `sections[${i}] (${section.type}) must contain exactly ${expectedCount} element(s)`,
+      };
+    }
+    let cursor = 0;
+    for (const slot of layout.slots) {
+      for (let s = 0; s < slot.count; s++) {
+        const element = elements[cursor];
+        if (!slot.elementTypes.includes(element?.elementType)) {
+          return {
+            valid: false,
+            message: `sections[${i}] (${section.type}): element at position ${cursor} must be one of: ${slot.elementTypes.join(", ")}`,
+          };
+        }
+        cursor++;
+      }
+    }
+  }
+  return { valid: true };
+}
+
+// Only replaces `sections` when the caller actually sent it, matching
+// applyMetadata's partial-update idiom. Mongoose casts each plain object into
+// the right element discriminator via its `elementType` key automatically.
+function applySections(detail, sections) {
+  if (sections !== undefined) detail.sections = sections;
 }
 
 async function attachDetails(contents, { langKey, status } = {}) {
@@ -215,6 +272,10 @@ export async function createContent(req, res) {
         message: "Only a SuperAdmin or WebSite Admin can set content status to " + d.status,
       });
     }
+    const sectionsCheck = validateSections(d.sections);
+    if (!sectionsCheck.valid) {
+      return res.status(400).json({ message: sectionsCheck.message });
+    }
   }
 
   const content = await Content.create({ application, categories, tags });
@@ -237,6 +298,7 @@ export async function createContent(req, res) {
           status: d.status,
         });
         applyMetadata(detail, d.metadata);
+        applySections(detail, d.sections);
         return detail.save();
       }),
     );
@@ -250,6 +312,9 @@ export async function createContent(req, res) {
         ? "Duplicate slug in details — each language's slug must be unique within this application"
         : "Duplicate language in details";
       return res.status(409).json({ message });
+    }
+    if (err.name === "ValidationError") {
+      return res.status(400).json({ message: err.message });
     }
     throw err;
   }
@@ -309,12 +374,16 @@ export async function deleteContent(req, res) {
 
 export async function upsertContentDetails(req, res) {
   const { id, langKey } = req.params;
-  const { title, slug, headline, abstract, status, metadata } = req.body;
+  const { title, slug, headline, abstract, status, metadata, sections } = req.body;
 
   if (status !== undefined && !isValidStatus(status)) {
     return res
       .status(400)
       .json({ message: `status must be one of: ${STATUS_VALUES.join(", ")}` });
+  }
+  const sectionsCheck = validateSections(sections);
+  if (!sectionsCheck.valid) {
+    return res.status(400).json({ message: sectionsCheck.message });
   }
 
   const content = await Content.findById(id);
@@ -374,6 +443,7 @@ export async function upsertContentDetails(req, res) {
   if (abstract !== undefined) detail.abstract = abstract;
   if (status !== undefined) detail.status = status;
   applyMetadata(detail, metadata);
+  applySections(detail, sections);
 
   try {
     await detail.save();
@@ -383,6 +453,9 @@ export async function upsertContentDetails(req, res) {
       return res.status(409).json({
         message: "Duplicate slug — this slug is already used by another content item in this application",
       });
+    }
+    if (err.name === "ValidationError") {
+      return res.status(400).json({ message: err.message });
     }
     throw err;
   }
@@ -405,4 +478,26 @@ export async function deleteContentDetails(req, res) {
     return res.status(404).json({ message: "Translation not found" });
 
   res.status(204).send();
+}
+
+// Used for image/imageGallery elements in a content body. Not scoped under a
+// specific Content id — the image may be uploaded before the content item
+// itself has ever been saved (e.g. mid-way through the "Create Content" form).
+// Returns an absolute URL (not a relative /storage path) since image/link/video
+// elements are validated against ^https?:// and, more importantly, so any
+// consuming frontend (a public site on a different domain than this API) can
+// use the URL as-is with no extra base-URL configuration of its own.
+export async function uploadContentImage(req, res) {
+  const { application } = req.body;
+  if (!application)
+    return res.status(400).json({ message: "application is required" });
+  if (!userCanAccessApplication(req.user, application)) {
+    return res.status(403).json({ message: "Insufficient permissions" });
+  }
+  if (!req.file)
+    return res.status(400).json({ message: "image is required" });
+
+  const relativePath = await saveContentImage(req.file.buffer, req.file.mimetype);
+  const url = `${req.protocol}://${req.get("host")}${relativePath}`;
+  res.status(201).json({ url });
 }

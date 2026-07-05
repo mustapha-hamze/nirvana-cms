@@ -41,3 +41,23 @@ export async function uploadLogo(applicationId: string, file: File): Promise<{ l
   if (!res.ok) throw new Error(data.message ?? 'Upload failed')
   return data
 }
+
+// Used by image/imageGallery content-body elements. Returns an absolute URL
+// (not a relative /storage path) so it works for any consumer, not just this
+// admin panel — see contentController.js's uploadContentImage for why.
+export async function uploadContentImage(applicationId: string, file: File): Promise<{ url: string }> {
+  const token = localStorage.getItem('token')
+  const form = new FormData()
+  form.append('application', applicationId)
+  form.append('image', file)
+
+  const res = await fetch('/api/content/images', {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+  })
+
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.message ?? 'Upload failed')
+  return data
+}

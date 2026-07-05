@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import { api } from '../api/client'
 import { theme } from '../theme'
 import { TrashIcon, PlusIcon, ChevronIcon, CloseIcon } from './icons'
@@ -7,26 +9,44 @@ import { Backdrop, ModalPanel, ModalHeader, ModalFooter, ErrorBanner, CancelButt
 import { TextField, TextAreaField } from './ui/FormField'
 import StatusToggle from './ui/StatusToggle'
 import ConfirmModal from './ui/ConfirmModal'
+import SectionCard from './body/SectionCard'
+import SectionTypePicker from './body/SectionTypePicker'
+import { useToast } from './ui/useToast'
 import { useAppSelector } from '../store/hooks'
 import { selectUser } from '../store/authSlice'
 import { isAppAdmin } from '../utils/permissions'
 import type { Category } from '../types/category'
 import type { Tag } from '../types/tag'
 import {
-  LANGUAGE_VALUES, LANGUAGE_LABELS, type LangKey, type ContentStatus,
-  type ContentItem, type ContentDetail, type ContentMetadata,
+  LANGUAGE_VALUES, LANGUAGE_LABELS, createEmptySection, withClientKeys, toPersistableSections,
+  type LangKey, type ContentStatus, type ContentItem, type ContentDetail, type ContentMetadata,
+  type ContentSection, type SectionType,
 } from '../types/content'
 
-type Draft = { title: string; headline: string; abstract: string; status: ContentStatus; metadata: ContentMetadata }
+type Draft = {
+  title: string
+  headline: string
+  abstract: string
+  status: ContentStatus
+  metadata: ContentMetadata
+  sections: ContentSection[]
+}
 
 const EMPTY_METADATA: ContentMetadata = { keywords: [], author: '', description: '' }
-const EMPTY_DRAFT: Draft = { title: '', headline: '', abstract: '', status: 'draft', metadata: EMPTY_METADATA }
+const EMPTY_DRAFT: Draft = { title: '', headline: '', abstract: '', status: 'draft', metadata: EMPTY_METADATA, sections: [] }
 
 function buildInitialDrafts(content: ContentItem | null): Partial<Record<LangKey, Draft>> {
   const drafts: Partial<Record<LangKey, Draft>> = {}
   if (!content) return drafts
   for (const d of content.details) {
-    drafts[d.langKey] = { title: d.title, headline: d.headline, abstract: d.abstract, status: d.status, metadata: d.metadata }
+    drafts[d.langKey] = {
+      title: d.title,
+      headline: d.headline,
+      abstract: d.abstract,
+      status: d.status,
+      metadata: d.metadata,
+      sections: withClientKeys(d.sections ?? []),
+    }
   }
   return drafts
 }
@@ -108,8 +128,11 @@ export default function ContentModal({
   const [activeLang, setActiveLang] = useState<LangKey | null>(content?.details[0]?.langKey ?? null)
   const [removeLang, setRemoveLang] = useState<LangKey | null>(null)
   const [metadataOpen, setMetadataOpen] = useState(false)
+  const [bodyOpen, setBodyOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const { showToast } = useToast()
+  const sectionSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
 
   // Categories/tags are shared across every language of this content (see Content
   // model), so they live outside the per-language tabs, not inside them.
@@ -163,6 +186,29 @@ export default function ContentModal({
     setActiveLang(null)
   }
 
+  function handleAddSection(type: SectionType) {
+    updateActiveDraft({ sections: [...draft.sections, createEmptySection(type)] })
+  }
+
+  function updateSectionAt(index: number, next: ContentSection) {
+    const sections = draft.sections.slice()
+    sections[index] = next
+    updateActiveDraft({ sections })
+  }
+
+  function removeSectionAt(index: number) {
+    updateActiveDraft({ sections: draft.sections.filter((_, i) => i !== index) })
+  }
+
+  function handleSectionDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const ids = draft.sections.map((s) => s.cid!)
+    const oldIndex = ids.indexOf(String(active.id))
+    const newIndex = ids.indexOf(String(over.id))
+    updateActiveDraft({ sections: arrayMove(draft.sections, oldIndex, newIndex) })
+  }
+
   async function handleSave() {
     setError('')
     const entries = (Object.entries(drafts) as [LangKey, Draft][]).filter(([, d]) => d.title.trim())
@@ -180,7 +226,9 @@ export default function ContentModal({
           canManage
             ? api.put<ContentItem>(`/content/${savedContent._id}`, { categories: selectedCategoryIds, tags: selectedTagIds })
             : null,
-          Promise.all(entries.map(([langKey, d]) => api.put<ContentDetail>(`/content/${savedContent._id}/details/${langKey}`, d))),
+          Promise.all(entries.map(([langKey, d]) =>
+            api.put<ContentDetail>(`/content/${savedContent._id}/details/${langKey}`, { ...d, sections: toPersistableSections(d.sections) }),
+          )),
         ])
         setSavedContent((prev) => {
           if (!prev) return prev
@@ -193,14 +241,16 @@ export default function ContentModal({
             details: [...byLang.values()],
           }
         })
+        showToast('Content updated')
       } else {
         const created = await api.post<ContentItem>('/content', {
           application: applicationId,
           categories: selectedCategoryIds,
           tags: selectedTagIds,
-          details: entries.map(([langKey, d]) => ({ langKey, ...d })),
+          details: entries.map(([langKey, d]) => ({ langKey, ...d, sections: toPersistableSections(d.sections) })),
         })
         setSavedContent(created)
+        showToast('Content created')
       }
       onSaved()
     } catch (err) {
@@ -214,7 +264,7 @@ export default function ContentModal({
 
   return (
     <Backdrop onClose={onClose}>
-      <ModalPanel maxWidth="max-w-384">
+      <ModalPanel maxWidth="max-w-288">
         <ModalHeader
           title={isEdit ? 'Edit Content' : 'Create Content'}
           subtitle={isEdit ? 'Manage translations for this content' : 'Add one or more languages, then create'}
@@ -367,6 +417,64 @@ export default function ContentModal({
                 onChange={(v) => updateActiveDraft({ abstract: v })}
                 dir={isRtl ? 'rtl' : 'ltr'}
               />
+
+              <div style={{ borderTop: `1px solid ${theme.border}` }} />
+
+              {/* Body — dynamic content sections, built right into the form so
+                  there's no separate page/route to add or edit them. Collapsed
+                  by default, same as SEO & Metadata below. */}
+              <div>
+                <button
+                  type="button" onClick={() => setBodyOpen((v) => !v)}
+                  className="flex items-center gap-1.5 text-sm font-medium transition"
+                  style={{ color: theme.textSecondary }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = theme.textPrimary)}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = theme.textSecondary)}
+                >
+                  <ChevronIcon open={bodyOpen} size={14} />
+                  Body
+                  {draft.sections.length > 0 && (
+                    <span
+                      className="text-xs font-semibold px-1.5 py-0.5 rounded-full"
+                      style={{ background: theme.accentBg, color: theme.accent }}
+                    >
+                      {draft.sections.length}
+                    </span>
+                  )}
+                </button>
+                {bodyOpen && (
+                  <div className="mt-4 space-y-3">
+                    <div className="flex justify-end">
+                      <SectionTypePicker onPick={handleAddSection} />
+                    </div>
+                    {draft.sections.length === 0 ? (
+                      <p className="text-sm" style={{ color: theme.textTertiary }}>
+                        No sections yet. Use "Add Section" to build this page's body.
+                      </p>
+                    ) : (
+                      <DndContext sensors={sectionSensors} collisionDetection={closestCenter} onDragEnd={handleSectionDragEnd}>
+                        <SortableContext items={draft.sections.map((s) => s.cid!)} strategy={verticalListSortingStrategy}>
+                          <div className="space-y-3">
+                            {draft.sections.map((section, i) => (
+                              <SectionCard
+                                key={section.cid}
+                                id={section.cid!}
+                                applicationId={applicationId}
+                                section={section}
+                                onChange={(next) => updateSectionAt(i, next)}
+                                onRemove={() => removeSectionAt(i)}
+                              />
+                            ))}
+                          </div>
+                        </SortableContext>
+                      </DndContext>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ borderTop: `1px solid ${theme.border}` }} />
+
               {/* SEO/byline — per language, collapsed by default to keep the form simple */}
               <div>
                 <button
