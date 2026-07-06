@@ -232,8 +232,10 @@ export type ContentItem = {
   application: string
   createdAt: string
   updatedAt: string
-  // Populated by the server — shared across every language translation.
-  categories: { _id: string; title: string; parentId: string | null }[]
-  tags: { _id: string; title: string }[]
+  // Populated by the server — shared across every language translation. Each
+  // category/tag itself carries one title per language (see Category/Tag
+  // types), not one flat title.
+  categories: { _id: string; translations: { langKey: LangKey; title: string; slug: string }[]; parentId: string | null }[]
+  tags: { _id: string; translations: { langKey: LangKey; title: string; slug: string }[] }[]
   details: ContentDetail[]
 }

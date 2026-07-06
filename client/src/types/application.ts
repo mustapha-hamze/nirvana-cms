@@ -8,6 +8,7 @@ export type Application = {
   description: string
   logo: string | null
   status: ApplicationStatus
+  appKey: string
   createdAt: string
   languages?: LangKey[]
 }

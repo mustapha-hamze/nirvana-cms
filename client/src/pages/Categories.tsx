@@ -11,6 +11,8 @@ import ConfirmModal from '../components/ui/ConfirmModal'
 import { useAppSelector } from '../store/hooks'
 import { selectUser } from '../store/authSlice'
 import { isAppAdmin } from '../utils/permissions'
+import { getPreviewTitle } from '../utils/translations'
+import { LANGUAGE_VALUES } from '../types/content'
 import type { Category } from '../types/category'
 
 function buildTree(categories: Category[]): Array<{ category: Category; depth: number }> {
@@ -105,6 +107,7 @@ export default function Categories() {
             <thead>
               <tr style={{ borderBottom: `1px solid ${theme.border}` }}>
                 <th className="text-left font-semibold px-5 py-3" style={{ color: theme.textTertiary }}>Title</th>
+                <th className="text-left font-semibold px-5 py-3" style={{ color: theme.textTertiary }}>Languages</th>
                 <th className="text-left font-semibold px-5 py-3" style={{ color: theme.textTertiary }}>Status</th>
                 <th className="text-left font-semibold px-5 py-3" style={{ color: theme.textTertiary }}>Created</th>
                 {canManage && (
@@ -126,8 +129,22 @@ export default function Categories() {
                         <span className="mr-2 text-sm" style={{ color: theme.textTertiary }}>└</span>
                       )}
                       <span className="font-medium" style={{ color: theme.textPrimary }}>
-                        {category.title}
+                        {getPreviewTitle(category.translations)}
                       </span>
+                    </div>
+                  </td>
+                  <td className="px-5 py-3">
+                    <div className="flex items-center gap-1.5">
+                      {category.translations.map((t) => (
+                        <span
+                          key={t.langKey}
+                          title={t.title}
+                          className="text-[11px] font-semibold px-2 py-1 rounded-full"
+                          style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)' }}
+                        >
+                          {t.langKey.toUpperCase()}
+                        </span>
+                      ))}
                     </div>
                   </td>
                   <td className="px-5 py-3">
@@ -194,6 +211,7 @@ export default function Categories() {
       {(showCreate || editCategory) && app && (
         <CategoryModal
           applicationId={app._id}
+          allowedLanguages={app.languages ?? LANGUAGE_VALUES}
           categories={categories}
           category={editCategory}
           onClose={() => { setShowCreate(false); setEditCategory(null) }}
@@ -202,7 +220,7 @@ export default function Categories() {
       )}
       {deleteCategory && (
         <ConfirmModal
-          title={`Delete "${deleteCategory.title}"?`}
+          title={`Delete "${getPreviewTitle(deleteCategory.translations)}"?`}
           message="This will remove the category. This action cannot be undone."
           confirmLabel="Delete Category"
           loadingLabel="Deleting…"

@@ -2,6 +2,7 @@ import Application from "../models/application/Application.js";
 import ApplicationSetting from "../models/application/ApplicationSetting.js";
 import User from "../models/User.js";
 import { saveApplicationLogo } from "../utils/logoUpload.js";
+import { generateAppKey } from "../utils/appKey.js";
 import { LANGUAGE_VALUES } from "../constants/languages.js";
 
 export async function getApplications(req, res) {
@@ -28,13 +29,31 @@ export async function createApplication(req, res) {
 
   if (!name) return res.status(400).json({ message: "name is required" });
 
-  const app = await Application.create({ name, description, status });
+  // appKey is system-generated, never accepted from the client. Collisions are
+  // astronomically unlikely (unique index backs it up regardless), so a small
+  // retry loop is enough rather than anything more elaborate.
+  let app;
+  for (let attempt = 0; !app; attempt++) {
+    try {
+      app = await Application.create({
+        name,
+        description,
+        status,
+        appKey: generateAppKey(),
+      });
+    } catch (err) {
+      const isDuplicateAppKey = err.code === 11000 && err.keyPattern?.appKey;
+      if (!isDuplicateAppKey || attempt >= 4) throw err;
+    }
+  }
   res.status(201).json(app);
 }
 
 export async function updateApplication(req, res) {
   const { name, description, status } = req.body;
 
+  // appKey is intentionally not accepted here — it's immutable at the schema
+  // level too, so this whitelist is the first of two layers, not the only one.
   const allowed = {};
   if (name !== undefined) allowed.name = name;
   if (description !== undefined) allowed.description = description;

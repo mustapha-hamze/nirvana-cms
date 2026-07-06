@@ -8,6 +8,7 @@ import authRoutes from './routes/authRoutes.js'
 import applicationRoutes from './routes/applicationRoutes.js'
 import userRoutes from './routes/userRoutes.js'
 import contentRoutes from './routes/contentRoutes.js'
+import pageRoutes from './routes/pageRoutes.js'
 import categoryRoutes from './routes/categoryRoutes.js'
 import tagRoutes from './routes/tagRoutes.js'
 
@@ -29,6 +30,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/applications', applicationRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/content', contentRoutes)
+app.use('/api/pages', pageRoutes)
 app.use('/api/categories', categoryRoutes)
 app.use('/api/tags', tagRoutes)
 

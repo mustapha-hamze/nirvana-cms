@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { theme } from '../../theme'
-import { CloseIcon } from '../icons'
+import { AlertCircleIcon, CheckCircleIcon, CloseIcon } from '../icons'
 import type { ToastType } from './toastContext'
 
 type Toast = { id: number; message: string; type: ToastType; exiting: boolean }
@@ -27,14 +27,17 @@ export default function ToastItem({
   const visible = entered && !toast.exiting
 
   const palette = toast.type === 'error'
-    ? { bg: theme.dangerBg, border: theme.dangerBorder, color: theme.danger }
-    : { bg: theme.successBg, border: 'rgba(52,211,153,0.3)', color: theme.success }
+    ? { bg: theme.dangerBg, border: theme.dangerBorder, color: theme.danger, Icon: AlertCircleIcon }
+    : { bg: theme.successBg, border: 'rgba(52,211,153,0.3)', color: theme.success, Icon: CheckCircleIcon }
 
   return (
     <div
       className="pointer-events-auto relative overflow-hidden rounded-xl shadow-2xl text-sm font-medium transition-all duration-200 ease-out"
       style={{
-        background: palette.bg,
+        // `palette.bg` is a low-alpha tint meant to sit over an opaque surface
+        // (it's reused from badge styling elsewhere) — layer it over theme.surface
+        // here so the toast itself isn't see-through.
+        background: `linear-gradient(${palette.bg}, ${palette.bg}), ${theme.surface}`,
         border: `1px solid ${palette.border}`,
         color: palette.color,
         opacity: visible ? 1 : 0,
@@ -42,6 +45,9 @@ export default function ToastItem({
       }}
     >
       <div className="flex items-center gap-3 pl-4 pr-3 py-3">
+        <span className="shrink-0 flex">
+          <palette.Icon size={18} />
+        </span>
         <span className="flex-1">{toast.message}</span>
         <button
           type="button"

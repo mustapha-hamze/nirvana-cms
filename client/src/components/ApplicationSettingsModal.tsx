@@ -78,7 +78,7 @@ export default function ApplicationSettingsModal({ app, onClose, onSaved }: Prop
         api.put(`/applications/${app._id}/settings`, settings),
         logoFile ? uploadLogo(app._id, logoFile) : Promise.resolve(),
       ])
-      showToast('Application settings saved')
+      showToast('Application settings have been saved')
       onSaved()
       onClose()
     } catch (err) {
@@ -145,6 +145,16 @@ export default function ApplicationSettingsModal({ app, onClose, onSaved }: Prop
                     <input ref={fileInputRef} type="file" accept="image/png" className="hidden" onChange={handleLogoChange} />
                   </div>
                 </div>
+
+                <Field label="App Key">
+                  <input type="text" value={app.appKey} readOnly disabled
+                    className="w-full px-3.5 py-2.5 rounded-xl text-sm outline-none font-mono"
+                    style={{ ...inputStyle, color: theme.textTertiary, cursor: 'not-allowed' }}
+                  />
+                  <p className="text-xs mt-1.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                    Auto-generated and read-only.
+                  </p>
+                </Field>
 
                 <Field label="Name" required>
                   <input type="text" value={appForm.name} required

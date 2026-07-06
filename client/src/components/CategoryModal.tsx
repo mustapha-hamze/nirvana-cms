@@ -5,6 +5,8 @@ import { TextField, SelectField } from './ui/FormField'
 import StatusToggle from './ui/StatusToggle'
 import { useToast } from './ui/useToast'
 import { theme } from '../theme'
+import { getPreviewTitle } from '../utils/translations'
+import { LANGUAGE_LABELS, type LangKey } from '../types/content'
 import type { Category } from '../types/category'
 
 // A category can't be its own ancestor — exclude itself and its descendants
@@ -28,19 +30,28 @@ function excludedIds(category: Category | null, categories: Category[]): Set<str
 
 export default function CategoryModal({
   applicationId,
+  allowedLanguages,
   categories,
   category,
   onClose,
   onSaved,
 }: {
   applicationId: string
+  allowedLanguages: LangKey[]
   categories: Category[]
   category: Category | null
   onClose: () => void
   onSaved: () => void
 }) {
   const isEdit = category !== null
-  const [title, setTitle] = useState(category?.title ?? '')
+  const [titles, setTitles] = useState<Partial<Record<LangKey, string>>>(() => {
+    const initial: Partial<Record<LangKey, string>> = {}
+    for (const t of category?.translations ?? []) initial[t.langKey] = t.title
+    return initial
+  })
+  const [activeLang, setActiveLang] = useState<LangKey>(
+    category?.translations[0]?.langKey ?? allowedLanguages[0],
+  )
   const [parentId, setParentId] = useState(category?.parentId ?? '')
   const [active, setActive] = useState(category?.status !== 'inactive')
   const [loading, setLoading] = useState(false)
@@ -50,24 +61,33 @@ export default function CategoryModal({
   const excluded = excludedIds(category, categories)
   const parentOptions = [
     { value: '', label: 'None (top-level)' },
-    ...categories.filter((c) => !excluded.has(c._id)).map((c) => ({ value: c._id, label: c.title })),
+    ...categories
+      .filter((c) => !excluded.has(c._id))
+      .map((c) => ({ value: c._id, label: getPreviewTitle(c.translations) })),
   ]
+
+  function updateTitle(lang: LangKey, value: string) {
+    setTitles((prev) => ({ ...prev, [lang]: value }))
+  }
 
   async function handleSave() {
     setError('')
-    if (!title.trim()) {
-      setError('Title is required')
+    const translations = allowedLanguages
+      .map((langKey) => ({ langKey, title: (titles[langKey] ?? '').trim() }))
+      .filter((t) => t.title)
+    if (translations.length === 0) {
+      setError('At least one language needs a title')
       return
     }
     setLoading(true)
     try {
-      const payload = { title, parentId: parentId || null, status: active ? 'active' : 'inactive' }
+      const payload = { translations, parentId: parentId || null, status: active ? 'active' : 'inactive' }
       if (category) {
         await api.put(`/categories/${category._id}`, payload)
       } else {
         await api.post('/categories', { application: applicationId, ...payload })
       }
-      showToast(isEdit ? 'Category updated' : 'Category created')
+      showToast(isEdit ? 'Category has been updated' : 'Category has been created')
       onSaved()
       onClose()
     } catch (err) {
@@ -75,6 +95,8 @@ export default function CategoryModal({
       setLoading(false)
     }
   }
+
+  const isRtl = activeLang === 'fa'
 
   return (
     <Backdrop onClose={onClose}>
@@ -84,12 +106,37 @@ export default function CategoryModal({
           subtitle={isEdit ? 'Update this category' : 'Add a new category to organize content'}
           onClose={onClose}
         />
+
+        {allowedLanguages.length > 1 && (
+          <div className="flex items-center gap-1 px-6 pt-4" style={{ borderBottom: `1px solid ${theme.border}` }}>
+            {allowedLanguages.map((lang) => {
+              const isActive = lang === activeLang
+              const filled = !!titles[lang]?.trim()
+              return (
+                <button
+                  key={lang} type="button" onClick={() => setActiveLang(lang)}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-all -mb-px shrink-0"
+                  style={isActive
+                    ? { color: theme.textPrimary, borderBottom: '2px solid #7c3aed' }
+                    : { color: theme.textSecondary, borderBottom: '2px solid transparent' }
+                  }
+                >
+                  {filled && <span className="w-1.5 h-1.5 rounded-full" style={{ background: theme.accent }} />}
+                  {LANGUAGE_LABELS[lang]}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
         <div className="px-6 py-5 space-y-4">
           {error && <ErrorBanner message={error} />}
           <TextField
-            label="Title" required value={title}
-            onChange={setTitle}
+            label={allowedLanguages.length > 1 ? `Title (${LANGUAGE_LABELS[activeLang]})` : 'Title'}
+            required value={titles[activeLang] ?? ''}
+            onChange={(v) => updateTitle(activeLang, v)}
             placeholder="e.g. News"
+            dir={isRtl ? 'rtl' : 'ltr'}
           />
           <SelectField
             label="Parent Category" value={parentId}

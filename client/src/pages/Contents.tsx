@@ -1,16 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { api } from "../api/client";
 import type { AdminOutletContext } from "../components/AdminLayout";
 import { theme } from "../theme";
 import { PlusIcon, EditIcon, TrashIcon } from "../components/icons";
-import ContentModal from "../components/ContentModal";
 import EmptyState from "../components/ui/EmptyState";
 import SkeletonTable from "../components/ui/SkeletonTable";
 import ConfirmModal from "../components/ui/ConfirmModal";
 import { useAppSelector } from "../store/hooks";
 import { selectUser } from "../store/authSlice";
 import { isAppAdmin } from "../utils/permissions";
+import { getPreviewTitle } from "../utils/translations";
 import {
   LANGUAGE_VALUES,
   LANGUAGE_LABELS,
@@ -28,12 +28,11 @@ function getPreviewDetail(content: ContentItem): ContentDetail | undefined {
 
 export default function Contents() {
   const { app } = useOutletContext<AdminOutletContext>();
+  const navigate = useNavigate();
   const user = useAppSelector(selectUser);
   const canManage = !!app && isAppAdmin(user, app._id);
   const [contents, setContents] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
-  const [editContent, setEditContent] = useState<ContentItem | null>(null);
   const [deleteContent, setDeleteContent] = useState<ContentItem | null>(null);
 
   const fetchContents = useCallback(async () => {
@@ -73,7 +72,7 @@ export default function Contents() {
           </p>
         </div>
         <button
-          onClick={() => setShowCreate(true)}
+          onClick={() => navigate(`/applications/${app?._id}/contents/create`)}
           disabled={!app}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.97] disabled:opacity-60"
           style={{
@@ -94,7 +93,7 @@ export default function Contents() {
           title="No content yet"
           description="Create your first piece of content for this application."
           actionLabel="Create Content"
-          onAction={() => setShowCreate(true)}
+          onAction={() => navigate(`/applications/${app?._id}/contents/create`)}
         />
       ) : (
         <div
@@ -210,7 +209,7 @@ export default function Contents() {
                                   color: theme.accent,
                                 }}
                               >
-                                {cat.title}
+                                {getPreviewTitle(cat.translations)}
                               </span>
                             ))}
                           </div>
@@ -232,7 +231,7 @@ export default function Contents() {
                                   color: theme.textSecondary,
                                 }}
                               >
-                                {tag.title}
+                                {getPreviewTitle(tag.translations)}
                               </span>
                             ))}
                           </div>
@@ -252,7 +251,11 @@ export default function Contents() {
                     <td className="px-5 py-3">
                       <div className="flex items-center justify-end gap-1">
                         <button
-                          onClick={() => setEditContent(content)}
+                          onClick={() =>
+                            navigate(
+                              `/applications/${app?._id}/contents/${content._id}/edit`,
+                            )
+                          }
                           title="Edit"
                           aria-label="Edit"
                           className="p-2 rounded-lg transition-all"
@@ -298,18 +301,6 @@ export default function Contents() {
         </div>
       )}
 
-      {(showCreate || editContent) && app && (
-        <ContentModal
-          applicationId={app._id}
-          allowedLanguages={app.languages ?? LANGUAGE_VALUES}
-          content={editContent}
-          onClose={() => {
-            setShowCreate(false);
-            setEditContent(null);
-          }}
-          onSaved={fetchContents}
-        />
-      )}
       {deleteContent && (
         <ConfirmModal
           title="Delete this content?"

@@ -7,6 +7,10 @@ const applicationSchema = new mongoose.Schema(
     description: { type: String, trim: true, default: "" },
     logo: { type: String, default: null },
     status: { type: String, enum: ["active", "inactive"], default: "active" },
+    // System-generated on creation (see generateAppKey) and never user-editable —
+    // `immutable` blocks changes after the initial set, on top of the controller
+    // never accepting it as input.
+    appKey: { type: String, required: true, unique: true, immutable: true },
   },
   { timestamps: true },
 );

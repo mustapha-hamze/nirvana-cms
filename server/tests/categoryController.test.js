@@ -14,11 +14,16 @@ const Application = {
   exists: jest.fn(),
 };
 
+const ApplicationSetting = {
+  findOne: jest.fn(),
+};
+
 const userCanAccessApplication = jest.fn();
 const generatePublicId = jest.fn();
 
 jest.unstable_mockModule("../src/models/Category.js", () => ({ default: Category }));
 jest.unstable_mockModule("../src/models/application/Application.js", () => ({ default: Application }));
+jest.unstable_mockModule("../src/models/application/ApplicationSetting.js", () => ({ default: ApplicationSetting }));
 jest.unstable_mockModule("../src/middleware/auth.js", () => ({ userCanAccessApplication }));
 jest.unstable_mockModule("../src/utils/publicId.js", () => ({ generatePublicId }));
 
@@ -53,6 +58,15 @@ describe("categoryController", () => {
     jest.clearAllMocks();
     generatePublicId.mockReturnValue("public-id-1");
     userCanAccessApplication.mockReturnValue(true);
+    ApplicationSetting.findOne.mockReturnValue({
+      select: jest.fn().mockResolvedValue({ languages: ["en", "fa"] }),
+    });
+    // Category.exists is used for two different checks (parent ownership and
+    // slug-collision lookups) — dispatch on the query shape: a slug check
+    // always includes a `translations` filter, a parent check never does.
+    Category.exists.mockImplementation((query) =>
+      query.translations ? Promise.resolve(false) : Promise.resolve({ _id: "parent-1" }),
+    );
   });
 
   describe("getCategories", () => {
@@ -77,8 +91,8 @@ describe("categoryController", () => {
       expect(res.json).toHaveBeenCalledWith({ message: "Insufficient permissions" });
     });
 
-    test("applies status and root parent filters, then sorts by title", async () => {
-      const categories = [{ _id: "cat-1", title: "News" }];
+    test("applies status and root parent filters, then sorts by creation date", async () => {
+      const categories = [{ _id: "cat-1", translations: [{ langKey: "en", title: "News", slug: "news" }] }];
       const sort = jest.fn().mockResolvedValue(categories);
       Category.find.mockReturnValue({ sort });
       const res = mockResponse();
@@ -93,7 +107,7 @@ describe("categoryController", () => {
         status: "active",
         parentId: null,
       });
-      expect(sort).toHaveBeenCalledWith({ title: 1 });
+      expect(sort).toHaveBeenCalledWith({ createdAt: 1 });
       expect(res.json).toHaveBeenCalledWith(categories);
     });
   });
@@ -124,8 +138,7 @@ describe("categoryController", () => {
   describe("createCategory", () => {
     test("validates application existence, parent ownership, and creates a category", async () => {
       Application.exists.mockResolvedValue({ _id: "app-1" });
-      Category.exists.mockResolvedValue({ _id: "parent-1" });
-      const created = { _id: "cat-1", title: "News", publicId: "public-id-1" };
+      const created = { _id: "cat-1", translations: [{ langKey: "en", title: "News", slug: "news" }], publicId: "public-id-1" };
       Category.create.mockResolvedValue(created);
       const res = mockResponse();
 
@@ -133,7 +146,7 @@ describe("categoryController", () => {
         {
           body: {
             application: "app-1",
-            title: "News",
+            translations: [{ langKey: "en", title: "News" }],
             parentId: "parent-1",
             status: "active",
           },
@@ -146,7 +159,7 @@ describe("categoryController", () => {
       expect(Category.exists).toHaveBeenCalledWith({ _id: "parent-1", application: "app-1" });
       expect(Category.create).toHaveBeenCalledWith({
         application: "app-1",
-        title: "News",
+        translations: [{ langKey: "en", title: "News", slug: "news" }],
         parentId: "parent-1",
         status: "active",
         publicId: "public-id-1",
@@ -155,12 +168,38 @@ describe("categoryController", () => {
       expect(res.json).toHaveBeenCalledWith(created);
     });
 
+    test("rejects translations with a language outside the application's allowed languages", async () => {
+      Application.exists.mockResolvedValue({ _id: "app-1" });
+      const res = mockResponse();
+
+      await createCategory(
+        {
+          body: { application: "app-1", translations: [{ langKey: "fr", title: "Actualités" }] },
+          user: mockUser(),
+        },
+        res,
+      );
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "translations.langKey must be one of: en, fa",
+      });
+      expect(Category.create).not.toHaveBeenCalled();
+    });
+
     test("rejects invalid status values", async () => {
       Application.exists.mockResolvedValue({ _id: "app-1" });
       const res = mockResponse();
 
       await createCategory(
-        { body: { application: "app-1", title: "News", status: "archived" }, user: mockUser() },
+        {
+          body: {
+            application: "app-1",
+            translations: [{ langKey: "en", title: "News" }],
+            status: "archived",
+          },
+          user: mockUser(),
+        },
         res,
       );
 
@@ -178,7 +217,10 @@ describe("categoryController", () => {
       const res = mockResponse();
 
       await createCategory(
-        { body: { application: "app-1", title: "News" }, user: mockUser() },
+        {
+          body: { application: "app-1", translations: [{ langKey: "en", title: "News" }] },
+          user: mockUser(),
+        },
         res,
       );
 
@@ -193,12 +235,11 @@ describe("categoryController", () => {
       const category = {
         _id: "cat-1",
         application: "app-1",
-        title: "Old",
+        translations: [{ langKey: "en", title: "Old", slug: "old" }],
         parentId: null,
         status: "active",
         save: jest.fn().mockResolvedValue(undefined),
       };
-      Category.exists.mockResolvedValue({ _id: "parent-1" });
       Category.findById.mockImplementation((id) => {
         if (id === "cat-1") return Promise.resolve(category);
         if (id === "parent-1") {
@@ -211,17 +252,47 @@ describe("categoryController", () => {
       await updateCategory(
         {
           params: { id: "cat-1" },
-          body: { title: "Updated", parentId: "parent-1", status: "inactive" },
+          body: {
+            translations: [{ langKey: "en", title: "Updated" }],
+            parentId: "parent-1",
+            status: "inactive",
+          },
           user: mockUser(),
         },
         res,
       );
 
-      expect(category.title).toBe("Updated");
+      expect(category.translations).toEqual([{ langKey: "en", title: "Updated", slug: "updated" }]);
       expect(category.parentId).toBe("parent-1");
       expect(category.status).toBe("inactive");
       expect(category.save).toHaveBeenCalled();
       expect(res.json).toHaveBeenCalledWith(category);
+    });
+
+    test("keeps the existing slug when a language's title is unchanged", async () => {
+      const category = {
+        _id: "cat-1",
+        application: "app-1",
+        translations: [{ langKey: "en", title: "News", slug: "news" }],
+        parentId: null,
+        status: "active",
+        save: jest.fn().mockResolvedValue(undefined),
+      };
+      Category.findById.mockResolvedValue(category);
+      const res = mockResponse();
+
+      await updateCategory(
+        {
+          params: { id: "cat-1" },
+          body: { translations: [{ langKey: "en", title: "News" }] },
+          user: mockUser(),
+        },
+        res,
+      );
+
+      expect(category.translations).toEqual([{ langKey: "en", title: "News", slug: "news" }]);
+      // Unchanged title shouldn't need a slug-collision lookup at all.
+      expect(Category.exists).not.toHaveBeenCalled();
     });
 
     test("rejects parent changes that would create a cycle", async () => {

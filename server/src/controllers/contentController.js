@@ -189,15 +189,15 @@ export async function getContents(req, res) {
 
   const contents = await Content.find(filter)
     .sort({ createdAt: -1 })
-    .populate("categories", "title parentId")
-    .populate("tags", "title");
+    .populate("categories", "translations parentId")
+    .populate("tags", "translations");
   res.json(await attachDetails(contents, { langKey, status }));
 }
 
 export async function getContent(req, res) {
   const content = await Content.findById(req.params.id)
-    .populate("categories", "title parentId")
-    .populate("tags", "title");
+    .populate("categories", "translations parentId")
+    .populate("tags", "translations");
   if (!content) return res.status(404).json({ message: "Content not found" });
   if (!userCanAccessApplication(req.user, content.application)) {
     return res.status(403).json({ message: "Insufficient permissions" });
@@ -302,8 +302,8 @@ export async function createContent(req, res) {
         return detail.save();
       }),
     );
-    await content.populate("categories", "title parentId");
-    await content.populate("tags", "title");
+    await content.populate("categories", "translations parentId");
+    await content.populate("tags", "translations");
     res.status(201).json({ ...content.toObject(), details: created });
   } catch (err) {
     await Content.findByIdAndDelete(content._id);
@@ -350,8 +350,8 @@ export async function updateContent(req, res) {
   }
 
   await content.save();
-  await content.populate("categories", "title parentId");
-  await content.populate("tags", "title");
+  await content.populate("categories", "translations parentId");
+  await content.populate("tags", "translations");
   res.json(content);
 }
 

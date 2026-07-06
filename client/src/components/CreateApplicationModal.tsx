@@ -22,7 +22,7 @@ export default function CreateApplicationModal({ onClose, onCreated }: Props) {
     setLoading(true)
     try {
       await api.post('/applications', { name, description })
-      showToast('Application created')
+      showToast('Application has been created')
       onCreated()
       onClose()
     } catch (err) {

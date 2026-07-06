@@ -11,6 +11,8 @@ import ConfirmModal from '../components/ui/ConfirmModal'
 import { useAppSelector } from '../store/hooks'
 import { selectUser } from '../store/authSlice'
 import { isAppAdmin } from '../utils/permissions'
+import { getPreviewTitle } from '../utils/translations'
+import { LANGUAGE_VALUES } from '../types/content'
 import type { Tag } from '../types/tag'
 
 export default function Tags() {
@@ -78,6 +80,7 @@ export default function Tags() {
             <thead>
               <tr style={{ borderBottom: `1px solid ${theme.border}` }}>
                 <th className="text-left font-semibold px-5 py-3" style={{ color: theme.textTertiary }}>Title</th>
+                <th className="text-left font-semibold px-5 py-3" style={{ color: theme.textTertiary }}>Languages</th>
                 <th className="text-left font-semibold px-5 py-3" style={{ color: theme.textTertiary }}>Status</th>
                 <th className="text-left font-semibold px-5 py-3" style={{ color: theme.textTertiary }}>Created</th>
                 {canManage && (
@@ -95,8 +98,22 @@ export default function Tags() {
                 >
                   <td className="px-5 py-3">
                     <span className="font-medium" style={{ color: theme.textPrimary }}>
-                      {tag.title}
+                      {getPreviewTitle(tag.translations)}
                     </span>
+                  </td>
+                  <td className="px-5 py-3">
+                    <div className="flex items-center gap-1.5">
+                      {tag.translations.map((t) => (
+                        <span
+                          key={t.langKey}
+                          title={t.title}
+                          className="text-[11px] font-semibold px-2 py-1 rounded-full"
+                          style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)' }}
+                        >
+                          {t.langKey.toUpperCase()}
+                        </span>
+                      ))}
+                    </div>
                   </td>
                   <td className="px-5 py-3">
                     <span
@@ -162,6 +179,7 @@ export default function Tags() {
       {(showCreate || editTag) && app && (
         <TagModal
           applicationId={app._id}
+          allowedLanguages={app.languages ?? LANGUAGE_VALUES}
           tag={editTag}
           onClose={() => { setShowCreate(false); setEditTag(null) }}
           onSaved={fetchTags}
@@ -169,7 +187,7 @@ export default function Tags() {
       )}
       {deleteTag && (
         <ConfirmModal
-          title={`Delete "${deleteTag.title}"?`}
+          title={`Delete "${getPreviewTitle(deleteTag.translations)}"?`}
           message="This will remove the tag. This action cannot be undone."
           confirmLabel="Delete Tag"
           loadingLabel="Deleting…"

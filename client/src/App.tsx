@@ -8,9 +8,11 @@ import SuperAdmins from './pages/SuperAdmins'
 import Dashboard from './pages/Dashboard'
 import AppUsers from './pages/AppUsers'
 import Contents from './pages/Contents'
+import ContentForm from './pages/ContentForm'
+import Pages from './pages/Pages'
+import PageForm from './pages/PageForm'
 import Categories from './pages/Categories'
 import Tags from './pages/Tags'
-import ComingSoonPage from './pages/ComingSoonPage'
 import AdminLayout from './components/AdminLayout'
 
 function ProtectedRoute({ children, roles }: { children: ReactNode; roles?: string[] }) {
@@ -80,7 +82,11 @@ export default function App() {
             }
           />
           <Route path="contents" element={<Contents />} />
-          <Route path="pages" element={<ComingSoonPage title="Pages" description="Manage the pages that make up this application's site." />} />
+          <Route path="contents/create" element={<ContentForm />} />
+          <Route path="contents/:contentId/edit" element={<ContentForm />} />
+          <Route path="pages" element={<Pages />} />
+          <Route path="pages/create" element={<PageForm />} />
+          <Route path="pages/:pageId/edit" element={<PageForm />} />
           <Route
             path="categories"
             element={

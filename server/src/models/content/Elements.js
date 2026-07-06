@@ -1,5 +1,6 @@
 import mongoose from 'mongoose'
 import { ELEMENT_TYPES, HEADING_LEVELS } from '../../constants/elementTypes.js'
+import { sanitizeRichText } from '../../utils/sanitizeRichText.js'
 
 // Cheap defense-in-depth only — confirms the value is at least an http(s) URL.
 // Real embeddability (e.g. is this actually a YouTube/Vimeo link) is NOT
@@ -11,7 +12,9 @@ const URL_PATTERN = /^https?:\/\/\S+$/
 // on leaf fields below). Skips the pattern check on an empty string so an
 // unfinished field doesn't itself become a validation failure; once there's
 // a value, it must actually look like a URL.
-const urlField = (extra = {}) => ({
+// Exported so other element catalogs (e.g. models/page/Elements.js) can build
+// their own url-shaped fields without duplicating the validation pattern.
+export const urlField = (extra = {}) => ({
   type: String,
   trim: true,
   default: '',
@@ -45,13 +48,13 @@ export const paragraphSchema = new mongoose.Schema(
   { _id: true },
 )
 
-// Raw HTML produced by the client's rich text editor (TipTap). There is no
-// HTML sanitizer in this codebase today — accepted as a v1 risk since only
-// authenticated staff/admins can author content; revisit before allowing
-// untrusted authors.
+// Raw HTML produced by the client's rich text editor (TipTap), run through
+// sanitizeRichText on every assignment (a Mongoose setter, not a one-off
+// controller call) so persisted HTML can only ever be as permissive as that
+// allowlist — regardless of which code path wrote it.
 export const richTextSchema = new mongoose.Schema(
   {
-    html: { type: String, default: '', maxlength: 20000 },
+    html: { type: String, default: '', maxlength: 20000, set: sanitizeRichText },
   },
   { _id: true },
 )
