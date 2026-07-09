@@ -9,6 +9,9 @@ import { LANGUAGE_VALUES } from "../constants/languages.js";
 import { SECTION_TYPE_VALUES, SECTION_LAYOUTS } from "../constants/sectionTypes.js";
 import { slugify } from "../utils/slugify.js";
 import { saveContentImage } from "../utils/contentImageUpload.js";
+import { saveVideo, saveDocument } from "../utils/rawFileUpload.js";
+import { paginateList, SORT_BY_VALUES, SORT_ORDER_VALUES } from "../utils/paginateList.js";
+import { getPreviewTitle } from "../utils/previewTitle.js";
 
 const STATUS_VALUES = ContentDetails.schema.path("status").enumValues;
 
@@ -156,7 +159,7 @@ async function attachDetails(contents, { langKey, status } = {}) {
 }
 
 export async function getContents(req, res) {
-  const { application, status, langKey } = req.query;
+  const { application, status, langKey, search, sortBy, sortOrder, page, limit } = req.query;
 
   if (!application)
     return res.status(400).json({ message: "application is required" });
@@ -175,6 +178,12 @@ export async function getContents(req, res) {
         message: `langKey must be one of: ${LANGUAGE_VALUES.join(", ")}`,
       });
   }
+  if (sortBy && !SORT_BY_VALUES.includes(sortBy)) {
+    return res.status(400).json({ message: `sortBy must be one of: ${SORT_BY_VALUES.join(", ")}` });
+  }
+  if (sortOrder && !SORT_ORDER_VALUES.includes(sortOrder)) {
+    return res.status(400).json({ message: `sortOrder must be one of: ${SORT_ORDER_VALUES.join(", ")}` });
+  }
 
   const filter = { application };
   // status/langKey live on ContentDetails, so resolve matching Content ids first.
@@ -191,7 +200,20 @@ export async function getContents(req, res) {
     .sort({ createdAt: -1 })
     .populate("categories", "translations parentId")
     .populate("tags", "translations");
-  res.json(await attachDetails(contents, { langKey, status }));
+  const withDetails = await attachDetails(contents, { langKey, status });
+
+  res.json(
+    paginateList(withDetails, {
+      idOf: (c) => c._id.toString(),
+      titleOf: (c) => getPreviewTitle(c.details),
+      createdAtOf: (c) => c.createdAt,
+      search,
+      sortBy,
+      sortOrder,
+      page,
+      limit,
+    }),
+  );
 }
 
 export async function getContent(req, res) {
@@ -498,6 +520,42 @@ export async function uploadContentImage(req, res) {
     return res.status(400).json({ message: "image is required" });
 
   const relativePath = await saveContentImage(req.file.buffer, req.file.mimetype);
+  const url = `${req.protocol}://${req.get("host")}${relativePath}`;
+  res.status(201).json({ url });
+}
+
+// Self-hosted video upload for content's videoEmbed elements — an
+// alternative to pasting an external YouTube/Vimeo URL. Same access-check
+// and unscoped-storage rationale as uploadContentImage above.
+export async function uploadContentVideo(req, res) {
+  const { application } = req.body;
+  if (!application)
+    return res.status(400).json({ message: "application is required" });
+  if (!userCanAccessApplication(req.user, application)) {
+    return res.status(403).json({ message: "Insufficient permissions" });
+  }
+  if (!req.file)
+    return res.status(400).json({ message: "video is required" });
+
+  const relativePath = await saveVideo(req.file.buffer, req.file.mimetype, "content");
+  const url = `${req.protocol}://${req.get("host")}${relativePath}`;
+  res.status(201).json({ url });
+}
+
+// No content element type consumes this yet (content has no document-bearing
+// element, unlike page's galleryItem) — provided for parity with page's
+// upload surface, ready for whenever content gains one.
+export async function uploadContentDocument(req, res) {
+  const { application } = req.body;
+  if (!application)
+    return res.status(400).json({ message: "application is required" });
+  if (!userCanAccessApplication(req.user, application)) {
+    return res.status(403).json({ message: "Insufficient permissions" });
+  }
+  if (!req.file)
+    return res.status(400).json({ message: "document is required" });
+
+  const relativePath = await saveDocument(req.file.buffer, req.file.mimetype, "content");
   const url = `${req.protocol}://${req.get("host")}${relativePath}`;
   res.status(201).json({ url });
 }

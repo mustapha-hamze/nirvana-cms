@@ -13,7 +13,7 @@ export default function PortfolioItemElementEditor({
 }) {
   return (
     <div className="space-y-3">
-      <ImageUploadField applicationId={applicationId} url={element.image} onUploaded={(image) => onChange({ ...element, image })} />
+      <ImageUploadField domain="page" applicationId={applicationId} url={element.image} onUploaded={(image) => onChange({ ...element, image })} />
       <TextField label="Image alt text" value={element.imageAlt} onChange={(imageAlt) => onChange({ ...element, imageAlt })} />
       <TextField label="Title" required value={element.title} onChange={(title) => onChange({ ...element, title })} placeholder="e.g. Brand redesign" />
       <div className="grid grid-cols-2 gap-3">

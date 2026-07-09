@@ -31,7 +31,7 @@ const ROLE_LABELS: Record<AppRole, string> = {
 const ROLE_COLORS: Record<AppRole, { bg: string; color: string }> = {
   WebSiteAdmin: { bg: 'rgba(52,211,153,0.1)', color: '#34d399' },
   WebSiteContentCreator: { bg: 'rgba(96,165,250,0.12)', color: '#60a5fa' },
-  WebsiteUser: { bg: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)' },
+  WebsiteUser: { bg: theme.subtleBg, color: theme.textSubtle },
 }
 
 export default function AppUsers() {

@@ -4,8 +4,12 @@ import Application from "../models/application/Application.js";
 import ApplicationSetting from "../models/application/ApplicationSetting.js";
 import { userCanAccessApplication, userIsAppAdmin } from "../middleware/auth.js";
 import { LANGUAGE_VALUES } from "../constants/languages.js";
-import { PAGE_SECTION_TYPE_VALUES, PAGE_SECTION_LAYOUTS } from "../constants/pageSectionTypes.js";
+import { PAGE_COMPONENT_TYPE_VALUES, PAGE_COMPONENT_LAYOUTS, MAX_COMPONENTS_PER_SECTION } from "../constants/pageComponentTypes.js";
 import { slugify } from "../utils/slugify.js";
+import { paginateList, SORT_BY_VALUES, SORT_ORDER_VALUES } from "../utils/paginateList.js";
+import { getPreviewTitle } from "../utils/previewTitle.js";
+import { savePageImage } from "../utils/pageImageUpload.js";
+import { saveVideo, saveDocument } from "../utils/rawFileUpload.js";
 
 const STATUS_VALUES = PageDetails.schema.path("status").enumValues;
 
@@ -52,12 +56,15 @@ function applyMetadata(detail, metadata) {
   if (metadata.description !== undefined) detail.metadata.description = String(metadata.description).trim();
 }
 
-// Checks the one thing the Mongoose schema can't express: that each section's
-// `type` is a known page section and its `elements` are all the one element
-// type that section holds, within that type's min/max count (see
-// PAGE_SECTION_LAYOUTS). Per-field checks (maxlength/enum/etc.) are
-// intentionally NOT duplicated here — the schema's own discriminators already
-// enforce those and surface as a Mongoose ValidationError on .save().
+// Checks the one thing the Mongoose schema can't express: that each
+// component's `type` is a known page component and its `elements` are all
+// the one element type that component holds, within that type's min/max
+// count (see PAGE_COMPONENT_LAYOUTS). A section itself has no `type` and no
+// min/max — it's a generic container, so an empty `components` array is
+// valid (a freshly added, still-empty section). Per-field checks
+// (maxlength/enum/etc.) are intentionally NOT duplicated here — the schema's
+// own discriminators already enforce those and surface as a Mongoose
+// ValidationError on .save().
 function validatePageSections(sections) {
   if (sections === undefined) return { valid: true };
   if (!Array.isArray(sections)) {
@@ -67,28 +74,37 @@ function validatePageSections(sections) {
     return { valid: false, message: "A page may have at most 40 sections" };
   }
   for (let i = 0; i < sections.length; i++) {
-    const section = sections[i];
-    const layout = PAGE_SECTION_LAYOUTS[section?.type];
-    if (!layout) {
+    const components = Array.isArray(sections[i]?.components) ? sections[i].components : [];
+    if (components.length > MAX_COMPONENTS_PER_SECTION) {
       return {
         valid: false,
-        message: `sections[${i}]: type must be one of: ${PAGE_SECTION_TYPE_VALUES.join(", ")}`,
+        message: `sections[${i}]: a section may have at most ${MAX_COMPONENTS_PER_SECTION} components`,
       };
     }
-    const elements = Array.isArray(section.elements) ? section.elements : [];
-    if (elements.length < layout.min || elements.length > layout.max) {
-      const range = layout.min === layout.max ? `exactly ${layout.min}` : `between ${layout.min} and ${layout.max}`;
-      return {
-        valid: false,
-        message: `sections[${i}] (${section.type}) must contain ${range} element(s)`,
-      };
-    }
-    const wrongType = elements.find((el) => el?.elementType !== layout.elementType);
-    if (wrongType) {
-      return {
-        valid: false,
-        message: `sections[${i}] (${section.type}): every element must be of type "${layout.elementType}"`,
-      };
+    for (let j = 0; j < components.length; j++) {
+      const component = components[j];
+      const layout = PAGE_COMPONENT_LAYOUTS[component?.type];
+      if (!layout) {
+        return {
+          valid: false,
+          message: `sections[${i}].components[${j}]: type must be one of: ${PAGE_COMPONENT_TYPE_VALUES.join(", ")}`,
+        };
+      }
+      const elements = Array.isArray(component.elements) ? component.elements : [];
+      if (elements.length < layout.min || elements.length > layout.max) {
+        const range = layout.min === layout.max ? `exactly ${layout.min}` : `between ${layout.min} and ${layout.max}`;
+        return {
+          valid: false,
+          message: `sections[${i}].components[${j}] (${component.type}) must contain ${range} element(s)`,
+        };
+      }
+      const wrongType = elements.find((el) => el?.elementType !== layout.elementType);
+      if (wrongType) {
+        return {
+          valid: false,
+          message: `sections[${i}].components[${j}] (${component.type}): every element must be of type "${layout.elementType}"`,
+        };
+      }
     }
   }
   return { valid: true };
@@ -135,7 +151,7 @@ async function attachDetails(pages, { langKey, status } = {}) {
 }
 
 export async function getPages(req, res) {
-  const { application, status, langKey } = req.query;
+  const { application, status, langKey, search, sortBy, sortOrder, page, limit } = req.query;
 
   if (!application)
     return res.status(400).json({ message: "application is required" });
@@ -152,6 +168,12 @@ export async function getPages(req, res) {
       .status(400)
       .json({ message: `langKey must be one of: ${LANGUAGE_VALUES.join(", ")}` });
   }
+  if (sortBy && !SORT_BY_VALUES.includes(sortBy)) {
+    return res.status(400).json({ message: `sortBy must be one of: ${SORT_BY_VALUES.join(", ")}` });
+  }
+  if (sortOrder && !SORT_ORDER_VALUES.includes(sortOrder)) {
+    return res.status(400).json({ message: `sortOrder must be one of: ${SORT_ORDER_VALUES.join(", ")}` });
+  }
 
   const filter = { application };
   // status/langKey live on PageDetails, so resolve matching Page ids first.
@@ -163,7 +185,20 @@ export async function getPages(req, res) {
   }
 
   const pages = await Page.find(filter).sort({ isHomepage: -1, createdAt: 1 });
-  res.json(await attachDetails(pages, { langKey, status }));
+  const withDetails = await attachDetails(pages, { langKey, status });
+
+  res.json(
+    paginateList(withDetails, {
+      idOf: (p) => p._id.toString(),
+      titleOf: (p) => getPreviewTitle(p.details),
+      createdAtOf: (p) => p.createdAt,
+      search,
+      sortBy,
+      sortOrder,
+      page,
+      limit,
+    }),
+  );
 }
 
 export async function getPage(req, res) {
@@ -398,4 +433,56 @@ export async function deletePageDetails(req, res) {
   if (!detail) return res.status(404).json({ message: "Translation not found" });
 
   res.status(204).send();
+}
+
+// Used for image elements across page sections (banner, cards, slides, ...).
+// Not scoped under a specific Page id — an image may be uploaded before the
+// page itself has ever been saved (e.g. mid-way through the "Create Page"
+// form). Returns an absolute URL for the same reason as uploadContentImage.
+export async function uploadPageImage(req, res) {
+  const { application } = req.body;
+  if (!application)
+    return res.status(400).json({ message: "application is required" });
+  if (!userCanAccessApplication(req.user, application)) {
+    return res.status(403).json({ message: "Insufficient permissions" });
+  }
+  if (!req.file)
+    return res.status(400).json({ message: "image is required" });
+
+  const relativePath = await savePageImage(req.file.buffer, req.file.mimetype);
+  const url = `${req.protocol}://${req.get("host")}${relativePath}`;
+  res.status(201).json({ url });
+}
+
+// Self-hosted video upload for page's videoEmbed/gallery elements — an
+// alternative to pasting an external YouTube/Vimeo URL.
+export async function uploadPageVideo(req, res) {
+  const { application } = req.body;
+  if (!application)
+    return res.status(400).json({ message: "application is required" });
+  if (!userCanAccessApplication(req.user, application)) {
+    return res.status(403).json({ message: "Insufficient permissions" });
+  }
+  if (!req.file)
+    return res.status(400).json({ message: "video is required" });
+
+  const relativePath = await saveVideo(req.file.buffer, req.file.mimetype, "page");
+  const url = `${req.protocol}://${req.get("host")}${relativePath}`;
+  res.status(201).json({ url });
+}
+
+// Document upload for page's gallery elements (mediaType: "document").
+export async function uploadPageDocument(req, res) {
+  const { application } = req.body;
+  if (!application)
+    return res.status(400).json({ message: "application is required" });
+  if (!userCanAccessApplication(req.user, application)) {
+    return res.status(403).json({ message: "Insufficient permissions" });
+  }
+  if (!req.file)
+    return res.status(400).json({ message: "document is required" });
+
+  const relativePath = await saveDocument(req.file.buffer, req.file.mimetype, "page");
+  const url = `${req.protocol}://${req.get("host")}${relativePath}`;
+  res.status(201).json({ url });
 }

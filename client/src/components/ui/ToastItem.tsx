@@ -64,7 +64,7 @@ export default function ToastItem({
       {/* Full width at mount, animates to empty over `durationMs` — a visual
           countdown to the auto-dismiss. Tied to the same `entered` flip as
           the enter animation so it starts right as the toast settles in. */}
-      <div className="absolute bottom-0 left-0 h-0.5 w-full" style={{ background: 'rgba(255,255,255,0.15)' }}>
+      <div className="absolute bottom-0 left-0 h-0.5 w-full" style={{ background: theme.overlaySubtle }}>
         <div
           style={{
             height: '100%',

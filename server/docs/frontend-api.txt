@@ -1,0 +1,467 @@
+================================================================================
+ NIRVANA CMS — FRONTEND / CONTENT DELIVERY API
+ For developers building a public website on top of this CMS
+================================================================================
+
+OVERVIEW
+--------------------------------------------------------------------------------
+This API is a read-only, unauthenticated "content delivery" surface. It exists
+so a public-facing website can pull application settings, categories, tags,
+content articles, and pages, without any user login.
+
+Base path:      /api/frontend
+Full base URL:  http://<server-host>/api/frontend   (e.g. http://localhost:5001/api/frontend)
+
+Every route is scoped to ONE application via an app key, and to ONE language.
+There is no session/JWT — identity is just the app key.
+
+
+AUTHENTICATION / SCOPING
+--------------------------------------------------------------------------------
+Every request must identify which application it's asking about. Provide the
+app key in EITHER of these ways:
+
+  - Query string:   ?appKey=YOUR_APP_KEY
+  - Header:         x-app-key: YOUR_APP_KEY
+
+If neither is present            -> 400 { "message": "appKey is required" }
+If the key doesn't match an      -> 404 { "message": "Application not found" }
+  active application (a disabled
+  or nonexistent app both 404
+  identically, on purpose — the
+  public site can't distinguish
+  "disabled" from "never existed")
+
+LANGUAGE SELECTION
+Pass ?lang=<code> to pick which translation you want back.
+  - If omitted, the API uses the application's first configured language.
+  - If the app has no explicit language configuration, it falls back to the
+    full system language list (see below).
+  - If you pass a lang code the application doesn't support:
+      400 { "message": "lang must be one of: en, fr" }   (example)
+
+Supported system language codes (an application may configure a subset):
+  en   English
+  fa   Persian
+  fr   French
+
+
+COMMON RESPONSE ENVELOPE — PAGINATED LISTS
+--------------------------------------------------------------------------------
+Endpoints that return a list of contents are paginated. Shape:
+
+{
+  "items": [ ... ],       // the page of results
+  "total": 42,             // total matching items across all pages
+  "page": 1,                // current page number (1-based)
+  "limit": 20,              // page size actually used
+  "totalPages": 3           // ceil(total / limit)
+}
+
+Pagination query params (optional, apply wherever noted below):
+  page    integer, default 1
+  limit   integer, default 20, max 100
+
+Sorting query params (optional, apply wherever noted below):
+  sortBy      see each endpoint below for allowed values
+  sortOrder   asc | desc
+
+If sortBy/sortOrder is given a value outside the allowed set, the request
+fails with 400 and a message listing the allowed values.
+
+
+================================================================================
+ ENDPOINTS
+================================================================================
+
+--------------------------------------------------------------------------------
+1) GET /api/frontend/settings
+--------------------------------------------------------------------------------
+Application-level settings for the public site: display name, logo, language
+list, primary domain, and an analytics snippet. Nothing sensitive is exposed
+here (API keys etc. are deliberately excluded).
+
+Query params:
+  appKey   required (or x-app-key header)
+  lang     optional (not actually used by this endpoint's output, but still
+           validated against the app's allowed languages if passed)
+
+Response 200:
+{
+  "name": "Acme Inc",
+  "logo": "https://.../logo.png",
+  "languages": ["en", "fr"],
+  "domain": "acme.com",
+  "googleAnalyticsScript": "<script>...</script>"
+}
+
+
+--------------------------------------------------------------------------------
+2) GET /api/frontend/categories
+--------------------------------------------------------------------------------
+Flat list of active categories (not filtered by language beyond title/slug
+translation), in creation order. Each item's `parentPublicId` lets you
+reconstruct the category tree client-side.
+
+Query params:
+  appKey     required
+  lang       optional
+  parentId   optional — filter to direct children of a given category. Pass
+             the literal string "null" (or empty string) to fetch only
+             top-level (root) categories: ?parentId=null
+
+Response 200: array (NOT paginated)
+[
+  {
+    "publicId": "cat_ab12cd",
+    "title": "News",
+    "slug": "news",
+    "parentPublicId": null
+  },
+  {
+    "publicId": "cat_ef34gh",
+    "title": "Local News",
+    "slug": "local-news",
+    "parentPublicId": "cat_ab12cd"
+  }
+]
+
+
+--------------------------------------------------------------------------------
+3) GET /api/frontend/tags
+--------------------------------------------------------------------------------
+Flat list of active tags, in creation order.
+
+Query params:
+  appKey   required
+  lang     optional
+
+Response 200: array (NOT paginated)
+[
+  { "publicId": "tag_xy98", "title": "Breaking", "slug": "breaking" }
+]
+
+
+--------------------------------------------------------------------------------
+4) GET /api/frontend/contents
+--------------------------------------------------------------------------------
+Paginated, sortable list of published content items (articles), optionally
+filtered to one category and/or one tag.
+
+Query params:
+  appKey       required
+  lang         optional
+  category     optional — a Category's publicId OR its per-language slug.
+               If given a value that doesn't resolve to any active category,
+               the response is an EMPTY page (items: [], total: 0), not a 404.
+  tag          optional — same rule as `category`, but for Tag.
+  page         optional, default 1
+  limit        optional, default 20, max 100
+  sortBy       optional. Allowed: "title" | "publishedAt". Default: "publishedAt"
+  sortOrder    optional. Allowed: "asc" | "desc".
+               Default direction depends on sortBy:
+                 - "title"        -> default "asc"  (A -> Z)
+                 - "publishedAt"  -> default "desc" (newest first)
+
+Only items that are PUBLISHED in the requested language are included. A
+content item that hasn't been translated/published into that language simply
+does not appear — it is not an error.
+
+Response 200 (paginated envelope, see above). Each item in `items`:
+{
+  "id": "64f0c2...",             // Mongo id of the Content record
+  "slug": "how-to-brew-coffee",  // per-language slug — use this to fetch the full item (see #6)
+  "title": "How to Brew Coffee",
+  "headline": "A quick guide for beginners",
+  "abstract": "Short teaser text shown in listing/cards.",
+  "publishedAt": "2026-06-01T12:00:00.000Z",
+  "categories": [
+    { "publicId": "cat_ab12cd", "title": "News", "slug": "news" }
+  ],
+  "tags": [
+    { "publicId": "tag_xy98", "title": "Breaking", "slug": "breaking" }
+  ]
+}
+
+Note: this summary shape does NOT include the article body (`sections`) or
+SEO `metadata` — fetch the single-item endpoint (#6) for those.
+
+Examples:
+  # Contents in category "news", newest first, page 1
+  GET /api/frontend/contents?appKey=KEY&category=news&page=1&limit=10
+
+  # Contents in category "news", alphabetical by title
+  GET /api/frontend/contents?appKey=KEY&category=news&sortBy=title&sortOrder=asc
+
+  # Contents tagged "breaking", oldest first
+  GET /api/frontend/contents?appKey=KEY&tag=breaking&sortBy=publishedAt&sortOrder=asc
+
+  # All published contents (no filter), default sort (newest first)
+  GET /api/frontend/contents?appKey=KEY
+
+
+--------------------------------------------------------------------------------
+5) GET /api/frontend/contents/:idOrSlug
+--------------------------------------------------------------------------------
+Single content item, full detail (includes body sections and SEO metadata).
+
+Path param:
+  idOrSlug   EITHER the Content's Mongo id (24-char hex) OR its per-language
+             slug (as returned by #4's `slug` field, or by this same field on
+             this endpoint's own response).
+
+Query params:
+  appKey   required
+  lang     optional — which language's translation to fetch. Must be
+           published in that language or this 404s.
+
+Response 200:
+{
+  "id": "64f0c2...",
+  "slug": "how-to-brew-coffee",
+  "title": "How to Brew Coffee",
+  "headline": "A quick guide for beginners",
+  "abstract": "Short teaser text.",
+  "publishedAt": "2026-06-01T12:00:00.000Z",
+  "categories": [ { "publicId": "...", "title": "...", "slug": "..." } ],
+  "tags": [ { "publicId": "...", "title": "...", "slug": "..." } ],
+  "metadata": {
+    "keywords": ["coffee", "brewing"],
+    "author": "Jane Doe",
+    "description": "Meta description for search engines."
+  },
+  "sections": [ /* see CONTENT BODY SECTIONS below */ ]
+}
+
+Not found (bad id/slug, wrong language, or unpublished) -> 404
+  { "message": "Content not found" }
+
+
+--------------------------------------------------------------------------------
+6) GET /api/frontend/pages
+--------------------------------------------------------------------------------
+Full list of pages (NOT paginated, NOT filtered by category/tag — pages don't
+have those). Sorted with the homepage first, then by creation order.
+
+Query params:
+  appKey   required
+  lang     optional
+
+Response 200: array
+[
+  {
+    "id": "64f0c2...",
+    "slug": "about-us",
+    "title": "About Us",
+    "isHomepage": false,
+    "publishedAt": "2026-05-01T09:00:00.000Z"
+  }
+]
+
+Only pages published in the requested language are included.
+
+
+--------------------------------------------------------------------------------
+7) GET /api/frontend/pages/:idOrSlug
+--------------------------------------------------------------------------------
+Single page, full detail (includes layout sections and SEO metadata).
+
+Path param:
+  idOrSlug   the Page's Mongo id OR its per-language slug. (The homepage's
+             slug is not meaningful for routing — render it at your site
+             root; identify it via `isHomepage` from the list endpoint.)
+
+Query params:
+  appKey   required
+  lang     optional
+
+Response 200:
+{
+  "id": "64f0c2...",
+  "slug": "about-us",
+  "title": "About Us",
+  "isHomepage": false,
+  "publishedAt": "2026-05-01T09:00:00.000Z",
+  "metadata": {
+    "keywords": ["about", "company"],
+    "author": "Jane Doe",
+    "description": "Meta description for search engines."
+  },
+  "sections": [ /* see PAGE LAYOUT SECTIONS below */ ]
+}
+
+Not found -> 404 { "message": "Page not found" }
+
+
+================================================================================
+ CONTENT BODY SECTIONS  (returned by #5's `sections` array)
+================================================================================
+A content item's body is an ORDERED array of sections. Array position is the
+display order. Each section:
+
+{
+  "type": "<one of the 10 types below>",
+  "elements": [ <1 to 3 elements, shape depends on element type> ]
+}
+
+Section types and what elements they hold:
+
+  text-1-col     1 text element   (paragraph | richText | heading | textInput)
+  text-2-col     2 text elements  (same choices as above, independently)
+  text-image     1 text element + 1 image element
+  text-video     1 text element + 1 videoEmbed element
+  video-text     1 videoEmbed element + 1 text element
+  image-only     1 image element
+  image-2-up     2 image elements
+  image-gallery  1 imageGallery element
+  video-only     1 videoEmbed element
+  document       1 paragraph element (plain text only, no formatting)
+
+Element shapes (each element also carries an "elementType" field naming
+which of these it is):
+
+  paragraph      { text: string }
+  richText       { html: string }               // sanitized HTML from a rich text editor
+  heading        { level: 1-6, text: string }
+  textInput      { text: string }                // short single-line text
+  image          { url: string, alt: string, caption: string }
+  imageGallery   { images: [ { url, alt, caption }, ... ] }  // 2-20 images
+  videoEmbed     { url: string, caption: string }
+  link           { url: string, label: string, newTab: boolean }
+
+
+================================================================================
+ PAGE LAYOUT SECTIONS  (returned by #7's `sections` array)
+================================================================================
+A page's layout is an ORDERED array of sections. A section is a generic
+container — it carries no type of its own — that holds an ORDERED array of
+COMPONENTS. A single section can freely mix component types (e.g. a Hero
+Slider followed by a Cards block, both in one section):
+
+{
+  "title": "About us",              // section's admin-facing label — also useful
+                                     // as a heading/aria-label when rendering
+  "isVisible": true,
+  "settings": {
+    "backgroundColor": "",           // free-form CSS color, or ""
+    "spacing": "compact|normal|spacious",
+    "width": "contained|full",
+    "textAlign": "left|center|right"
+  },
+  "components": [
+    {
+      "type": "<one of the 25 component types below>",
+      "elements": [ <a homogeneous list of one element type, see below> ]
+    }
+  ]
+}
+
+NOTE: sections with isVisible: false are already filtered out server-side —
+the admin editor keeps them around as drafts, but this API never returns
+them, so every section in the array is meant to render. `isVisible` is still
+included on each section for completeness, but a public renderer has nothing
+to check it for; every section returned here is visible by construction.
+Visibility is a section-level concept only — there is no per-component
+visibility flag; if a component shouldn't render, it's removed from its
+section's `components` array.
+
+A section's `components` array may be empty (a section an editor added but
+hasn't filled in yet) — render an empty section as nothing, not an error.
+
+Component types, the ONE element type each holds, and how many items:
+
+  slider       1-10   slide
+  banner       1      banner
+  text         1-6    richText
+  cards        1-12   card
+  tabs         2-10   tab
+  accordion    1-20   accordionItem
+  faq          1-30   accordionItem      (same shape as accordion, FAQ framing)
+  carousel     2-20   carouselItem
+  image        1      image
+  pricing      1-6    pricingPlan
+  steps        2-10   step
+  team         1-24   teamMember
+  quotation    1-10   testimonialItem
+  testimonial  1-10   testimonialItem
+  review       1-10   testimonialItem    (rating is meaningful here)
+  video        1-4    videoEmbed
+  chart        1      chartData
+  gallery      1-50   galleryItem
+  cta          1      cta
+  statistics   2-12   statItem
+  timeline     2-20   timelineItem
+  map          1      map
+  portfolio    1-24   portfolioItem
+  feature      1      feature
+  heading      1      heading            (primitive — a standalone H1-H6)
+  link         1      link               (primitive — a standalone link/button)
+
+Element shapes:
+
+  slide          { image, imageAlt, heading, subheading, ctaLabel, ctaUrl }
+  banner         { image, imageAlt, logo, logoAlt, heading, subheading, ctaLabel, ctaUrl }
+  richText       { html: string }
+  image          { url, alt, caption }
+  videoEmbed     { url, caption }
+  card           { image, imageAlt, title, description, badge, ctaLabel, ctaUrl,
+                   highlighted: boolean }
+  tab            { label, content: string /* sanitized HTML */ }
+  accordionItem  { heading, content: string /* sanitized HTML */ }
+  carouselItem   { image, imageAlt, caption, linkUrl }
+  pricingPlan    { name, price, billingPeriod, features: string[] (<=12),
+                   ctaLabel, ctaUrl, highlighted: boolean }
+  step           { title, description, icon }         // step number = array position
+  teamMember     { photo, name, role, bio,
+                   socialLinks: [ { platform, url }, ... ] (<=6) }
+                   platform is one of:
+                     linkedin | twitter | instagram | facebook | website | email
+  testimonialItem{ quote, authorName, authorRole, avatar, rating: 0-5 or null }
+  chartData      { chartType: bar|line|pie|doughnut, title,
+                   labels: string[],
+                   series: [ { label, color, data: number[] }, ... ] (<=8)
+                 }                          // each series.data.length === labels.length
+  galleryItem    { mediaType: image|video|document, url, thumbnailUrl, alt,
+                   caption, fileName }
+  cta            { heading, subheading, ctaLabel, ctaUrl,
+                   secondaryCtaLabel, secondaryCtaUrl }
+  statItem       { value, label, icon }
+  timelineItem   { date, title, description }
+  map            { address, latitude, longitude, zoom,
+                   embedUrl }              // if embedUrl is set, prefer it over lat/lng
+  portfolioItem  { image, imageAlt, title, client, category, description,
+                   caseStudyUrl }
+  feature        { image, imageAlt, heading, highlightText, description,
+                   items: string[] (<=12), badgeImage, badgeImageAlt }
+  heading        { level: 1-6, text: string }
+  link           { url: string, label: string, newTab: boolean }
+
+
+================================================================================
+ ERROR RESPONSES — QUICK REFERENCE
+================================================================================
+400  { "message": "appKey is required" }
+400  { "message": "lang must be one of: en, fr" }
+400  { "message": "sortBy must be one of: title, publishedAt" }
+400  { "message": "sortOrder must be one of: asc, desc" }
+404  { "message": "Application not found" }       // bad/inactive appKey
+404  { "message": "Content not found" }            // #5, bad id/slug/lang or unpublished
+404  { "message": "Page not found" }               // #7, bad id/slug/lang or unpublished
+
+
+================================================================================
+ WORKED EXAMPLE — BUILDING A CATEGORY LANDING PAGE
+================================================================================
+1. Fetch nav data once (cache client-side):
+     GET /api/frontend/categories?appKey=KEY&parentId=null
+     GET /api/frontend/tags?appKey=KEY
+
+2. User visits /news (a category's slug):
+     GET /api/frontend/contents?appKey=KEY&category=news&page=1&limit=12&sortBy=publishedAt&sortOrder=desc
+
+3. User clicks an article card (using the item's `slug` from step 2):
+     GET /api/frontend/contents/how-to-brew-coffee?appKey=KEY
+
+4. Render `sections` from step 3 by switching on each section's `type`,
+   mapping to a component per type as documented above.
+================================================================================

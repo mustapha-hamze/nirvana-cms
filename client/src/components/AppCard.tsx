@@ -57,7 +57,7 @@ export default function AppCard({
             className="text-[11px] font-semibold px-2 py-1 rounded-full"
             style={app.status === 'active'
               ? { background: theme.successBg, color: theme.success }
-              : { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)' }
+              : { background: theme.subtleBg, color: theme.textTertiary }
             }
           >
             {app.status}

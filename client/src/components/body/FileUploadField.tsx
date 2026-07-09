@@ -1,0 +1,102 @@
+import { useState } from 'react'
+import { theme } from '../../theme'
+import { uploadContentVideo, uploadPageVideo, uploadPageDocument } from '../../api/client'
+
+const KIND_CONFIG = {
+  video: {
+    accept: 'video/mp4,video/webm,video/quicktime',
+    hint: 'MP4, WEBM, or MOV — up to 50MB.',
+    maxBytes: 50 * 1024 * 1024,
+    tooLargeMessage: 'Video must be smaller than 50MB',
+  },
+  document: {
+    accept: 'application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    hint: 'PDF, DOC, or DOCX — up to 10MB.',
+    maxBytes: 10 * 1024 * 1024,
+    tooLargeMessage: 'Document must be smaller than 10MB',
+  },
+} as const
+
+// Sibling to ImageUploadField for the two other self-hosted file kinds — a
+// video is never processed server-side (see rawFileUpload.js), just
+// validated and stored, so this has no image-style preview, only a link to
+// the uploaded file.
+export default function FileUploadField({
+  applicationId,
+  kind,
+  domain,
+  url,
+  onUploaded,
+  label,
+}: {
+  applicationId: string
+  kind: 'video' | 'document'
+  domain: 'content' | 'page'
+  url: string
+  onUploaded: (url: string) => void
+  label?: string
+}) {
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState('')
+  const config = KIND_CONFIG[kind]
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = '' // allow re-selecting the same file to re-upload/replace
+    if (!file) return
+    if (file.size > config.maxBytes) {
+      setError(config.tooLargeMessage)
+      return
+    }
+    setError('')
+    setUploading(true)
+    try {
+      // Content has no document-bearing element yet, so there's no
+      // uploadContentDocument client function to pick here — only the
+      // three combinations an editor can actually reach.
+      const upload = domain === 'content' ? uploadContentVideo : kind === 'video' ? uploadPageVideo : uploadPageDocument
+      const { url: uploadedUrl } = await upload(applicationId, file)
+      onUploaded(uploadedUrl)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div>
+      <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textSecondary }}>
+        {label ?? (kind === 'video' ? 'Upload video' : 'Upload document')}{' '}
+        {uploading && <span style={{ color: theme.textTertiary }}>— uploading…</span>}
+      </label>
+      <input
+        type="file"
+        accept={config.accept}
+        onChange={handleFileChange}
+        disabled={uploading}
+        className="block w-full text-sm"
+        style={{ color: theme.textSecondary }}
+      />
+      <p className="text-xs mt-1" style={{ color: theme.textTertiary }}>
+        {config.hint}
+      </p>
+      {error && (
+        <p className="text-xs mt-1" style={{ color: theme.danger }}>
+          {error}
+        </p>
+      )}
+      {url && (
+        <a
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          className="block text-xs mt-2 truncate underline"
+          style={{ color: theme.accent }}
+        >
+          {url}
+        </a>
+      )}
+    </div>
+  )
+}

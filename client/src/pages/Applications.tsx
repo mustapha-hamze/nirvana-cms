@@ -65,7 +65,7 @@ export default function Applications() {
             <button
               onClick={() => navigate('/super-admins')}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.97]"
-              style={{ color: theme.textPrimary, background: 'rgba(255,255,255,0.06)', border: `1px solid ${theme.border}` }}
+              style={{ color: theme.textPrimary, background: theme.hoverBgSubtle, border: `1px solid ${theme.border}` }}
             >
               <ShieldIcon />
               Manage Super Admins
@@ -142,19 +142,19 @@ function SkeletonCard() {
       style={{ background: theme.surface, border: `1px solid ${theme.border}` }}
     >
       <div className="flex items-start gap-4">
-        <div className="w-14 h-14 rounded-2xl shrink-0" style={{ background: 'rgba(255,255,255,0.05)' }} />
+        <div className="w-14 h-14 rounded-2xl shrink-0" style={{ background: theme.subtleBg }} />
         <div className="flex-1 space-y-2 pt-1">
-          <div className="h-4 rounded-lg w-2/3" style={{ background: 'rgba(255,255,255,0.06)' }} />
-          <div className="h-3 rounded-lg w-full" style={{ background: 'rgba(255,255,255,0.04)' }} />
-          <div className="h-3 rounded-lg w-4/5" style={{ background: 'rgba(255,255,255,0.04)' }} />
+          <div className="h-4 rounded-lg w-2/3" style={{ background: theme.subtleBg }} />
+          <div className="h-3 rounded-lg w-full" style={{ background: theme.subtleBg }} />
+          <div className="h-3 rounded-lg w-4/5" style={{ background: theme.subtleBg }} />
         </div>
       </div>
       <div
         className="mt-4 pt-3 flex justify-between"
         style={{ borderTop: `1px solid ${theme.border}` }}
       >
-        <div className="h-3 rounded-lg w-20" style={{ background: 'rgba(255,255,255,0.04)' }} />
-        <div className="h-3 rounded-lg w-16" style={{ background: 'rgba(255,255,255,0.04)' }} />
+        <div className="h-3 rounded-lg w-20" style={{ background: theme.subtleBg }} />
+        <div className="h-3 rounded-lg w-16" style={{ background: theme.subtleBg }} />
       </div>
     </div>
   )

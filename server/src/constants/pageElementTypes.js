@@ -28,6 +28,11 @@ export const PAGE_ELEMENT_TYPES = Object.freeze({
   TIMELINE_ITEM: 'timelineItem',
   MAP: 'map',
   PORTFOLIO_ITEM: 'portfolioItem',
+  FEATURE: 'feature',
+  // Primitive building blocks — same shape as content/Elements.js's heading
+  // and link, reused directly rather than redefined (see page/Elements.js).
+  HEADING: 'heading',
+  LINK: 'link',
 })
 
 export const PAGE_ELEMENT_TYPE_VALUES = Object.values(PAGE_ELEMENT_TYPES)

@@ -3,10 +3,9 @@ import { CSS } from '@dnd-kit/utilities'
 import { theme } from '../../theme'
 import { DragHandleIcon, TrashIcon } from '../icons'
 import { ElementEditor } from './elementEditorRegistry'
-import {
-  SECTION_TYPE_LABELS, ELEMENT_TYPE_LABELS, getSlotElementTypes, convertElementType,
-  type ContentSection, type ContentElement, type ElementType,
-} from '../../types/content'
+import type { ContentSection, ContentElement, ElementType } from '../../types/content'
+import { SECTION_TYPE_LABELS, ELEMENT_TYPE_LABELS, getSlotElementTypes } from '../../constants/contentSections'
+import { convertElementType } from '../../factories/contentElements'
 
 export default function SectionCard({
   id,

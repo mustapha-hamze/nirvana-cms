@@ -5,6 +5,8 @@ import { userCanAccessApplication } from "../middleware/auth.js";
 import { generatePublicId } from "../utils/publicId.js";
 import { slugify } from "../utils/slugify.js";
 import { LANGUAGE_VALUES } from "../constants/languages.js";
+import { paginateList, SORT_BY_VALUES, SORT_ORDER_VALUES } from "../utils/paginateList.js";
+import { getPreviewTitle } from "../utils/previewTitle.js";
 
 const STATUS_VALUES = Tag.schema.path("status").enumValues;
 const MAX_PUBLIC_ID_ATTEMPTS = 5;
@@ -99,7 +101,7 @@ async function resolveTranslations({ application, translations, existing = [], e
 }
 
 export async function getTags(req, res) {
-  const { application, status } = req.query;
+  const { application, status, search, sortBy, sortOrder, page, limit } = req.query;
 
   if (!application)
     return res.status(400).json({ message: "application is required" });
@@ -111,15 +113,29 @@ export async function getTags(req, res) {
       .status(400)
       .json({ message: `status must be one of: ${STATUS_VALUES.join(", ")}` });
   }
+  if (sortBy && !SORT_BY_VALUES.includes(sortBy)) {
+    return res.status(400).json({ message: `sortBy must be one of: ${SORT_BY_VALUES.join(", ")}` });
+  }
+  if (sortOrder && !SORT_ORDER_VALUES.includes(sortOrder)) {
+    return res.status(400).json({ message: `sortOrder must be one of: ${SORT_ORDER_VALUES.join(", ")}` });
+  }
 
   const filter = { application };
   if (status) filter.status = status;
 
-  // Can't sort by "title" server-side anymore — which language's title is
-  // "first" is a per-viewer choice, not a per-document fact — so this is
-  // ordered by creation instead; the admin UI sorts by its own preview title.
-  const tags = await Tag.find(filter).sort({ createdAt: 1 });
-  res.json(tags);
+  const tags = await Tag.find(filter);
+  res.json(
+    paginateList(tags, {
+      idOf: (t) => t._id.toString(),
+      titleOf: (t) => getPreviewTitle(t.translations),
+      createdAtOf: (t) => t.createdAt,
+      search,
+      sortBy,
+      sortOrder,
+      page,
+      limit,
+    }),
+  );
 }
 
 export async function getTag(req, res) {

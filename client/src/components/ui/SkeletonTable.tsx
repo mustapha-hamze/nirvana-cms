@@ -9,10 +9,10 @@ export default function SkeletonTable({ rows = 5 }: { rows?: number }) {
           className="flex items-center gap-4 px-5 py-4"
           style={i < rows - 1 ? { borderBottom: `1px solid ${theme.border}` } : undefined}
         >
-          <div className="w-8 h-8 rounded-full shrink-0" style={{ background: 'rgba(255,255,255,0.05)' }} />
-          <div className="h-3 rounded-lg w-1/4" style={{ background: 'rgba(255,255,255,0.06)' }} />
-          <div className="h-3 rounded-lg w-1/3" style={{ background: 'rgba(255,255,255,0.04)' }} />
-          <div className="h-3 rounded-lg w-1/6" style={{ background: 'rgba(255,255,255,0.04)' }} />
+          <div className="w-8 h-8 rounded-full shrink-0" style={{ background: theme.subtleBg }} />
+          <div className="h-3 rounded-lg w-1/4" style={{ background: theme.subtleBg }} />
+          <div className="h-3 rounded-lg w-1/3" style={{ background: theme.subtleBg }} />
+          <div className="h-3 rounded-lg w-1/6" style={{ background: theme.subtleBg }} />
         </div>
       ))}
     </div>

@@ -1,0 +1,96 @@
+// Shared video/document upload plumbing — unlike images (imageStorage.js),
+// these are stored as-is with no processing, just validated and written to
+// storage/{video|document}/{domain}. One multer instance and one save
+// function per kind, reused by both the content and page domains (only the
+// destination subfolder varies).
+import multer from 'multer'
+import path from 'path'
+import fs from 'fs/promises'
+import crypto from 'crypto'
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const STORAGE_ROOT = path.resolve(__dirname, '../../storage')
+
+const VIDEO_MAX_BYTES = 50 * 1024 * 1024 // 50MB
+const DOCUMENT_MAX_BYTES = 10 * 1024 * 1024 // 10MB
+
+const VIDEO_EXTENSION_BY_MIME = {
+  'video/mp4': '.mp4',
+  'video/webm': '.webm',
+  'video/quicktime': '.mov',
+}
+
+const DOCUMENT_EXTENSION_BY_MIME = {
+  'application/pdf': '.pdf',
+  'application/msword': '.doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+}
+
+const KIND_CONFIG = {
+  video: {
+    fieldName: 'video',
+    folder: 'video',
+    extensionByMime: VIDEO_EXTENSION_BY_MIME,
+    maxBytes: VIDEO_MAX_BYTES,
+    typeErrorMessage: 'Video must be MP4, WebM, or MOV',
+    sizeErrorMessage: 'Video must be smaller than 50MB',
+  },
+  document: {
+    fieldName: 'document',
+    folder: 'document',
+    extensionByMime: DOCUMENT_EXTENSION_BY_MIME,
+    maxBytes: DOCUMENT_MAX_BYTES,
+    typeErrorMessage: 'Document must be PDF, DOC, or DOCX',
+    sizeErrorMessage: 'Document must be smaller than 10MB',
+  },
+}
+
+function buildUploadMiddleware(kind) {
+  const config = KIND_CONFIG[kind]
+  const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: config.maxBytes },
+    fileFilter(req, file, cb) {
+      if (!Object.prototype.hasOwnProperty.call(config.extensionByMime, file.mimetype)) {
+        return cb(Object.assign(new Error(config.typeErrorMessage), { status: 400 }))
+      }
+      cb(null, true)
+    },
+  }).single(config.fieldName)
+
+  // Same callback-wrapping convention as imageStorage.js's imageUploadMiddleware
+  // — turns multer's own file-too-large rejection into a clean 400.
+  return function rawFileUploadMiddleware(req, res, next) {
+    upload(req, res, (err) => {
+      if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
+        return next(Object.assign(new Error(config.sizeErrorMessage), { status: 400 }))
+      }
+      if (err) return next(err)
+      next()
+    })
+  }
+}
+
+export const videoUploadMiddleware = buildUploadMiddleware('video')
+export const documentUploadMiddleware = buildUploadMiddleware('document')
+
+// domain: 'content' | 'page'. No content validation beyond mimetype
+// whitelisting (unlike images, there's no equivalent of re-encoding/resizing
+// a video or document) — the buffer is written to disk as-is.
+async function saveRawFile(kind, buffer, mimetype, domain) {
+  const config = KIND_CONFIG[kind]
+  const filename = `${crypto.randomUUID()}${config.extensionByMime[mimetype] ?? ''}`
+  const dir = path.join(STORAGE_ROOT, config.folder, domain)
+  await fs.mkdir(dir, { recursive: true })
+  await fs.writeFile(path.join(dir, filename), buffer)
+  return `/storage/${config.folder}/${domain}/${filename}`
+}
+
+export function saveVideo(buffer, mimetype, domain) {
+  return saveRawFile('video', buffer, mimetype, domain)
+}
+
+export function saveDocument(buffer, mimetype, domain) {
+  return saveRawFile('document', buffer, mimetype, domain)
+}

@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import { PAGE_SECTION_TYPE_VALUES } from '../../constants/pageSectionTypes.js'
+import { PAGE_COMPONENT_TYPE_VALUES } from '../../constants/pageComponentTypes.js'
 import {
   SECTION_SPACING_VALUES,
   SECTION_WIDTH_VALUES,
@@ -7,11 +7,11 @@ import {
 } from '../../constants/pageSectionSettings.js'
 import { pageElementBaseSchema, attachPageElementDiscriminators } from './Elements.js'
 
-// Presentational settings shared by every section type — background color,
+// Presentational settings shared by every section — background color,
 // vertical spacing, content width, and text alignment. Deliberately flat and
-// type-agnostic (unlike `elements`, which is type-specific): these are layout
-// knobs an editor expects to find the same way on any section, not data the
-// section displays.
+// component-agnostic (unlike `components`, which is type-specific): these are
+// layout knobs an editor expects to find the same way on any section, not
+// data any one component displays.
 const sectionSettingsSchema = new mongoose.Schema(
   {
     // Free-form CSS color (hex, rgb(), or a named color) rather than an enum —
@@ -26,25 +26,43 @@ const sectionSettingsSchema = new mongoose.Schema(
   { _id: false },
 )
 
-// Same non-discriminated-wrapper approach as content/Section.js: every page
-// section is structurally identical at the persistence layer (a `type` plus
-// an ordered `elements` array, plus the visibility/settings below). What
-// differs between a Slider and a Team section is a business rule — which
-// single element type its list holds, and how many — captured in
-// constants/pageSectionTypes.js's PAGE_SECTION_LAYOUTS and checked in
-// pageController.validatePageSections(), not encoded as separate Mongoose
-// discriminators for the section itself.
-export const pageSectionSchema = new mongoose.Schema(
+// One component placed inside a section — what used to be an entire
+// section's `type` + `elements` before sections became generic containers.
+// Still structurally the same idea: a `type` (Banner, Cards, Hero Slider, a
+// primitive Heading/Image/Link, ...) plus the ordered, homogeneous list of
+// elements that type holds, per PAGE_COMPONENT_LAYOUTS's { elementType, min,
+// max } — not encoded as separate Mongoose discriminators for the component
+// itself, same rationale as content/Section.js's own sections.
+const pageComponentSchema = new mongoose.Schema(
   {
-    type: { type: String, enum: PAGE_SECTION_TYPE_VALUES, required: true },
-    // Lets an editor keep a section authored but temporarily out of the
-    // rendered page — e.g. a seasonal Banner or a Statistics section still
-    // being finalized — without losing its content by deleting it outright.
-    isVisible: { type: Boolean, default: true },
-    settings: { type: sectionSettingsSchema, default: () => ({}) },
+    type: { type: String, enum: PAGE_COMPONENT_TYPE_VALUES, required: true },
     elements: { type: [pageElementBaseSchema], default: [] },
   },
   { _id: true, timestamps: false },
 )
 
-attachPageElementDiscriminators(pageSectionSchema.path('elements'))
+attachPageElementDiscriminators(pageComponentSchema.path('elements'))
+
+// A section is now a generic, empty container an editor fills with one or
+// more components — it carries no `type` of its own (that lived here before
+// components existed; see pageComponentSchema above). `components` may be
+// empty: a freshly added section starts blank, and PAGE_COMPONENT_LAYOUTS'
+// min/max only constrain a component's own element count, not how many
+// components a section holds (validated in pageController's
+// validatePageSections(), same as before).
+export const pageSectionSchema = new mongoose.Schema(
+  {
+    // Admin-facing label, e.g. "About Us" — language-specific since sections
+    // live under PageDetails. Not `required`: sections saved before this
+    // field existed have none, and the schema default of '' lets them keep
+    // loading/saving untouched.
+    title: { type: String, trim: true, default: '', maxlength: 120 },
+    // Lets an editor keep a section authored but temporarily out of the
+    // rendered page — e.g. a seasonal promo or a section still being
+    // finalized — without losing its content by deleting it outright.
+    isVisible: { type: Boolean, default: true },
+    settings: { type: sectionSettingsSchema, default: () => ({}) },
+    components: { type: [pageComponentSchema], default: [] },
+  },
+  { _id: true, timestamps: false },
+)

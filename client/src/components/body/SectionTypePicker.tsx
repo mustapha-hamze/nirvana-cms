@@ -13,7 +13,8 @@ import {
   VideoOnlyIcon,
   DocumentPlainIcon,
 } from '../icons'
-import { SECTION_TYPE_VALUES, SECTION_TYPE_LABELS, type SectionType } from '../../types/content'
+import type { SectionType } from '../../types/content'
+import { SECTION_TYPE_VALUES, SECTION_TYPE_LABELS } from '../../constants/contentSections'
 
 const SECTION_ICONS: Record<SectionType, ComponentType<{ size?: number }>> = {
   'text-1-col': TextOneColIcon,

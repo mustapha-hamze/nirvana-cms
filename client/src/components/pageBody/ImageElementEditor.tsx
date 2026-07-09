@@ -13,7 +13,7 @@ export default function ImageElementEditor({
 }) {
   return (
     <div className="space-y-3">
-      <ImageUploadField applicationId={applicationId} url={element.url} onUploaded={(url) => onChange({ ...element, url })} />
+      <ImageUploadField domain="page" applicationId={applicationId} url={element.url} onUploaded={(url) => onChange({ ...element, url })} />
       <TextField
         label="Alt text"
         required

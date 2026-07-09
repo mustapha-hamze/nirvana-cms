@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { logout, selectUser } from '../store/authSlice'
 import { theme } from '../theme'
 import { LogoutIcon } from './icons'
+import ThemeToggle from './ui/ThemeToggle'
 
 export default function Layout({ children }: { children: ReactNode }) {
   const dispatch = useAppDispatch()
@@ -33,11 +34,11 @@ export default function Layout({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-3">
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: 'rgba(124,58,237,0.5)', border: '1px solid rgba(255,255,255,0.08)' }}
+              style={{ background: 'rgba(124,58,237,0.5)', border: `1px solid ${theme.divider}` }}
             >
               <NLogo />
             </div>
-            <span className="font-semibold text-[15px] tracking-wide" style={{ color: 'rgba(255,255,255,0.85)' }}>
+            <span className="font-semibold text-[15px] tracking-wide" style={{ color: theme.textStrong }}>
               Nirvana CMS
             </span>
           </div>
@@ -51,23 +52,27 @@ export default function Layout({ children }: { children: ReactNode }) {
                 {initials}
               </div>
               <div className="hidden sm:block">
-                <p className="text-sm font-medium leading-none" style={{ color: 'rgba(255,255,255,0.8)' }}>
+                <p className="text-sm font-medium leading-none" style={{ color: theme.textStrong }}>
                   {user?.name}
                 </p>
-                <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                <p className="text-xs mt-0.5" style={{ color: theme.textFaint }}>
                   {user?.role}
                 </p>
               </div>
             </div>
 
-            <div className="w-px h-5" style={{ background: 'rgba(255,255,255,0.08)' }} />
+            <div className="w-px h-5" style={{ background: theme.divider }} />
+
+            <ThemeToggle />
+
+            <div className="w-px h-5" style={{ background: theme.divider }} />
 
             <button
               onClick={handleLogout}
               className="flex items-center gap-1.5 text-sm transition"
-              style={{ color: 'rgba(255,255,255,0.4)' }}
+              style={{ color: theme.textMuted }}
               onMouseEnter={(e) => (e.currentTarget.style.color = theme.danger)}
-              onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.4)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = theme.textMuted)}
             >
               <LogoutIcon />
               <span className="hidden sm:inline">Logout</span>

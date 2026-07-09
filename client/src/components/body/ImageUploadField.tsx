@@ -1,17 +1,25 @@
 import { useState } from 'react'
 import { theme } from '../../theme'
-import { uploadContentImage } from '../../api/client'
+import { uploadContentImage, uploadPageImage } from '../../api/client'
 
-const MAX_BYTES = 1024 * 1024
+const MAX_BYTES = 2 * 1024 * 1024
 
 export default function ImageUploadField({
   applicationId,
   url,
   onUploaded,
+  label = 'Image',
+  // Which editor domain this upload belongs to — determines storage location
+  // server-side (storage/images/content vs storage/images/page). Defaults to
+  // 'content' since that's this shared component's original/majority caller;
+  // every pageBody/* usage passes 'page' explicitly.
+  domain = 'content',
 }: {
   applicationId: string
   url: string
   onUploaded: (url: string) => void
+  label?: string
+  domain?: 'content' | 'page'
 }) {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
@@ -21,13 +29,14 @@ export default function ImageUploadField({
     e.target.value = '' // allow re-selecting the same file to re-upload/replace
     if (!file) return
     if (file.size > MAX_BYTES) {
-      setError('Image must be smaller than 1MB')
+      setError('Image must be smaller than 2MB')
       return
     }
     setError('')
     setUploading(true)
     try {
-      const { url: uploadedUrl } = await uploadContentImage(applicationId, file)
+      const upload = domain === 'page' ? uploadPageImage : uploadContentImage
+      const { url: uploadedUrl } = await upload(applicationId, file)
       onUploaded(uploadedUrl)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed')
@@ -39,7 +48,7 @@ export default function ImageUploadField({
   return (
     <div>
       <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textSecondary }}>
-        Image {uploading && <span style={{ color: theme.textTertiary }}>— uploading…</span>}
+        {label} {uploading && <span style={{ color: theme.textTertiary }}>— uploading…</span>}
       </label>
       <input
         type="file"
@@ -50,7 +59,7 @@ export default function ImageUploadField({
         style={{ color: theme.textSecondary }}
       />
       <p className="text-xs mt-1" style={{ color: theme.textTertiary }}>
-        PNG, JPEG, WEBP, or GIF — up to 1MB.
+        PNG, JPEG, WEBP, or GIF — up to 2MB.
       </p>
       {error && (
         <p className="text-xs mt-1" style={{ color: theme.danger }}>

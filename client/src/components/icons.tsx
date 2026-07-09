@@ -77,6 +77,32 @@ export function SearchIcon({ size = 15 }: { size?: number }) {
   return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" x2="16.65" y1="21" y2="16.65" /></svg>
 }
 
+export function CopyIcon({ size = 14 }: { size?: number }) {
+  return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>
+}
+
+export function ArrowUpIcon({ size = 12 }: { size?: number }) {
+  return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="19" y2="5" /><polyline points="5 12 12 5 19 12" /></svg>
+}
+
+export function ArrowDownIcon({ size = 12 }: { size?: number }) {
+  return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="5" y2="19" /><polyline points="19 12 12 19 5 12" /></svg>
+}
+
+// Neutral up/down indicator for a sortable-but-not-currently-active column
+// header — tells the user the column can be clicked before they've clicked it.
+export function ArrowUpDownIcon({ size = 12 }: { size?: number }) {
+  return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m3 8 4-4 4 4" /><path d="M7 4v16" /><path d="m21 16-4 4-4-4" /><path d="M17 20V4" /></svg>
+}
+
+export function ChevronLeftIcon({ size = 16 }: { size?: number }) {
+  return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+}
+
+export function ChevronRightIcon({ size = 16 }: { size?: number }) {
+  return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+}
+
 export function ChevronIcon({ open, size = 15 }: { open: boolean; size?: number }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none"
@@ -90,6 +116,14 @@ export function ChevronIcon({ open, size = 15 }: { open: boolean; size?: number 
 
 export function Spinner({ size = 16, style }: { size?: number; style?: React.CSSProperties }) {
   return <svg className="animate-spin" xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={style}><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
+}
+
+export function SunIcon({ size = 16 }: { size?: number }) {
+  return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></svg>
+}
+
+export function MoonIcon({ size = 16 }: { size?: number }) {
+  return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" /></svg>
 }
 
 // --- Content body section-layout icons ---
@@ -151,7 +185,7 @@ export function DocumentPlainIcon({ size = 20 }: { size?: number }) {
   return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z" /><line x1="8" x2="16" y1="12" y2="12" /><line x1="8" x2="16" y1="16" y2="16" /></svg>
 }
 
-// --- Page section icons (client/src/types/page.ts's PageSectionType) ---
+// --- Page component icons (client/src/types/page.ts's PageComponentType) ---
 // The Image/Video/Text/Team/Pricing page sections deliberately reuse
 // ImageOnlyIcon/VideoOnlyIcon/DocumentPlainIcon/UsersIcon/TagIcon above rather
 // than getting their own near-identical glyph.
@@ -224,6 +258,14 @@ export function MapIcon({ size = 20 }: { size?: number }) {
 
 export function PortfolioIcon({ size = 20 }: { size?: number }) {
   return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></svg>
+}
+
+export function HeadingIcon({ size = 20 }: { size?: number }) {
+  return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4v16M18 4v16M6 12h12" /></svg>
+}
+
+export function LinkIcon({ size = 20 }: { size?: number }) {
+  return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 14.5l5-5" /><path d="M11 6.5l.7-.7a4 4 0 0 1 5.6 5.7l-.8.8" /><path d="M13 17.5l-.7.7a4 4 0 0 1-5.6-5.7l.8-.8" /></svg>
 }
 
 export function DragHandleIcon({ size = 16 }: { size?: number }) {

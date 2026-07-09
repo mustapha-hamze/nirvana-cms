@@ -1,3 +1,106 @@
 @import "tailwindcss";
 
 button { cursor: pointer; }
+
+/* Hover utility classes — replace imperative onMouseEnter/onMouseLeave style
+   mutation used throughout admin list rows and icon buttons. Since every
+   theme.ts token is a CSS var (see below), these stay theme-aware for free. */
+.row-hover:hover { background: var(--color-row-hover); }
+
+.icon-btn-accent { color: var(--color-accent); }
+.icon-btn-accent:hover { color: var(--color-accent-hover); background: var(--color-accent-bg); }
+
+.icon-btn-danger { color: var(--color-danger); }
+.icon-btn-danger:hover { color: var(--color-danger-hover); background: var(--color-danger-bg-hover); }
+
+.icon-btn-muted { color: var(--color-text-muted); }
+.icon-btn-muted:hover { color: var(--color-text-primary); background: var(--color-hover-bg-subtle); }
+
+/* Admin panel design tokens (see src/theme.ts) — dark is the default/original
+   look; [data-theme="light"] (set on <html> by ThemeModeProvider) overrides
+   them. Login has its own fixed light surface and doesn't use these. */
+:root {
+  --color-bg: #081028;
+  --color-header-bg: #050c1f;
+  --color-sidebar-bg: #0a1330;
+  --color-surface: #0d1635;
+  --color-surface-hover: #112040;
+  --color-row-hover: #112040;
+  --color-border: rgba(255, 255, 255, 0.06);
+  --color-input-bg: #081028;
+  --color-input-border: rgba(255, 255, 255, 0.1);
+
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-tertiary: rgba(255, 255, 255, 0.28);
+  --color-text-muted: rgba(255, 255, 255, 0.4);
+  --color-text-faint: rgba(255, 255, 255, 0.35);
+  --color-text-subtle: rgba(255, 255, 255, 0.5);
+  --color-text-strong: rgba(255, 255, 255, 0.85);
+
+  --color-hover-bg-subtle: rgba(255, 255, 255, 0.06);
+  --color-subtle-bg: rgba(255, 255, 255, 0.05);
+  --color-divider: rgba(255, 255, 255, 0.08);
+  --color-overlay-subtle: rgba(255, 255, 255, 0.15);
+
+  --color-accent: #a78bfa;
+  --color-accent-hover: #c4b5fd;
+  --color-accent-bg: rgba(124, 58, 237, 0.15);
+  --color-accent-bg-soft: rgba(124, 58, 237, 0.1);
+  --color-accent-border-soft: rgba(124, 58, 237, 0.2);
+  --color-accent-gradient: linear-gradient(90deg, #7c3aed, #4f46e5);
+  --color-accent-gradient-diag: linear-gradient(135deg, #7c3aed, #4f46e5);
+
+  --color-success: #34d399;
+  --color-success-bg: rgba(52, 211, 153, 0.1);
+
+  --color-danger: #f87171;
+  --color-danger-hover: #fca5a5;
+  --color-danger-bg: rgba(239, 68, 68, 0.1);
+  --color-danger-bg-hover: rgba(239, 68, 68, 0.12);
+  --color-danger-border: rgba(239, 68, 68, 0.2);
+  --color-danger-solid: #dc2626;
+}
+
+:root[data-theme="light"] {
+  --color-bg: #f4f6fb;
+  --color-header-bg: #ffffff;
+  --color-sidebar-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f1f3f9;
+  --color-row-hover: #f8fafc;
+  --color-border: rgba(15, 23, 42, 0.08);
+  --color-input-bg: #ffffff;
+  --color-input-border: rgba(15, 23, 42, 0.12);
+
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #52607a;
+  --color-text-tertiary: rgba(15, 23, 42, 0.32);
+  --color-text-muted: rgba(15, 23, 42, 0.45);
+  --color-text-faint: rgba(15, 23, 42, 0.4);
+  --color-text-subtle: rgba(15, 23, 42, 0.5);
+  --color-text-strong: rgba(15, 23, 42, 0.85);
+
+  --color-hover-bg-subtle: rgba(15, 23, 42, 0.05);
+  --color-subtle-bg: rgba(15, 23, 42, 0.045);
+  --color-divider: rgba(15, 23, 42, 0.1);
+  --color-overlay-subtle: rgba(15, 23, 42, 0.08);
+
+  --color-accent: #7c3aed;
+  --color-accent-hover: #6d28d9;
+  --color-accent-bg: rgba(124, 58, 237, 0.1);
+  --color-accent-bg-soft: rgba(124, 58, 237, 0.07);
+  --color-accent-border-soft: rgba(124, 58, 237, 0.25);
+  --color-accent-gradient: linear-gradient(90deg, #7c3aed, #4f46e5);
+  --color-accent-gradient-diag: linear-gradient(135deg, #7c3aed, #4f46e5);
+
+  --color-success: #059669;
+  --color-success-bg: rgba(5, 150, 105, 0.1);
+
+  --color-danger: #dc2626;
+  --color-danger-hover: #b91c1c;
+  --color-danger-bg: rgba(220, 38, 38, 0.08);
+  --color-danger-bg-hover: rgba(220, 38, 38, 0.12);
+  --color-danger-border: rgba(220, 38, 38, 0.2);
+  --color-danger-solid: #dc2626;
+}

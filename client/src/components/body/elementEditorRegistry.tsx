@@ -35,6 +35,6 @@ export function ElementEditor({
     case 'link':
       return <LinkElementEditor element={element} onChange={onChange} />
     case 'videoEmbed':
-      return <VideoEmbedElementEditor element={element} onChange={onChange} />
+      return <VideoEmbedElementEditor applicationId={applicationId} element={element} onChange={onChange} />
   }
 }

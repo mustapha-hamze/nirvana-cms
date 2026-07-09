@@ -13,8 +13,10 @@ export default function BannerElementEditor({
 }) {
   return (
     <div className="space-y-3">
-      <ImageUploadField applicationId={applicationId} url={element.image} onUploaded={(image) => onChange({ ...element, image })} />
-      <TextField label="Image alt text" value={element.imageAlt} onChange={(imageAlt) => onChange({ ...element, imageAlt })} />
+      <ImageUploadField domain="page" label="Background image" applicationId={applicationId} url={element.image} onUploaded={(image) => onChange({ ...element, image })} />
+      <TextField label="Background image alt text" value={element.imageAlt} onChange={(imageAlt) => onChange({ ...element, imageAlt })} />
+      <ImageUploadField domain="page" label="Logo (optional)" applicationId={applicationId} url={element.logo} onUploaded={(logo) => onChange({ ...element, logo })} />
+      <TextField label="Logo alt text" value={element.logoAlt} onChange={(logoAlt) => onChange({ ...element, logoAlt })} />
       <TextField label="Heading" value={element.heading} onChange={(heading) => onChange({ ...element, heading })} />
       <TextAreaField label="Subheading" value={element.subheading} onChange={(subheading) => onChange({ ...element, subheading })} rows={2} />
       <div className="grid grid-cols-2 gap-3">

@@ -2,8 +2,8 @@ import { TextField } from '../ui/FormField'
 import RichTextArea from './RichTextArea'
 import type { AccordionItemElement } from '../../types/page'
 
-// Shared by the Accordion and FAQ sections — see PAGE_SECTION_LAYOUTS in
-// types/page.ts for why they use the same element.
+// Shared by the Accordion and FAQ components — see PAGE_COMPONENT_LAYOUTS in
+// constants/pageSections.ts for why they use the same element.
 export default function AccordionItemElementEditor({
   element,
   onChange,

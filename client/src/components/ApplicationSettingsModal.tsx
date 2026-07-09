@@ -139,7 +139,7 @@ export default function ApplicationSettingsModal({ app, onClose, onSaved }: Prop
                       onMouseLeave={(e) => (e.currentTarget.style.color = theme.accent)}>
                       Upload logo
                     </button>
-                    <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                    <p className="text-xs mt-0.5" style={{ color: theme.textTertiary }}>
                       PNG · 1024×1024px · max 300 KB
                     </p>
                     <input ref={fileInputRef} type="file" accept="image/png" className="hidden" onChange={handleLogoChange} />
@@ -151,7 +151,7 @@ export default function ApplicationSettingsModal({ app, onClose, onSaved }: Prop
                     className="w-full px-3.5 py-2.5 rounded-xl text-sm outline-none font-mono"
                     style={{ ...inputStyle, color: theme.textTertiary, cursor: 'not-allowed' }}
                   />
-                  <p className="text-xs mt-1.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                  <p className="text-xs mt-1.5" style={{ color: theme.textTertiary }}>
                     Auto-generated and read-only.
                   </p>
                 </Field>
@@ -205,7 +205,7 @@ export default function ApplicationSettingsModal({ app, onClose, onSaved }: Prop
                       )
                     })}
                   </div>
-                  <p className="text-xs mt-1.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                  <p className="text-xs mt-1.5" style={{ color: theme.textTertiary }}>
                     Content for this application can only be created in these languages.
                   </p>
                 </Field>
@@ -227,9 +227,9 @@ export default function ApplicationSettingsModal({ app, onClose, onSaved }: Prop
                     />
                     <button type="button" onClick={() => setShowApiKey((v) => !v)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 transition"
-                      style={{ color: 'rgba(255,255,255,0.3)' }}
+                      style={{ color: theme.textTertiary }}
                       onMouseEnter={(e) => (e.currentTarget.style.color = theme.textSecondary)}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.3)')}>
+                      onMouseLeave={(e) => (e.currentTarget.style.color = theme.textTertiary)}>
                       {showApiKey ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
                     </button>
                   </div>
@@ -259,7 +259,7 @@ export default function ApplicationSettingsModal({ app, onClose, onSaved }: Prop
             className="px-4 py-2.5 rounded-xl text-sm font-medium transition"
             style={{ color: theme.textSecondary }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.06)'
+              e.currentTarget.style.background = theme.hoverBgSubtle
               e.currentTarget.style.color = theme.textPrimary
             }}
             onMouseLeave={(e) => {
@@ -283,7 +283,7 @@ export default function ApplicationSettingsModal({ app, onClose, onSaved }: Prop
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
     <div className="flex items-center gap-3 mb-4">
-      <span className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.3)' }}>
+      <span className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: theme.textTertiary }}>
         {children}
       </span>
       <div className="flex-1 h-px" style={{ background: theme.border }} />

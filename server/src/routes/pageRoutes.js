@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { authenticate, requireStaff } from "../middleware/auth.js";
+import { pageImageUploadMiddleware } from "../utils/pageImageUpload.js";
+import { videoUploadMiddleware, documentUploadMiddleware } from "../utils/rawFileUpload.js";
 import {
   getPages,
   getPage,
@@ -8,6 +10,9 @@ import {
   deletePage,
   upsertPageDetails,
   deletePageDetails,
+  uploadPageImage,
+  uploadPageVideo,
+  uploadPageDocument,
 } from "../controllers/pageController.js";
 
 const router = Router();
@@ -19,6 +24,10 @@ router.use(authenticate, requireStaff);
 
 router.get("/", getPages);
 router.post("/", createPage);
+// Registered before '/:id' so these literal paths aren't swallowed as an :id.
+router.post("/images", pageImageUploadMiddleware, uploadPageImage);
+router.post("/videos", videoUploadMiddleware, uploadPageVideo);
+router.post("/documents", documentUploadMiddleware, uploadPageDocument);
 router.get("/:id", getPage);
 router.put("/:id", updatePage);
 router.delete("/:id", deletePage);

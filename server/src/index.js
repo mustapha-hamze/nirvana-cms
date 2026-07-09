@@ -11,6 +11,7 @@ import contentRoutes from './routes/contentRoutes.js'
 import pageRoutes from './routes/pageRoutes.js'
 import categoryRoutes from './routes/categoryRoutes.js'
 import tagRoutes from './routes/tagRoutes.js'
+import frontendRoutes from './routes/frontendRoutes.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
@@ -33,6 +34,7 @@ app.use('/api/content', contentRoutes)
 app.use('/api/pages', pageRoutes)
 app.use('/api/categories', categoryRoutes)
 app.use('/api/tags', tagRoutes)
+app.use('/api/frontend', frontendRoutes)
 
 app.use((err, req, res, next) => {
   const status = err.status || 500

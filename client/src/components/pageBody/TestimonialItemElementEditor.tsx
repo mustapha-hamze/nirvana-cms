@@ -4,8 +4,8 @@ import { theme } from '../../theme'
 import { ReviewIcon } from '../icons'
 import type { TestimonialItemElement } from '../../types/page'
 
-// Shared by Quotation, Testimonial, and Review sections — see
-// PAGE_SECTION_LAYOUTS in types/page.ts for why they use the same element.
+// Shared by Quotation, Testimonial, and Review components — see
+// PAGE_COMPONENT_LAYOUTS in constants/pageSections.ts for why they use the same element.
 // `rating` is meaningful for Review and simply left unset (null) elsewhere.
 export default function TestimonialItemElementEditor({
   applicationId,
@@ -23,7 +23,7 @@ export default function TestimonialItemElementEditor({
         <TextField label="Author name" value={element.authorName} onChange={(authorName) => onChange({ ...element, authorName })} />
         <TextField label="Author role" value={element.authorRole} onChange={(authorRole) => onChange({ ...element, authorRole })} placeholder="e.g. CEO, Acme Corp" />
       </div>
-      <ImageUploadField applicationId={applicationId} url={element.avatar} onUploaded={(avatar) => onChange({ ...element, avatar })} />
+      <ImageUploadField domain="page" applicationId={applicationId} url={element.avatar} onUploaded={(avatar) => onChange({ ...element, avatar })} />
 
       <div>
         <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textSecondary }}>

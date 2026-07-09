@@ -42,13 +42,13 @@ export function ModalHeader({ title, subtitle, onClose }: { title: string; subti
       <button
         onClick={onClose}
         className="p-1.5 rounded-lg transition"
-        style={{ color: 'rgba(255,255,255,0.35)' }}
+        style={{ color: theme.textFaint }}
         onMouseEnter={(e) => {
           e.currentTarget.style.color = theme.textPrimary
-          e.currentTarget.style.background = 'rgba(255,255,255,0.06)'
+          e.currentTarget.style.background = theme.hoverBgSubtle
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.color = 'rgba(255,255,255,0.35)'
+          e.currentTarget.style.color = theme.textFaint
           e.currentTarget.style.background = 'transparent'
         }}
       >
@@ -84,7 +84,7 @@ export function CancelButton({ onClick, disabled }: { onClick: () => void; disab
       className="px-4 py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-60"
       style={{ color: theme.textSecondary }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.background = 'rgba(255,255,255,0.06)'
+        e.currentTarget.style.background = theme.hoverBgSubtle
         e.currentTarget.style.color = theme.textPrimary
       }}
       onMouseLeave={(e) => {

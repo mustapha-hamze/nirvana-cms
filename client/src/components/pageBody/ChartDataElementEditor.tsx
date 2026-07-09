@@ -2,7 +2,8 @@ import { SelectField, TextField } from '../ui/FormField'
 import StringListField from './StringListField'
 import { theme } from '../../theme'
 import { PlusIcon, TrashIcon } from '../icons'
-import { CHART_TYPE_VALUES, CHART_TYPE_LABELS, type ChartDataElement, type ChartSeries } from '../../types/page'
+import type { ChartDataElement, ChartSeries } from '../../types/page'
+import { CHART_TYPE_VALUES, CHART_TYPE_LABELS } from '../../constants/pageSections'
 
 const MAX_SERIES = 8
 const CHART_TYPE_OPTIONS = CHART_TYPE_VALUES.map((t) => ({ value: t, label: CHART_TYPE_LABELS[t] }))

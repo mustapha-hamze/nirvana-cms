@@ -1,16 +1,26 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { api } from "../api/client";
 import type { AdminOutletContext } from "../components/AdminLayout";
 import { theme } from "../theme";
-import { PlusIcon, EditIcon, TrashIcon } from "../components/icons";
+import { EditIcon, TrashIcon } from "../components/icons";
 import EmptyState from "../components/ui/EmptyState";
 import SkeletonTable from "../components/ui/SkeletonTable";
 import ConfirmModal from "../components/ui/ConfirmModal";
+import Pagination from "../components/ui/Pagination";
+import SortableHeader from "../components/ui/SortableHeader";
+import IdCell from "../components/ui/IdCell";
+import AdminPageHeader from "../components/ui/AdminPageHeader";
+import ListSearchInput from "../components/ui/ListSearchInput";
+import AdminTable, { AdminTableRow, AdminTableHeadCell, EmptyResultsRow } from "../components/ui/AdminTable";
+import AdminTableActionButton from "../components/ui/AdminTableActionButton";
+import { LanguageStatusBadges } from "../components/ui/LanguageBadges";
+import CreatedAtCell from "../components/ui/CreatedAtCell";
 import { useAppSelector } from "../store/hooks";
 import { selectUser } from "../store/authSlice";
 import { isAppAdmin } from "../utils/permissions";
-import { LANGUAGE_VALUES, LANGUAGE_LABELS } from "../types/content";
+import { usePaginatedApiList } from "../hooks/usePaginatedApiList";
+import { LANGUAGE_VALUES } from "../types/content";
 import type { PageItem, PageDetail } from "../types/page";
 
 function getPreviewDetail(page: PageItem): PageDetail | undefined {
@@ -26,50 +36,30 @@ export default function Pages() {
   const navigate = useNavigate();
   const user = useAppSelector(selectUser);
   const canManage = !!app && isAppAdmin(user, app._id);
-  const [pages, setPages] = useState<PageItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [deletePage, setDeletePageState] = useState<PageItem | null>(null);
+  const {
+    searchInput, setSearchInput, search, sortBy, sortOrder, page, setPage, toggleSort,
+    result, loading, refresh: fetchPages,
+  } = usePaginatedApiList<PageItem>({ endpoint: "/pages", applicationId: app?._id });
 
-  const fetchPages = useCallback(async () => {
-    if (!app) return;
-    setLoading(true);
-    try {
-      const data = await api.get<PageItem[]>(`/pages?application=${app._id}`);
-      setPages(data);
-    } finally {
-      setLoading(false);
-    }
-  }, [app]);
-
-  useEffect(() => {
-    fetchPages();
-  }, [fetchPages]);
+  const { items: pages, total, totalPages, limit } = result;
+  const hasAnyPage = total > 0 || search;
 
   return (
     <div className="mx-10 my-10">
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight" style={{ color: theme.textPrimary }}>
-            Pages
-          </h1>
-          <p className="mt-1 text-[15px]" style={{ color: theme.textSecondary }}>
-            {loading || !app ? "…" : `${pages.length} page${pages.length !== 1 ? "s" : ""} in ${app.name}`}
-          </p>
-        </div>
-        <button
-          onClick={() => navigate(`/applications/${app?._id}/pages/create`)}
-          disabled={!app}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.97] disabled:opacity-60"
-          style={{ background: theme.accentGradient, boxShadow: "0 2px 16px rgba(124,58,237,0.35)" }}
-        >
-          <PlusIcon />
-          Create Page
-        </button>
-      </div>
+      <AdminPageHeader
+        title="Pages"
+        subtitle={loading || !app ? "…" : `${total} page${total !== 1 ? "s" : ""} in ${app.name}`}
+        actionLabel="Create Page"
+        onAction={() => navigate(`/applications/${app?._id}/pages/create`)}
+        actionDisabled={!app}
+      />
+
+      {hasAnyPage && <ListSearchInput value={searchInput} onChange={setSearchInput} />}
 
       {loading ? (
         <SkeletonTable />
-      ) : pages.length === 0 ? (
+      ) : !hasAnyPage ? (
         <EmptyState
           icon={<BigPageIcon />}
           title="No pages yet"
@@ -77,109 +67,69 @@ export default function Pages() {
           actionLabel="Create Page"
           onAction={() => navigate(`/applications/${app?._id}/pages/create`)}
         />
+      ) : pages.length === 0 ? (
+        <EmptyResultsRow message={`No pages match "${search}".`} />
       ) : (
-        <div className="rounded-2xl overflow-hidden" style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${theme.border}` }}>
-                <th className="text-left font-semibold px-5 py-3" style={{ color: theme.textTertiary }}>Title</th>
-                <th className="text-left font-semibold px-5 py-3" style={{ color: theme.textTertiary }}>Languages</th>
-                <th className="text-left font-semibold px-5 py-3" style={{ color: theme.textTertiary }}>Created</th>
-                <th className="text-right font-semibold px-5 py-3" style={{ color: theme.textTertiary }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pages.map((page) => {
-                const preview = getPreviewDetail(page);
-                return (
-                  <tr
-                    key={page._id}
-                    style={{ borderBottom: `1px solid ${theme.border}` }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = theme.rowHover)}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                  >
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium" style={{ color: theme.textPrimary }}>
-                          {preview?.title ?? "—"}
-                        </span>
-                        {page.isHomepage && (
-                          <span
-                            className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                            style={{ background: theme.accentBg, color: theme.accent }}
-                          >
-                            Homepage
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-1.5">
-                        {page.details.map((d) => (
-                          <span
-                            key={d.langKey}
-                            title={`${LANGUAGE_LABELS[d.langKey]} — ${d.status}`}
-                            className="text-[11px] font-semibold px-2 py-1 rounded-full"
-                            style={
-                              d.status === "published"
-                                ? { background: theme.successBg, color: theme.success }
-                                : { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.5)" }
-                            }
-                          >
-                            {d.langKey.toUpperCase()}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-5 py-3" style={{ color: theme.textTertiary }}>
-                      {new Date(page.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => navigate(`/applications/${app?._id}/pages/${page._id}/edit`)}
-                          title="Edit"
-                          aria-label="Edit"
-                          className="p-2 rounded-lg transition-all"
-                          style={{ color: theme.accent }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.color = theme.accentHover;
-                            e.currentTarget.style.background = theme.accentBg;
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.color = theme.accent;
-                            e.currentTarget.style.background = "transparent";
-                          }}
+        <AdminTable
+          footer={<Pagination page={page} totalPages={totalPages} total={total} limit={limit} onPageChange={setPage} />}
+        >
+          <thead>
+            <tr style={{ borderBottom: `1px solid ${theme.border}` }}>
+              <SortableHeader label="Title" active={sortBy === "title"} direction={sortOrder} onClick={() => toggleSort("title")} />
+              <AdminTableHeadCell>ID</AdminTableHeadCell>
+              <AdminTableHeadCell>Languages</AdminTableHeadCell>
+              <SortableHeader label="Created" active={sortBy === "createdAt"} direction={sortOrder} onClick={() => toggleSort("createdAt")} />
+              <AdminTableHeadCell align="right">Actions</AdminTableHeadCell>
+            </tr>
+          </thead>
+          <tbody>
+            {pages.map((page) => {
+              const preview = getPreviewDetail(page);
+              return (
+                <AdminTableRow key={page._id}>
+                  <td className="px-5 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium" style={{ color: theme.textPrimary }}>
+                        {preview?.title ?? "—"}
+                      </span>
+                      {page.isHomepage && (
+                        <span
+                          className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                          style={{ background: theme.accentBg, color: theme.accent }}
                         >
-                          <EditIcon />
-                        </button>
-                        {canManage && (
-                          <button
-                            onClick={() => setDeletePageState(page)}
-                            title="Delete"
-                            aria-label="Delete"
-                            className="p-2 rounded-lg transition-all"
-                            style={{ color: theme.danger }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.color = theme.dangerHover;
-                              e.currentTarget.style.background = theme.dangerBgHover;
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.color = theme.danger;
-                              e.currentTarget.style.background = "transparent";
-                            }}
-                          >
-                            <TrashIcon />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                          Homepage
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-5 py-3">
+                    <IdCell id={page._id} />
+                  </td>
+                  <td className="px-5 py-3">
+                    <LanguageStatusBadges details={page.details} />
+                  </td>
+                  <CreatedAtCell date={page.createdAt} />
+                  <td className="px-5 py-3">
+                    <div className="flex items-center justify-end gap-1">
+                      <AdminTableActionButton
+                        onClick={() => navigate(`/applications/${app?._id}/pages/${page._id}/edit`)}
+                        title="Edit"
+                        variant="accent"
+                      >
+                        <EditIcon />
+                      </AdminTableActionButton>
+                      {canManage && (
+                        <AdminTableActionButton onClick={() => setDeletePageState(page)} title="Delete" variant="danger">
+                          <TrashIcon />
+                        </AdminTableActionButton>
+                      )}
+                    </div>
+                  </td>
+                </AdminTableRow>
+              );
+            })}
+          </tbody>
+        </AdminTable>
       )}
 
       {deletePage && (

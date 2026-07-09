@@ -1,5 +1,6 @@
 import { TextField, TextAreaField } from '../ui/FormField'
 import ImageUploadField from '../body/ImageUploadField'
+import { theme } from '../../theme'
 import type { CardElement } from '../../types/page'
 
 export default function CardElementEditor({
@@ -13,7 +14,7 @@ export default function CardElementEditor({
 }) {
   return (
     <div className="space-y-3">
-      <ImageUploadField applicationId={applicationId} url={element.image} onUploaded={(image) => onChange({ ...element, image })} />
+      <ImageUploadField domain="page" applicationId={applicationId} url={element.image} onUploaded={(image) => onChange({ ...element, image })} />
       <TextField label="Image alt text" value={element.imageAlt} onChange={(imageAlt) => onChange({ ...element, imageAlt })} />
       <TextField label="Title" required value={element.title} onChange={(title) => onChange({ ...element, title })} />
       <TextAreaField label="Description" value={element.description} onChange={(description) => onChange({ ...element, description })} rows={3} />
@@ -22,6 +23,10 @@ export default function CardElementEditor({
         <TextField label="Link" value={element.ctaUrl} onChange={(ctaUrl) => onChange({ ...element, ctaUrl })} placeholder="https://…" />
       </div>
       <TextField label="Link label" value={element.ctaLabel} onChange={(ctaLabel) => onChange({ ...element, ctaLabel })} placeholder="Read more" />
+      <label className="flex items-center gap-2 text-sm" style={{ color: theme.textSecondary }}>
+        <input type="checkbox" checked={element.highlighted} onChange={(e) => onChange({ ...element, highlighted: e.target.checked })} />
+        Highlight this card with an accent color
+      </label>
     </div>
   )
 }

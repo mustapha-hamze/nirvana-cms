@@ -21,7 +21,7 @@ export default function Dashboard() {
           <StatCard
             label="Status"
             value={app.status === 'active' ? 'Active' : 'Inactive'}
-            valueColor={app.status === 'active' ? theme.success : 'rgba(255,255,255,0.4)'}
+            valueColor={app.status === 'active' ? theme.success : theme.textMuted}
           />
           <StatCard
             label="Created"

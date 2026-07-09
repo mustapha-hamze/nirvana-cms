@@ -4,6 +4,11 @@ const app = {
   _id: 'app-1',
   name: 'Nirvana Admin',
   logo: '',
+  description: '',
+  status: 'active',
+  appKey: 'nirvana-admin',
+  createdAt: '2026-01-01T00:00:00.000Z',
+  languages: ['en', 'fa'],
 }
 
 const adminUser = {
@@ -18,11 +23,18 @@ type Category = {
   _id: string
   publicId: string
   application: string
-  title: string
+  translations: Array<{ langKey: 'en' | 'fa'; title: string; slug: string }>
   parentId: string | null
   status: 'active' | 'inactive'
   createdAt: string
   updatedAt: string
+}
+
+type CategoryPayload = {
+  application?: string
+  translations?: Category['translations']
+  parentId?: string | null
+  status?: Category['status']
 }
 
 const initialCategories: Category[] = [
@@ -30,7 +42,7 @@ const initialCategories: Category[] = [
     _id: 'cat-root',
     publicId: 'public-root',
     application: app._id,
-    title: 'News',
+    translations: [{ langKey: 'en', title: 'News', slug: 'news' }],
     parentId: null,
     status: 'active',
     createdAt: '2026-01-02T00:00:00.000Z',
@@ -40,7 +52,7 @@ const initialCategories: Category[] = [
     _id: 'cat-child',
     publicId: 'public-child',
     application: app._id,
-    title: 'Company',
+    translations: [{ langKey: 'en', title: 'Company', slug: 'company' }],
     parentId: 'cat-root',
     status: 'inactive',
     createdAt: '2026-01-03T00:00:00.000Z',
@@ -69,13 +81,13 @@ async function mockAdminApi(page: Page) {
     }
 
     if (method === 'POST' && path === '/categories') {
-      const body = request.postDataJSON() as Partial<Category>
+      const body = request.postDataJSON() as CategoryPayload
       createdCount += 1
       const category: Category = {
         _id: `cat-created-${createdCount}`,
         publicId: `public-created-${createdCount}`,
         application: body.application ?? app._id,
-        title: body.title ?? 'Untitled',
+        translations: body.translations ?? [{ langKey: 'en', title: 'Untitled', slug: 'untitled' }],
         parentId: body.parentId ?? null,
         status: body.status ?? 'active',
         createdAt: '2026-01-04T00:00:00.000Z',
@@ -88,7 +100,7 @@ async function mockAdminApi(page: Page) {
 
     if (method === 'PUT' && path.startsWith('/categories/')) {
       const id = path.split('/').at(-1)
-      const body = request.postDataJSON() as Partial<Category>
+      const body = request.postDataJSON() as CategoryPayload
       const category = categories.find((item) => item._id === id)
       if (!category) {
         await route.fulfill({ status: 404, json: { message: 'Category not found' } })

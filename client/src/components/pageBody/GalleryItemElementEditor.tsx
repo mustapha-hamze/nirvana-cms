@@ -1,6 +1,9 @@
 import { TextField, TextAreaField, SelectField } from '../ui/FormField'
 import ImageUploadField from '../body/ImageUploadField'
-import { GALLERY_MEDIA_TYPE_VALUES, GALLERY_MEDIA_TYPE_LABELS, type GalleryItemElement } from '../../types/page'
+import FileUploadField from '../body/FileUploadField'
+import { theme } from '../../theme'
+import type { GalleryItemElement } from '../../types/page'
+import { GALLERY_MEDIA_TYPE_VALUES, GALLERY_MEDIA_TYPE_LABELS } from '../../constants/pageSections'
 
 const MEDIA_TYPE_OPTIONS = GALLERY_MEDIA_TYPE_VALUES.map((value) => ({ value, label: GALLERY_MEDIA_TYPE_LABELS[value] }))
 
@@ -26,7 +29,7 @@ export default function GalleryItemElementEditor({
 
       {element.mediaType === 'image' ? (
         <>
-          <ImageUploadField applicationId={applicationId} url={element.url} onUploaded={(url) => onChange({ ...element, url })} />
+          <ImageUploadField domain="page" applicationId={applicationId} url={element.url} onUploaded={(url) => onChange({ ...element, url })} />
           <TextField label="Alt text" value={element.alt} onChange={(alt) => onChange({ ...element, alt })} />
         </>
       ) : (
@@ -38,6 +41,16 @@ export default function GalleryItemElementEditor({
             onChange={(url) => onChange({ ...element, url })}
             placeholder={element.mediaType === 'video' ? 'https://youtube.com/watch?v=…' : 'https://…/brochure.pdf'}
           />
+          <p className="text-xs -mt-1.5" style={{ color: theme.textTertiary }}>
+            Or upload a file below instead of pasting a link — it fills the same URL field above.
+          </p>
+          <FileUploadField
+            applicationId={applicationId}
+            kind={element.mediaType === 'video' ? 'video' : 'document'}
+            domain="page"
+            url={element.url}
+            onUploaded={(url) => onChange({ ...element, url })}
+          />
           {element.mediaType === 'document' && (
             <TextField
               label="File name"
@@ -47,6 +60,8 @@ export default function GalleryItemElementEditor({
             />
           )}
           <ImageUploadField
+            domain="page"
+            label="Thumbnail image"
             applicationId={applicationId}
             url={element.thumbnailUrl}
             onUploaded={(thumbnailUrl) => onChange({ ...element, thumbnailUrl })}

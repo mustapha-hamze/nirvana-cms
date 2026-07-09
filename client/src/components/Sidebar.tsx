@@ -51,7 +51,7 @@ export default function Sidebar({ appId }: { appId: string }) {
               : { color: theme.textSecondary }
             }
             onMouseEnter={(e) => {
-              if (!isContentSectionActive) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'
+              if (!isContentSectionActive) e.currentTarget.style.background = theme.hoverBgSubtle
             }}
             onMouseLeave={(e) => {
               if (!isContentSectionActive) e.currentTarget.style.background = 'transparent'
@@ -111,7 +111,7 @@ function SidebarLink({ to, icon, children }: { to: string; icon?: ReactNode; chi
         : { color: theme.textSecondary }
       }
       onMouseEnter={(e) => {
-        if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'
+        if (!active) e.currentTarget.style.background = theme.hoverBgSubtle
       }}
       onMouseLeave={(e) => {
         if (!active) e.currentTarget.style.background = 'transparent'

@@ -1,5 +1,6 @@
 import { SelectField, TextField } from '../ui/FormField'
-import { HEADING_LEVELS, type HeadingElement, type HeadingLevel } from '../../types/content'
+import type { HeadingElement, HeadingLevel } from '../../types/content'
+import { HEADING_LEVELS } from '../../constants/contentSections'
 
 const LEVEL_OPTIONS = HEADING_LEVELS.map((level) => ({ value: String(level), label: `H${level}` }))
 

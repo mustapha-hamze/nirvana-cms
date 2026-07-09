@@ -1,19 +1,27 @@
-import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { api } from "../api/client";
 import type { AdminOutletContext } from "../components/AdminLayout";
 import { theme } from "../theme";
-import { PlusIcon, EditIcon, TrashIcon } from "../components/icons";
+import { EditIcon, TrashIcon } from "../components/icons";
 import EmptyState from "../components/ui/EmptyState";
 import SkeletonTable from "../components/ui/SkeletonTable";
 import ConfirmModal from "../components/ui/ConfirmModal";
+import Pagination from "../components/ui/Pagination";
+import SortableHeader from "../components/ui/SortableHeader";
+import AdminPageHeader from "../components/ui/AdminPageHeader";
+import ListSearchInput from "../components/ui/ListSearchInput";
+import AdminTable, { AdminTableRow, AdminTableHeadCell, EmptyResultsRow } from "../components/ui/AdminTable";
+import AdminTableActionButton from "../components/ui/AdminTableActionButton";
+import { LanguageStatusBadges } from "../components/ui/LanguageBadges";
+import CreatedAtCell from "../components/ui/CreatedAtCell";
 import { useAppSelector } from "../store/hooks";
 import { selectUser } from "../store/authSlice";
 import { isAppAdmin } from "../utils/permissions";
 import { getPreviewTitle } from "../utils/translations";
+import { usePaginatedApiList } from "../hooks/usePaginatedApiList";
+import { useState } from "react";
 import {
   LANGUAGE_VALUES,
-  LANGUAGE_LABELS,
   type ContentItem,
   type ContentDetail,
 } from "../types/content";
@@ -31,63 +39,30 @@ export default function Contents() {
   const navigate = useNavigate();
   const user = useAppSelector(selectUser);
   const canManage = !!app && isAppAdmin(user, app._id);
-  const [contents, setContents] = useState<ContentItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [deleteContent, setDeleteContent] = useState<ContentItem | null>(null);
+  const {
+    searchInput, setSearchInput, search, sortBy, sortOrder, page, setPage, toggleSort,
+    result, loading, refresh: fetchContents,
+  } = usePaginatedApiList<ContentItem>({ endpoint: "/content", applicationId: app?._id });
 
-  const fetchContents = useCallback(async () => {
-    if (!app) return;
-    setLoading(true);
-    try {
-      const data = await api.get<ContentItem[]>(
-        `/content?application=${app._id}`,
-      );
-      setContents(data);
-    } finally {
-      setLoading(false);
-    }
-  }, [app]);
-
-  useEffect(() => {
-    fetchContents();
-  }, [fetchContents]);
+  const { items: contents, total, totalPages, limit } = result;
+  const hasAnyContent = total > 0 || search;
 
   return (
     <div className="mx-10 my-10">
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <h1
-            className="text-2xl font-bold tracking-tight"
-            style={{ color: theme.textPrimary }}
-          >
-            Contents
-          </h1>
-          <p
-            className="mt-1 text-[15px]"
-            style={{ color: theme.textSecondary }}
-          >
-            {loading || !app
-              ? "…"
-              : `${contents.length} item${contents.length !== 1 ? "s" : ""} in ${app.name}`}
-          </p>
-        </div>
-        <button
-          onClick={() => navigate(`/applications/${app?._id}/contents/create`)}
-          disabled={!app}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.97] disabled:opacity-60"
-          style={{
-            background: theme.accentGradient,
-            boxShadow: "0 2px 16px rgba(124,58,237,0.35)",
-          }}
-        >
-          <PlusIcon />
-          Create Content
-        </button>
-      </div>
+      <AdminPageHeader
+        title="Contents"
+        subtitle={loading || !app ? "…" : `${total} item${total !== 1 ? "s" : ""} in ${app.name}`}
+        actionLabel="Create Content"
+        onAction={() => navigate(`/applications/${app?._id}/contents/create`)}
+        actionDisabled={!app}
+      />
+
+      {hasAnyContent && <ListSearchInput value={searchInput} onChange={setSearchInput} />}
 
       {loading ? (
         <SkeletonTable />
-      ) : contents.length === 0 ? (
+      ) : !hasAnyContent ? (
         <EmptyState
           icon={<BigContentIcon />}
           title="No content yet"
@@ -95,210 +70,95 @@ export default function Contents() {
           actionLabel="Create Content"
           onAction={() => navigate(`/applications/${app?._id}/contents/create`)}
         />
+      ) : contents.length === 0 ? (
+        <EmptyResultsRow message={`No content matches "${search}".`} />
       ) : (
-        <div
-          className="rounded-2xl overflow-hidden"
-          style={{
-            background: theme.surface,
-            border: `1px solid ${theme.border}`,
-          }}
+        <AdminTable
+          footer={<Pagination page={page} totalPages={totalPages} total={total} limit={limit} onPageChange={setPage} />}
         >
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${theme.border}` }}>
-                <th
-                  className="text-left font-semibold px-5 py-3"
-                  style={{ color: theme.textTertiary }}
-                >
-                  Title
-                </th>
-                <th
-                  className="text-left font-semibold px-5 py-3"
-                  style={{ color: theme.textTertiary }}
-                >
-                  Languages
-                </th>
-                {canManage && (
-                  <th
-                    className="text-left font-semibold px-5 py-3"
-                    style={{ color: theme.textTertiary }}
-                  >
-                    Categories
-                  </th>
-                )}
-                {canManage && (
-                  <th
-                    className="text-left font-semibold px-5 py-3"
-                    style={{ color: theme.textTertiary }}
-                  >
-                    Tags
-                  </th>
-                )}
-                <th
-                  className="text-left font-semibold px-5 py-3"
-                  style={{ color: theme.textTertiary }}
-                >
-                  Created
-                </th>
-                <th
-                  className="text-right font-semibold px-5 py-3"
-                  style={{ color: theme.textTertiary }}
-                >
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {contents.map((content) => {
-                const preview = getPreviewDetail(content);
-                return (
-                  <tr
-                    key={content._id}
-                    style={{ borderBottom: `1px solid ${theme.border}` }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.background = theme.rowHover)
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.background = "transparent")
-                    }
-                  >
+          <thead>
+            <tr style={{ borderBottom: `1px solid ${theme.border}` }}>
+              <SortableHeader label="Title" active={sortBy === "title"} direction={sortOrder} onClick={() => toggleSort("title")} />
+              <AdminTableHeadCell>Languages</AdminTableHeadCell>
+              {canManage && <AdminTableHeadCell>Categories</AdminTableHeadCell>}
+              {canManage && <AdminTableHeadCell>Tags</AdminTableHeadCell>}
+              <SortableHeader label="Created" active={sortBy === "createdAt"} direction={sortOrder} onClick={() => toggleSort("createdAt")} />
+              <AdminTableHeadCell align="right">Actions</AdminTableHeadCell>
+            </tr>
+          </thead>
+          <tbody>
+            {contents.map((content) => {
+              const preview = getPreviewDetail(content);
+              return (
+                <AdminTableRow key={content._id}>
+                  <td className="px-5 py-3">
+                    <span className="font-medium" style={{ color: theme.textPrimary }}>
+                      {preview?.title ?? "—"}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3">
+                    <LanguageStatusBadges details={content.details} />
+                  </td>
+                  {canManage && (
                     <td className="px-5 py-3">
-                      <span
-                        className="font-medium"
-                        style={{ color: theme.textPrimary }}
+                      {content.categories.length === 0 ? (
+                        <span style={{ color: theme.textTertiary }}>—</span>
+                      ) : (
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {content.categories.map((cat) => (
+                            <span
+                              key={cat._id}
+                              className="text-[11px] font-semibold px-2 py-1 rounded-full"
+                              style={{ background: theme.accentBg, color: theme.accent }}
+                            >
+                              {getPreviewTitle(cat.translations)}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </td>
+                  )}
+                  {canManage && (
+                    <td className="px-5 py-3">
+                      {content.tags.length === 0 ? (
+                        <span style={{ color: theme.textTertiary }}>—</span>
+                      ) : (
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {content.tags.map((tag) => (
+                            <span
+                              key={tag._id}
+                              className="text-[11px] font-semibold px-2 py-1 rounded-full"
+                              style={{ background: theme.subtleBg, color: theme.textSecondary }}
+                            >
+                              {getPreviewTitle(tag.translations)}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </td>
+                  )}
+                  <CreatedAtCell date={content.createdAt} />
+                  <td className="px-5 py-3">
+                    <div className="flex items-center justify-end gap-1">
+                      <AdminTableActionButton
+                        onClick={() => navigate(`/applications/${app?._id}/contents/${content._id}/edit`)}
+                        title="Edit"
+                        variant="accent"
                       >
-                        {preview?.title ?? "—"}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-1.5">
-                        {content.details.map((d) => (
-                          <span
-                            key={d.langKey}
-                            title={`${LANGUAGE_LABELS[d.langKey]} — ${d.status}`}
-                            className="text-[11px] font-semibold px-2 py-1 rounded-full"
-                            style={
-                              d.status === "published"
-                                ? {
-                                    background: theme.successBg,
-                                    color: theme.success,
-                                  }
-                                : {
-                                    background: "rgba(255,255,255,0.05)",
-                                    color: "rgba(255,255,255,0.5)",
-                                  }
-                            }
-                          >
-                            {d.langKey.toUpperCase()}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    {canManage && (
-                      <td className="px-5 py-3">
-                        {content.categories.length === 0 ? (
-                          <span style={{ color: theme.textTertiary }}>—</span>
-                        ) : (
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            {content.categories.map((cat) => (
-                              <span
-                                key={cat._id}
-                                className="text-[11px] font-semibold px-2 py-1 rounded-full"
-                                style={{
-                                  background: theme.accentBg,
-                                  color: theme.accent,
-                                }}
-                              >
-                                {getPreviewTitle(cat.translations)}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </td>
-                    )}
-                    {canManage && (
-                      <td className="px-5 py-3">
-                        {content.tags.length === 0 ? (
-                          <span style={{ color: theme.textTertiary }}>—</span>
-                        ) : (
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            {content.tags.map((tag) => (
-                              <span
-                                key={tag._id}
-                                className="text-[11px] font-semibold px-2 py-1 rounded-full"
-                                style={{
-                                  background: "rgba(255,255,255,0.05)",
-                                  color: theme.textSecondary,
-                                }}
-                              >
-                                {getPreviewTitle(tag.translations)}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </td>
-                    )}
-                    <td
-                      className="px-5 py-3"
-                      style={{ color: theme.textTertiary }}
-                    >
-                      {new Date(content.createdAt).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() =>
-                            navigate(
-                              `/applications/${app?._id}/contents/${content._id}/edit`,
-                            )
-                          }
-                          title="Edit"
-                          aria-label="Edit"
-                          className="p-2 rounded-lg transition-all"
-                          style={{ color: theme.accent }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.color = theme.accentHover;
-                            e.currentTarget.style.background = theme.accentBg;
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.color = theme.accent;
-                            e.currentTarget.style.background = "transparent";
-                          }}
-                        >
-                          <EditIcon />
-                        </button>
-                        {canManage && (
-                          <button
-                            onClick={() => setDeleteContent(content)}
-                            title="Delete"
-                            aria-label="Delete"
-                            className="p-2 rounded-lg transition-all"
-                            style={{ color: theme.danger }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.color = theme.dangerHover;
-                              e.currentTarget.style.background =
-                                theme.dangerBgHover;
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.color = theme.danger;
-                              e.currentTarget.style.background = "transparent";
-                            }}
-                          >
-                            <TrashIcon />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                        <EditIcon />
+                      </AdminTableActionButton>
+                      {canManage && (
+                        <AdminTableActionButton onClick={() => setDeleteContent(content)} title="Delete" variant="danger">
+                          <TrashIcon />
+                        </AdminTableActionButton>
+                      )}
+                    </div>
+                  </td>
+                </AdminTableRow>
+              );
+            })}
+          </tbody>
+        </AdminTable>
       )}
 
       {deleteContent && (

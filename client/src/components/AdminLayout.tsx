@@ -6,6 +6,7 @@ import { api } from '../api/client'
 import { theme } from '../theme'
 import { BackIcon, LogoutIcon } from './icons'
 import Sidebar from './Sidebar'
+import ThemeToggle from './ui/ThemeToggle'
 import type { Application } from '../types/application'
 
 export type AdminOutletContext = { app: Application | null }
@@ -53,13 +54,13 @@ export default function AdminLayout() {
                   onClick={() => navigate('/applications')}
                   title="Back to Applications"
                   className="p-2 rounded-lg transition shrink-0"
-                  style={{ color: 'rgba(255,255,255,0.4)' }}
+                  style={{ color: theme.textMuted }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.color = theme.textPrimary
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.06)'
+                    e.currentTarget.style.background = theme.hoverBgSubtle
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.color = 'rgba(255,255,255,0.4)'
+                    e.currentTarget.style.color = theme.textMuted
                     e.currentTarget.style.background = 'transparent'
                   }}
                 >
@@ -98,23 +99,27 @@ export default function AdminLayout() {
                 {initials}
               </div>
               <div className="hidden sm:block">
-                <p className="text-sm font-medium leading-none" style={{ color: 'rgba(255,255,255,0.8)' }}>
+                <p className="text-sm font-medium leading-none" style={{ color: theme.textStrong }}>
                   {user?.name}
                 </p>
-                <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                <p className="text-xs mt-0.5" style={{ color: theme.textFaint }}>
                   {user?.role}
                 </p>
               </div>
             </div>
 
-            <div className="w-px h-5" style={{ background: 'rgba(255,255,255,0.08)' }} />
+            <div className="w-px h-5" style={{ background: theme.divider }} />
+
+            <ThemeToggle />
+
+            <div className="w-px h-5" style={{ background: theme.divider }} />
 
             <button
               onClick={handleLogout}
               className="flex items-center gap-1.5 text-sm transition"
-              style={{ color: 'rgba(255,255,255,0.4)' }}
+              style={{ color: theme.textMuted }}
               onMouseEnter={(e) => (e.currentTarget.style.color = theme.danger)}
-              onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.4)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = theme.textMuted)}
             >
               <LogoutIcon />
               <span className="hidden sm:inline">Logout</span>

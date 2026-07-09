@@ -2,7 +2,8 @@ import { TextField, TextAreaField, SelectField } from '../ui/FormField'
 import ImageUploadField from '../body/ImageUploadField'
 import { theme } from '../../theme'
 import { PlusIcon, TrashIcon } from '../icons'
-import { SOCIAL_PLATFORM_VALUES, SOCIAL_PLATFORM_LABELS, type TeamMemberElement, type SocialPlatform } from '../../types/page'
+import type { TeamMemberElement, SocialPlatform } from '../../types/page'
+import { SOCIAL_PLATFORM_VALUES, SOCIAL_PLATFORM_LABELS } from '../../constants/pageSections'
 
 const MAX_SOCIAL_LINKS = 6
 const PLATFORM_OPTIONS = SOCIAL_PLATFORM_VALUES.map((p) => ({ value: p, label: SOCIAL_PLATFORM_LABELS[p] }))
@@ -32,7 +33,7 @@ export default function TeamMemberElementEditor({
 
   return (
     <div className="space-y-3">
-      <ImageUploadField applicationId={applicationId} url={element.photo} onUploaded={(photo) => onChange({ ...element, photo })} />
+      <ImageUploadField domain="page" applicationId={applicationId} url={element.photo} onUploaded={(photo) => onChange({ ...element, photo })} />
       <div className="grid grid-cols-2 gap-3">
         <TextField label="Name" required value={element.name} onChange={(name) => onChange({ ...element, name })} />
         <TextField label="Role" value={element.role} onChange={(role) => onChange({ ...element, role })} placeholder="e.g. Co-founder" />

@@ -19,6 +19,9 @@ import StatItemElementEditor from './StatItemElementEditor'
 import TimelineItemElementEditor from './TimelineItemElementEditor'
 import MapElementEditor from './MapElementEditor'
 import PortfolioItemElementEditor from './PortfolioItemElementEditor'
+import FeatureElementEditor from './FeatureElementEditor'
+import HeadingElementEditor from './HeadingElementEditor'
+import LinkElementEditor from './LinkElementEditor'
 
 // Dispatches to the right per-type editor based on the discriminated union's
 // `elementType` tag, so PageSectionCard doesn't need its own switch statement
@@ -38,7 +41,7 @@ export function PageElementEditor({
     case 'image':
       return <ImageElementEditor applicationId={applicationId} element={element} onChange={onChange} />
     case 'videoEmbed':
-      return <VideoEmbedElementEditor element={element} onChange={onChange} />
+      return <VideoEmbedElementEditor applicationId={applicationId} element={element} onChange={onChange} />
     case 'slide':
       return <SlideElementEditor applicationId={applicationId} element={element} onChange={onChange} />
     case 'banner':
@@ -73,5 +76,11 @@ export function PageElementEditor({
       return <MapElementEditor element={element} onChange={onChange} />
     case 'portfolioItem':
       return <PortfolioItemElementEditor applicationId={applicationId} element={element} onChange={onChange} />
+    case 'feature':
+      return <FeatureElementEditor applicationId={applicationId} element={element} onChange={onChange} />
+    case 'heading':
+      return <HeadingElementEditor element={element} onChange={onChange} />
+    case 'link':
+      return <LinkElementEditor element={element} onChange={onChange} />
   }
 }

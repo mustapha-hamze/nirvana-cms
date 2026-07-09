@@ -13,7 +13,7 @@ export default function SlideElementEditor({
 }) {
   return (
     <div className="space-y-3">
-      <ImageUploadField applicationId={applicationId} url={element.image} onUploaded={(image) => onChange({ ...element, image })} />
+      <ImageUploadField domain="page" applicationId={applicationId} url={element.image} onUploaded={(image) => onChange({ ...element, image })} />
       <TextField label="Image alt text" value={element.imageAlt} onChange={(imageAlt) => onChange({ ...element, imageAlt })} />
       <TextField label="Heading" value={element.heading} onChange={(heading) => onChange({ ...element, heading })} />
       <TextAreaField label="Subheading" value={element.subheading} onChange={(subheading) => onChange({ ...element, subheading })} rows={2} />

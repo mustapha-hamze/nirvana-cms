@@ -15,7 +15,7 @@ export default function StepElementEditor({
     <div className="space-y-3">
       <TextField label="Title" required value={element.title} onChange={(title) => onChange({ ...element, title })} placeholder="e.g. Create an account" />
       <TextAreaField label="Description" value={element.description} onChange={(description) => onChange({ ...element, description })} rows={2} />
-      <ImageUploadField applicationId={applicationId} url={element.icon} onUploaded={(icon) => onChange({ ...element, icon })} />
+      <ImageUploadField domain="page" applicationId={applicationId} url={element.icon} onUploaded={(icon) => onChange({ ...element, icon })} />
     </div>
   )
 }

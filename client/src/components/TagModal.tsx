@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { api } from '../api/client'
 import { Backdrop, ModalPanel, ModalHeader, ModalFooter, ErrorBanner, CancelButton, PrimaryButton } from './ui/Modal'
-import { TextField } from './ui/FormField'
 import StatusToggle from './ui/StatusToggle'
+import TranslatedTitleTabs from './ui/TranslatedTitleTabs'
+import TranslatedTitleField from './ui/TranslatedTitleField'
+import { useTranslatedTitleForm } from '../hooks/useTranslatedTitleForm'
 import { useToast } from './ui/useToast'
 import { theme } from '../theme'
-import { LANGUAGE_LABELS, type LangKey } from '../types/content'
+import type { LangKey } from '../types/content'
 import type { Tag } from '../types/tag'
 
 export default function TagModal({
@@ -22,28 +24,20 @@ export default function TagModal({
   onSaved: () => void
 }) {
   const isEdit = tag !== null
-  const [titles, setTitles] = useState<Partial<Record<LangKey, string>>>(() => {
-    const initial: Partial<Record<LangKey, string>> = {}
-    for (const t of tag?.translations ?? []) initial[t.langKey] = t.title
-    return initial
+  const {
+    titles, activeLang, setActiveLang, active, setActive, updateTitle, buildTranslations,
+  } = useTranslatedTitleForm({
+    allowedLanguages,
+    initialTranslations: tag?.translations ?? [],
+    initialActive: tag?.status !== 'inactive',
   })
-  const [activeLang, setActiveLang] = useState<LangKey>(
-    tag?.translations[0]?.langKey ?? allowedLanguages[0],
-  )
-  const [active, setActive] = useState(tag?.status !== 'inactive')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const { showToast } = useToast()
 
-  function updateTitle(lang: LangKey, value: string) {
-    setTitles((prev) => ({ ...prev, [lang]: value }))
-  }
-
   async function handleSave() {
     setError('')
-    const translations = allowedLanguages
-      .map((langKey) => ({ langKey, title: (titles[langKey] ?? '').trim() }))
-      .filter((t) => t.title)
+    const translations = buildTranslations()
     if (translations.length === 0) {
       setError('At least one language needs a title')
       return
@@ -65,8 +59,6 @@ export default function TagModal({
     }
   }
 
-  const isRtl = activeLang === 'fa'
-
   return (
     <Backdrop onClose={onClose}>
       <ModalPanel>
@@ -76,36 +68,16 @@ export default function TagModal({
           onClose={onClose}
         />
 
-        {allowedLanguages.length > 1 && (
-          <div className="flex items-center gap-1 px-6 pt-4" style={{ borderBottom: `1px solid ${theme.border}` }}>
-            {allowedLanguages.map((lang) => {
-              const isActive = lang === activeLang
-              const filled = !!titles[lang]?.trim()
-              return (
-                <button
-                  key={lang} type="button" onClick={() => setActiveLang(lang)}
-                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-all -mb-px shrink-0"
-                  style={isActive
-                    ? { color: theme.textPrimary, borderBottom: '2px solid #7c3aed' }
-                    : { color: theme.textSecondary, borderBottom: '2px solid transparent' }
-                  }
-                >
-                  {filled && <span className="w-1.5 h-1.5 rounded-full" style={{ background: theme.accent }} />}
-                  {LANGUAGE_LABELS[lang]}
-                </button>
-              )
-            })}
-          </div>
-        )}
+        <TranslatedTitleTabs allowedLanguages={allowedLanguages} activeLang={activeLang} titles={titles} onSelect={setActiveLang} />
 
         <div className="px-6 py-5 space-y-4">
           {error && <ErrorBanner message={error} />}
-          <TextField
-            label={allowedLanguages.length > 1 ? `Title (${LANGUAGE_LABELS[activeLang]})` : 'Title'}
-            required value={titles[activeLang] ?? ''}
+          <TranslatedTitleField
+            allowedLanguages={allowedLanguages}
+            activeLang={activeLang}
+            value={titles[activeLang] ?? ''}
             onChange={(v) => updateTitle(activeLang, v)}
             placeholder="e.g. Breaking"
-            dir={isRtl ? 'rtl' : 'ltr'}
           />
           <div>
             <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textSecondary }}>

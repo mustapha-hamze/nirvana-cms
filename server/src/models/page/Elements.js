@@ -1,13 +1,13 @@
 import mongoose from 'mongoose'
 import { PAGE_ELEMENT_TYPES, CHART_TYPES, SOCIAL_PLATFORMS, GALLERY_MEDIA_TYPES } from '../../constants/pageElementTypes.js'
-import { urlField, richTextSchema, imageSchema, videoEmbedSchema } from '../content/Elements.js'
+import { urlField, richTextSchema, imageSchema, videoEmbedSchema, headingSchema, linkSchema } from '../content/Elements.js'
 import { sanitizeRichText } from '../../utils/sanitizeRichText.js'
 
-// Base schema for one item in a page Section's `elements` array — a fresh
+// Base schema for one item in a page component's `elements` array — a fresh
 // instance from Content's (discriminators attach per array-path, not
 // globally), but richText/image/videoEmbed below are the literal schemas
 // imported from content/Elements.js: same concept whether it's inside an
-// article body or a page section, so those are reused as-is rather than
+// article body or a page component, so those are reused as-is rather than
 // redefined.
 export const pageElementBaseSchema = new mongoose.Schema(
   {},
@@ -27,12 +27,16 @@ export const slideSchema = new mongoose.Schema(
   { _id: true },
 )
 
-// A Banner section always holds exactly one of these (see PAGE_SECTION_LAYOUTS)
+// A Banner component always holds exactly one of these (see PAGE_COMPONENT_LAYOUTS)
 // — a single static promo block, as opposed to a Slider's rotating set.
+// `logo` is optional and distinct from `image` (the full-bleed background) —
+// e.g. a brand mark shown beside the heading, as in a two-column hero.
 export const bannerSchema = new mongoose.Schema(
   {
     image: urlField(),
     imageAlt: { type: String, trim: true, default: '', maxlength: 250 },
+    logo: urlField(),
+    logoAlt: { type: String, trim: true, default: '', maxlength: 250 },
     heading: { type: String, trim: true, default: '', maxlength: 200 },
     subheading: { type: String, trim: true, default: '', maxlength: 300 },
     ctaLabel: { type: String, trim: true, default: '', maxlength: 60 },
@@ -50,6 +54,11 @@ export const cardSchema = new mongoose.Schema(
     badge: { type: String, trim: true, default: '', maxlength: 40 },
     ctaLabel: { type: String, trim: true, default: '', maxlength: 60 },
     ctaUrl: urlField(),
+    // Marks a card for accent styling (e.g. a category grid with one tile
+    // called out in a different color) — same convention as pricingPlan's
+    // `highlighted`. Not exclusive/enforced: which card(s) end up styled is a
+    // frontend rendering choice, this just flags editor intent.
+    highlighted: { type: Boolean, default: false },
   },
   { _id: true },
 )
@@ -65,9 +74,9 @@ export const tabSchema = new mongoose.Schema(
   { _id: true },
 )
 
-// Shared by Accordion and FAQ sections — both are "a list of expandable
+// Shared by Accordion and FAQ components — both are "a list of expandable
 // heading+body items"; FAQ is that same shape with question/answer framing,
-// not a structurally different component. See constants/pageSectionTypes.js.
+// not a structurally different component. See constants/pageComponentTypes.js.
 export const accordionItemSchema = new mongoose.Schema(
   {
     heading: { type: String, trim: true, default: '', maxlength: 200 },
@@ -78,7 +87,7 @@ export const accordionItemSchema = new mongoose.Schema(
 
 // One rotating item in a Carousel — deliberately generic (image + caption +
 // optional link) so it can carry photos, video thumbnails, or promo tiles;
-// a Carousel of actual video embeds should use the Video section instead.
+// a Carousel of actual video embeds should use the Video component instead.
 export const carouselItemSchema = new mongoose.Schema(
   {
     image: urlField(),
@@ -105,7 +114,7 @@ export const pricingPlanSchema = new mongoose.Schema(
     },
     ctaLabel: { type: String, trim: true, default: '', maxlength: 60 },
     ctaUrl: urlField(),
-    // Visually marks the recommended/featured plan — at most one per section
+    // Visually marks the recommended/featured plan — at most one per component
     // is a UI convention, not a data-integrity rule, so it's not enforced here.
     highlighted: { type: Boolean, default: false },
   },
@@ -149,9 +158,9 @@ export const teamMemberSchema = new mongoose.Schema(
   { _id: true },
 )
 
-// Shared by Quotation, Testimonial, and Review sections — all three are "a
+// Shared by Quotation, Testimonial, and Review components — all three are "a
 // quote plus attribution," optionally rated. Splitting them into three
-// section *types* gives editors the specific, clearly-labeled component they
+// component *types* gives editors the specific, clearly-labeled component they
 // expect to pick from; giving each an identical-but-separately-maintained
 // schema would just be duplication for no behavioral difference. `rating` is
 // meaningful for Review and harmlessly unused by the other two.
@@ -175,7 +184,7 @@ export const chartDataSeriesSchema = new mongoose.Schema(
   { _id: false },
 )
 
-// A Chart section always holds exactly one of these (see PAGE_SECTION_LAYOUTS)
+// A Chart component always holds exactly one of these (see PAGE_COMPONENT_LAYOUTS)
 // — the chart itself is the "element"; series are its sub-structure, not
 // separate array items, since they must all share one set of labels/axis.
 export const chartDataSchema = new mongoose.Schema(
@@ -221,7 +230,7 @@ export const galleryItemSchema = new mongoose.Schema(
   { _id: true },
 )
 
-// A CTA section always holds exactly one of these (see PAGE_SECTION_LAYOUTS)
+// A CTA component always holds exactly one of these (see PAGE_COMPONENT_LAYOUTS)
 // — a text-led prompt (e.g. "Subscribe to our newsletter"), as opposed to
 // Banner's image-led promo block. A secondary link is optional (e.g.
 // "Get started" + "Learn more").
@@ -259,7 +268,7 @@ export const timelineItemSchema = new mongoose.Schema(
   { _id: true },
 )
 
-// A Map section always holds exactly one of these (see PAGE_SECTION_LAYOUTS).
+// A Map component always holds exactly one of these (see PAGE_COMPONENT_LAYOUTS).
 // Either `embedUrl` (a pasted Google/Apple Maps embed link — the common case)
 // or `latitude`/`longitude`/`zoom` may be filled in; when both are present a
 // future public renderer should prefer `embedUrl`, since that's what an
@@ -291,6 +300,33 @@ export const portfolioItemSchema = new mongoose.Schema(
   { _id: true },
 )
 
+// A Feature component always holds exactly one of these (see PAGE_COMPONENT_LAYOUTS)
+// — an image-led "about/why us" block: a photo, a heading with an optional
+// accent-colored trailing phrase (`highlightText`, e.g. "...around the WORLD"),
+// a description, a short checklist (`items`, styled with a check icon by the
+// renderer — plain strings here, same shape as pricingPlan's `features`), and
+// an optional floating badge graphic (e.g. an award seal).
+export const featureSchema = new mongoose.Schema(
+  {
+    image: urlField(),
+    imageAlt: { type: String, trim: true, default: '', maxlength: 250 },
+    heading: { type: String, trim: true, default: '', maxlength: 200 },
+    highlightText: { type: String, trim: true, default: '', maxlength: 100 },
+    description: { type: String, trim: true, default: '', maxlength: 600 },
+    items: {
+      type: [{ type: String, trim: true, maxlength: 200 }],
+      default: [],
+      validate: {
+        validator: (arr) => arr.length <= 12,
+        message: 'A feature section may list at most 12 items',
+      },
+    },
+    badgeImage: urlField(),
+    badgeImageAlt: { type: String, trim: true, default: '', maxlength: 250 },
+  },
+  { _id: true },
+)
+
 // Attaches every page element discriminator to the given array-of-elements
 // path. Call once, right after the owning schema (page/Section.js) declares
 // its `elements` field — same convention as attachElementDiscriminators in
@@ -316,4 +352,7 @@ export function attachPageElementDiscriminators(elementsPath) {
   elementsPath.discriminator(PAGE_ELEMENT_TYPES.TIMELINE_ITEM, timelineItemSchema)
   elementsPath.discriminator(PAGE_ELEMENT_TYPES.MAP, mapSchema)
   elementsPath.discriminator(PAGE_ELEMENT_TYPES.PORTFOLIO_ITEM, portfolioItemSchema)
+  elementsPath.discriminator(PAGE_ELEMENT_TYPES.FEATURE, featureSchema)
+  elementsPath.discriminator(PAGE_ELEMENT_TYPES.HEADING, headingSchema)
+  elementsPath.discriminator(PAGE_ELEMENT_TYPES.LINK, linkSchema)
 }

@@ -17,7 +17,7 @@ export default function StatItemElementEditor({
         <TextField label="Value" required value={element.value} onChange={(value) => onChange({ ...element, value })} placeholder="e.g. 10K+" />
         <TextField label="Label" required value={element.label} onChange={(label) => onChange({ ...element, label })} placeholder="e.g. Happy customers" />
       </div>
-      <ImageUploadField applicationId={applicationId} url={element.icon} onUploaded={(icon) => onChange({ ...element, icon })} />
+      <ImageUploadField domain="page" applicationId={applicationId} url={element.icon} onUploaded={(icon) => onChange({ ...element, icon })} />
     </div>
   )
 }

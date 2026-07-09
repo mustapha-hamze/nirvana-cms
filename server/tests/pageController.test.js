@@ -86,7 +86,10 @@ function mockUser(applications = ["app-1"], role = "WebSiteAdmin") {
   };
 }
 
-const validCardsSection = {
+// A section is now a generic container: `{ title, components: [...] }` where
+// each component is the old `{type, elements}` shape (see
+// models/page/Section.js). validCardsComponent below is one such component.
+const validCardsComponent = {
   type: "cards",
   elements: [
     { elementType: "card", title: "One" },
@@ -103,7 +106,7 @@ describe("pageController", () => {
   });
 
   describe("createPage — section validation", () => {
-    test("rejects a section with an unknown type", async () => {
+    test("rejects a component with an unknown type", async () => {
       Application.exists.mockResolvedValue(true);
       const res = mockResponse();
 
@@ -111,7 +114,9 @@ describe("pageController", () => {
         {
           body: {
             application: "app-1",
-            details: [{ langKey: "en", title: "About", sections: [{ type: "bogus", elements: [] }] }],
+            details: [
+              { langKey: "en", title: "About", sections: [{ title: "S", components: [{ type: "bogus", elements: [] }] }] },
+            ],
           },
           user: mockUser(),
         },
@@ -120,12 +125,12 @@ describe("pageController", () => {
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
-        message: expect.stringContaining("sections[0]: type must be one of"),
+        message: expect.stringContaining("sections[0].components[0]: type must be one of"),
       });
       expect(Page.create).not.toHaveBeenCalled();
     });
 
-    test("rejects a section with fewer elements than its type allows", async () => {
+    test("rejects a component with fewer elements than its type allows", async () => {
       Application.exists.mockResolvedValue(true);
       const res = mockResponse();
 
@@ -137,8 +142,10 @@ describe("pageController", () => {
               {
                 langKey: "en",
                 title: "About",
-                // "steps" requires at least 2 elements (see PAGE_SECTION_LAYOUTS).
-                sections: [{ type: "steps", elements: [{ elementType: "step", title: "Only one" }] }],
+                // "steps" requires at least 2 elements (see PAGE_COMPONENT_LAYOUTS).
+                sections: [
+                  { title: "S", components: [{ type: "steps", elements: [{ elementType: "step", title: "Only one" }] }] },
+                ],
               },
             ],
           },
@@ -154,7 +161,7 @@ describe("pageController", () => {
       expect(Page.create).not.toHaveBeenCalled();
     });
 
-    test("rejects a section containing the wrong element type", async () => {
+    test("rejects a component containing the wrong element type", async () => {
       Application.exists.mockResolvedValue(true);
       const res = mockResponse();
 
@@ -166,7 +173,9 @@ describe("pageController", () => {
               {
                 langKey: "en",
                 title: "About",
-                sections: [{ type: "team", elements: [{ elementType: "card", title: "Not a team member" }] }],
+                sections: [
+                  { title: "S", components: [{ type: "team", elements: [{ elementType: "card", title: "Not a team member" }] }] },
+                ],
               },
             ],
           },
@@ -182,17 +191,18 @@ describe("pageController", () => {
       expect(Page.create).not.toHaveBeenCalled();
     });
 
-    test("creates the page and persists valid sections onto each PageDetails", async () => {
+    test("creates the page and persists valid sections/components onto each PageDetails", async () => {
       Application.exists.mockResolvedValue(true);
       const pageInstance = makePageInstance({});
       Page.create.mockResolvedValue(pageInstance);
       const res = mockResponse();
+      const section = { title: "Our Channels", components: [validCardsComponent] };
 
       await createPage(
         {
           body: {
             application: "app-1",
-            details: [{ langKey: "en", title: "About Us", sections: [validCardsSection] }],
+            details: [{ langKey: "en", title: "About Us", sections: [section] }],
           },
           user: mockUser(),
         },
@@ -202,12 +212,32 @@ describe("pageController", () => {
       expect(Page.create).toHaveBeenCalledWith({ application: "app-1", isHomepage: false });
       expect(PageDetailsCtor).toHaveBeenCalledTimes(1);
       const createdDetail = PageDetailsCtor.mock.results[0].value;
-      expect(createdDetail.sections).toEqual([validCardsSection]);
+      expect(createdDetail.sections).toEqual([section]);
       expect(createdDetail.save).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(201);
     });
 
-    test("rejects a statistics section below its minimum of 2 elements", async () => {
+    test("accepts a section with an empty components array (freshly added, not yet filled in)", async () => {
+      Application.exists.mockResolvedValue(true);
+      const pageInstance = makePageInstance({});
+      Page.create.mockResolvedValue(pageInstance);
+      const res = mockResponse();
+
+      await createPage(
+        {
+          body: {
+            application: "app-1",
+            details: [{ langKey: "en", title: "About", sections: [{ title: "Empty section", components: [] }] }],
+          },
+          user: mockUser(),
+        },
+        res,
+      );
+
+      expect(res.status).toHaveBeenCalledWith(201);
+    });
+
+    test("rejects a statistics component below its minimum of 2 elements", async () => {
       Application.exists.mockResolvedValue(true);
       const res = mockResponse();
 
@@ -219,7 +249,9 @@ describe("pageController", () => {
               {
                 langKey: "en",
                 title: "About",
-                sections: [{ type: "statistics", elements: [{ elementType: "statItem", value: "10K+" }] }],
+                sections: [
+                  { title: "S", components: [{ type: "statistics", elements: [{ elementType: "statItem", value: "10K+" }] }] },
+                ],
               },
             ],
           },
@@ -235,7 +267,7 @@ describe("pageController", () => {
       expect(Page.create).not.toHaveBeenCalled();
     });
 
-    test("rejects a map section containing the wrong element type", async () => {
+    test("rejects a map component containing the wrong element type", async () => {
       Application.exists.mockResolvedValue(true);
       const res = mockResponse();
 
@@ -247,7 +279,7 @@ describe("pageController", () => {
               {
                 langKey: "en",
                 title: "Contact",
-                sections: [{ type: "map", elements: [{ elementType: "image", url: "" }] }],
+                sections: [{ title: "S", components: [{ type: "map", elements: [{ elementType: "image", url: "" }] }] }],
               },
             ],
           },
@@ -263,16 +295,69 @@ describe("pageController", () => {
       expect(Page.create).not.toHaveBeenCalled();
     });
 
-    test("accepts a valid gallery section mixing image and document items", async () => {
+    test("persists a section title alongside its components", async () => {
+      Application.exists.mockResolvedValue(true);
+      const pageInstance = makePageInstance({});
+      Page.create.mockResolvedValue(pageInstance);
+      const res = mockResponse();
+      const titledSection = { title: "Our Channels", components: [validCardsComponent] };
+
+      await createPage(
+        {
+          body: {
+            application: "app-1",
+            details: [{ langKey: "en", title: "About", sections: [titledSection] }],
+          },
+          user: mockUser(),
+        },
+        res,
+      );
+
+      const createdDetail = PageDetailsCtor.mock.results[0].value;
+      expect(createdDetail.sections[0].title).toBe("Our Channels");
+      expect(res.status).toHaveBeenCalledWith(201);
+    });
+
+    test("accepts a section with no title, for compatibility with data saved before the field existed", async () => {
+      Application.exists.mockResolvedValue(true);
+      const pageInstance = makePageInstance({});
+      Page.create.mockResolvedValue(pageInstance);
+      const res = mockResponse();
+
+      await createPage(
+        {
+          body: {
+            application: "app-1",
+            // No `title` on this section — validatePageSections never
+            // inspects it, so a titleless section isn't rejected here.
+            // (The '' default itself is applied by Mongoose on the real
+            // Section schema, which this mocked PageDetails doesn't run —
+            // that's covered by the schema, not the controller.)
+            details: [{ langKey: "en", title: "About", sections: [{ components: [validCardsComponent] }] }],
+          },
+          user: mockUser(),
+        },
+        res,
+      );
+
+      expect(res.status).toHaveBeenCalledWith(201);
+    });
+
+    test("accepts a valid gallery component mixing image and document items", async () => {
       Application.exists.mockResolvedValue(true);
       const pageInstance = makePageInstance({});
       Page.create.mockResolvedValue(pageInstance);
       const res = mockResponse();
       const gallerySection = {
-        type: "gallery",
-        elements: [
-          { elementType: "galleryItem", mediaType: "image", url: "https://example.com/a.png" },
-          { elementType: "galleryItem", mediaType: "document", url: "https://example.com/brochure.pdf", fileName: "Brochure.pdf" },
+        title: "Gallery",
+        components: [
+          {
+            type: "gallery",
+            elements: [
+              { elementType: "galleryItem", mediaType: "image", url: "https://example.com/a.png" },
+              { elementType: "galleryItem", mediaType: "document", url: "https://example.com/brochure.pdf", fileName: "Brochure.pdf" },
+            ],
+          },
         ],
       };
 
@@ -290,6 +375,29 @@ describe("pageController", () => {
       const createdDetail = PageDetailsCtor.mock.results[0].value;
       expect(createdDetail.sections).toEqual([gallerySection]);
       expect(res.status).toHaveBeenCalledWith(201);
+    });
+
+    test("rejects a section with more components than the per-section limit", async () => {
+      Application.exists.mockResolvedValue(true);
+      const res = mockResponse();
+      const tooManyComponents = Array.from({ length: 31 }, () => ({ ...validCardsComponent }));
+
+      await createPage(
+        {
+          body: {
+            application: "app-1",
+            details: [{ langKey: "en", title: "About", sections: [{ title: "S", components: tooManyComponents }] }],
+          },
+          user: mockUser(),
+        },
+        res,
+      );
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        message: expect.stringContaining("a section may have at most 30 components"),
+      });
+      expect(Page.create).not.toHaveBeenCalled();
     });
   });
 
