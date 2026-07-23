@@ -18,8 +18,8 @@ jest.unstable_mockModule("../src/models/content/ContentDetails.js", () => ({ def
 jest.unstable_mockModule("../src/models/page/Page.js", () => ({ default: Page }));
 jest.unstable_mockModule("../src/models/page/PageDetails.js", () => ({ default: PageDetails }));
 
+const { resolveFrontendApp } = await import("../src/middleware/resolveFrontendApp.js");
 const {
-  resolveFrontendApp,
   getFrontendSettings,
   getFrontendCategories,
   getFrontendTags,

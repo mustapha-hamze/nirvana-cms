@@ -8,10 +8,8 @@ const STORAGE_ROOT = path.resolve(__dirname, "../storage");
 
 const writtenPaths = [];
 
-async function readSaved(url) {
-  // url is e.g. "/storage/video/page/<uuid>.mp4" — strip the leading
-  // "/storage/" to get a path relative to STORAGE_ROOT.
-  const relative = url.replace(/^\/storage\//, "");
+async function readSaved(folder, domain, filename) {
+  const relative = path.join(folder, domain, filename);
   writtenPaths.push(relative);
   return fs.readFile(path.join(STORAGE_ROOT, relative));
 }
@@ -22,21 +20,21 @@ describe("saveVideo", () => {
     writtenPaths.length = 0;
   });
 
-  test("saves a page video under storage/video/page", async () => {
+  test("returns a bare filename, saved under storage/videos/pages", async () => {
     const buffer = Buffer.from("fake mp4 bytes");
-    const url = await saveVideo(buffer, "video/mp4", "page");
+    const filename = await saveVideo(buffer, "video/mp4", "page");
 
-    expect(url).toMatch(/^\/storage\/video\/page\/.+\.mp4$/);
-    const saved = await readSaved(url);
+    expect(filename).toMatch(/^.+\.mp4$/);
+    const saved = await readSaved("videos", "pages", filename);
     expect(saved.equals(buffer)).toBe(true);
   });
 
-  test("saves a content video under storage/video/content", async () => {
+  test("saves a content video under storage/videos/contents", async () => {
     const buffer = Buffer.from("fake webm bytes");
-    const url = await saveVideo(buffer, "video/webm", "content");
+    const filename = await saveVideo(buffer, "video/webm", "content");
 
-    expect(url).toMatch(/^\/storage\/video\/content\/.+\.webm$/);
-    await readSaved(url); // registers the file for cleanup above
+    expect(filename).toMatch(/^.+\.webm$/);
+    await readSaved("videos", "contents", filename); // registers the file for cleanup above
   });
 });
 
@@ -46,20 +44,20 @@ describe("saveDocument", () => {
     writtenPaths.length = 0;
   });
 
-  test("saves a page document under storage/document/page", async () => {
+  test("returns a bare filename, saved under storage/documents/pages", async () => {
     const buffer = Buffer.from("%PDF-1.4 fake pdf bytes");
-    const url = await saveDocument(buffer, "application/pdf", "page");
+    const filename = await saveDocument(buffer, "application/pdf", "page");
 
-    expect(url).toMatch(/^\/storage\/document\/page\/.+\.pdf$/);
-    const saved = await readSaved(url);
+    expect(filename).toMatch(/^.+\.pdf$/);
+    const saved = await readSaved("documents", "pages", filename);
     expect(saved.equals(buffer)).toBe(true);
   });
 
-  test("saves a content document under storage/document/content", async () => {
+  test("saves a content document under storage/documents/contents", async () => {
     const buffer = Buffer.from("%PDF-1.4 fake pdf bytes");
-    const url = await saveDocument(buffer, "application/pdf", "content");
+    const filename = await saveDocument(buffer, "application/pdf", "content");
 
-    expect(url).toMatch(/^\/storage\/document\/content\/.+\.pdf$/);
-    await readSaved(url); // registers the file for cleanup above
+    expect(filename).toMatch(/^.+\.pdf$/);
+    await readSaved("documents", "contents", filename); // registers the file for cleanup above
   });
 });

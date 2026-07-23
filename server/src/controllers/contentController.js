@@ -1,17 +1,21 @@
 import Content from "../models/content/Content.js";
 import ContentDetails from "../models/content/ContentDetails.js";
 import Application from "../models/application/Application.js";
-import ApplicationSetting from "../models/application/ApplicationSetting.js";
 import Category from "../models/Category.js";
 import Tag from "../models/Tag.js";
 import { userCanAccessApplication, userIsAppAdmin } from "../middleware/auth.js";
 import { LANGUAGE_VALUES } from "../constants/languages.js";
-import { SECTION_TYPE_VALUES, SECTION_LAYOUTS } from "../constants/sectionTypes.js";
 import { slugify } from "../utils/slugify.js";
 import { saveContentImage } from "../utils/contentImageUpload.js";
 import { saveVideo, saveDocument } from "../utils/rawFileUpload.js";
-import { paginateList, SORT_BY_VALUES, SORT_ORDER_VALUES } from "../utils/paginateList.js";
+import { paginateList, normalizePaging, SORT_BY_VALUES, SORT_ORDER_VALUES } from "../utils/paginateList.js";
 import { getPreviewTitle } from "../utils/previewTitle.js";
+import { getAllowedLanguages } from "../services/applicationSettingsService.js";
+import { findAvailableDetailSlug } from "../services/detailSlugService.js";
+import { applyMetadata } from "../services/metadataService.js";
+import { attachDetailsToParents } from "../services/detailAttachmentService.js";
+import { validateIdsInApplication } from "../validators/taxonomyValidator.js";
+import { validateContentSections } from "../validators/sectionValidators.js";
 
 const STATUS_VALUES = ContentDetails.schema.path("status").enumValues;
 
@@ -19,46 +23,8 @@ function isValidStatus(status) {
   return STATUS_VALUES.includes(status);
 }
 
-async function getAllowedLanguages(applicationId) {
-  const settings = await ApplicationSetting.findOne({
-    application: applicationId,
-  }).select("languages");
-  return settings?.languages?.length ? settings.languages : LANGUAGE_VALUES;
-}
-
-// Auto-derived slugs (title unspecified by the caller) disambiguate silently on
-// collision — e.g. "weekly-update" -> "weekly-update-2" — like WordPress/Drupal,
-// since duplicate titles are routine and shouldn't block a content creator.
-// Explicit, caller-provided slugs are NOT resolved here — a collision on those
-// stays a hard validation error, since the creator deliberately chose that slug.
-// Checks soft-deleted rows too: they still occupy the unique index.
-async function findAvailableSlug({ application, langKey, baseSlug }) {
-  let slug = baseSlug;
-  let suffix = 2;
-  while (
-    await ContentDetails.exists({
-      application,
-      langKey,
-      slug,
-      isDeleted: { $in: [true, false] },
-    })
-  ) {
-    slug = `${baseSlug}-${suffix++}`;
-  }
-  return slug;
-}
-
-// categories/tags are shared across every language of a Content item (see model
-// comment), so they must all belong to the same application as the content.
-async function validateIdsInApplication(Model, ids, applicationId) {
-  if (!Array.isArray(ids)) return false;
-  if (ids.length === 0) return true;
-  const uniqueCount = new Set(ids.map(String)).size;
-  const found = await Model.countDocuments({
-    _id: { $in: ids },
-    application: applicationId,
-  });
-  return found === uniqueCount;
+function findAvailableSlug({ application, langKey, baseSlug }) {
+  return findAvailableDetailSlug(ContentDetails, { application, langKey, baseSlug });
 }
 
 function validateCategoryIds(categoryIds, applicationId) {
@@ -69,67 +35,6 @@ function validateTagIds(tagIds, applicationId) {
   return validateIdsInApplication(Tag, tagIds, applicationId);
 }
 
-// Applies only the metadata subfields the caller actually sent, so a partial
-// update (e.g. just `author`) doesn't wipe out keywords/description.
-function applyMetadata(detail, metadata) {
-  if (!metadata || typeof metadata !== "object") return;
-  if (metadata.keywords !== undefined) {
-    detail.metadata.keywords = Array.isArray(metadata.keywords)
-      ? metadata.keywords.map((k) => String(k).trim()).filter(Boolean)
-      : [];
-  }
-  if (metadata.author !== undefined) detail.metadata.author = String(metadata.author).trim();
-  if (metadata.description !== undefined) detail.metadata.description = String(metadata.description).trim();
-}
-
-// Checks the one thing the Mongoose schema can't express: that each section's
-// `type` is a known layout and its `elements` match that layout's slots (see
-// SECTION_LAYOUTS) in count, type, and order. Per-field checks (required/
-// maxlength on text/url/alt/etc.) are intentionally NOT duplicated here — the
-// schema's own discriminators already enforce those and surface as a Mongoose
-// ValidationError on .save().
-function validateSections(sections) {
-  if (sections === undefined) return { valid: true };
-  if (!Array.isArray(sections)) {
-    return { valid: false, message: "sections must be an array" };
-  }
-  if (sections.length > 40) {
-    return { valid: false, message: "A content body may have at most 40 sections" };
-  }
-  for (let i = 0; i < sections.length; i++) {
-    const section = sections[i];
-    const layout = SECTION_LAYOUTS[section?.type];
-    if (!layout) {
-      return {
-        valid: false,
-        message: `sections[${i}]: type must be one of: ${SECTION_TYPE_VALUES.join(", ")}`,
-      };
-    }
-    const elements = Array.isArray(section.elements) ? section.elements : [];
-    const expectedCount = layout.slots.reduce((sum, slot) => sum + slot.count, 0);
-    if (elements.length !== expectedCount) {
-      return {
-        valid: false,
-        message: `sections[${i}] (${section.type}) must contain exactly ${expectedCount} element(s)`,
-      };
-    }
-    let cursor = 0;
-    for (const slot of layout.slots) {
-      for (let s = 0; s < slot.count; s++) {
-        const element = elements[cursor];
-        if (!slot.elementTypes.includes(element?.elementType)) {
-          return {
-            valid: false,
-            message: `sections[${i}] (${section.type}): element at position ${cursor} must be one of: ${slot.elementTypes.join(", ")}`,
-          };
-        }
-        cursor++;
-      }
-    }
-  }
-  return { valid: true };
-}
-
 // Only replaces `sections` when the caller actually sent it, matching
 // applyMetadata's partial-update idiom. Mongoose casts each plain object into
 // the right element discriminator via its `elementType` key automatically.
@@ -137,25 +42,8 @@ function applySections(detail, sections) {
   if (sections !== undefined) detail.sections = sections;
 }
 
-async function attachDetails(contents, { langKey, status } = {}) {
-  const contentIds = contents.map((c) => c._id);
-  const filter = { content: { $in: contentIds } };
-  if (langKey) filter.langKey = langKey;
-  if (status) filter.status = status;
-
-  const details = await ContentDetails.find(filter).sort({ langKey: 1 });
-
-  const byContentId = new Map();
-  for (const detail of details) {
-    const key = detail.content.toString();
-    if (!byContentId.has(key)) byContentId.set(key, []);
-    byContentId.get(key).push(detail);
-  }
-
-  return contents.map((c) => ({
-    ...c.toObject(),
-    details: byContentId.get(c._id.toString()) ?? [],
-  }));
+function attachDetails(contents, { application, langKey, status } = {}) {
+  return attachDetailsToParents(ContentDetails, "content", contents, { application, langKey, status });
 }
 
 export async function getContents(req, res) {
@@ -187,8 +75,11 @@ export async function getContents(req, res) {
 
   const filter = { application };
   // status/langKey live on ContentDetails, so resolve matching Content ids first.
+  // `application` is included even though the ids are re-filtered by it via
+  // `filter` below — ContentDetails denormalizes `application` specifically
+  // so this lookup isn't a status/langKey scan across every application.
   if (status || langKey) {
-    const detailFilter = {};
+    const detailFilter = { application };
     if (status) detailFilter.status = status;
     if (langKey) detailFilter.langKey = langKey;
     filter._id = {
@@ -196,14 +87,24 @@ export async function getContents(req, res) {
     };
   }
 
-  const contents = await Content.find(filter)
-    .sort({ createdAt: -1 })
-    .populate("categories", "translations parentId")
-    .populate("tags", "translations");
-  const withDetails = await attachDetails(contents, { langKey, status });
+  res.json(await listContents(filter, { application, langKey, status, search, sortBy, sortOrder, page, limit }));
+}
 
-  res.json(
-    paginateList(withDetails, {
+// `title` isn't a field on Content itself (it lives per-language on
+// ContentDetails), so a title search/sort can't be expressed as a plain
+// Mongo filter/sort without an aggregation join — for that path we still
+// fetch every matching content item and paginate in memory (paginateList),
+// same as before. Otherwise (the common case: no search, default or
+// createdAt sort) skip/limit/sort go straight to MongoDB, so a large
+// application's content list no longer pulls every row just to show one page.
+async function listContents(filter, { application, langKey, status, search, sortBy, sortOrder, page, limit }) {
+  if (search || sortBy === "title") {
+    const contents = await Content.find(filter)
+      .sort({ createdAt: -1 })
+      .populate("categories", "translations parentId")
+      .populate("tags", "translations");
+    const withDetails = await attachDetails(contents, { application, langKey, status });
+    return paginateList(withDetails, {
       idOf: (c) => c._id.toString(),
       titleOf: (c) => getPreviewTitle(c.details),
       createdAtOf: (c) => c.createdAt,
@@ -212,8 +113,23 @@ export async function getContents(req, res) {
       sortOrder,
       page,
       limit,
-    }),
-  );
+    });
+  }
+
+  const direction = sortOrder === "asc" ? 1 : -1;
+  const { page: effectivePage, limit: effectiveLimit } = normalizePaging(page, limit);
+
+  const total = await Content.countDocuments(filter);
+  const totalPages = Math.max(1, Math.ceil(total / effectiveLimit));
+  const contents = await Content.find(filter)
+    .sort({ createdAt: direction })
+    .skip((effectivePage - 1) * effectiveLimit)
+    .limit(effectiveLimit)
+    .populate("categories", "translations parentId")
+    .populate("tags", "translations");
+  const items = await attachDetails(contents, { application, langKey, status });
+
+  return { items, total, page: effectivePage, limit: effectiveLimit, totalPages };
 }
 
 export async function getContent(req, res) {
@@ -294,7 +210,7 @@ export async function createContent(req, res) {
         message: "Only a SuperAdmin or WebSite Admin can set content status to " + d.status,
       });
     }
-    const sectionsCheck = validateSections(d.sections);
+    const sectionsCheck = validateContentSections(d.sections);
     if (!sectionsCheck.valid) {
       return res.status(400).json({ message: sectionsCheck.message });
     }
@@ -403,7 +319,7 @@ export async function upsertContentDetails(req, res) {
       .status(400)
       .json({ message: `status must be one of: ${STATUS_VALUES.join(", ")}` });
   }
-  const sectionsCheck = validateSections(sections);
+  const sectionsCheck = validateContentSections(sections);
   if (!sectionsCheck.valid) {
     return res.status(400).json({ message: sectionsCheck.message });
   }
@@ -505,10 +421,9 @@ export async function deleteContentDetails(req, res) {
 // Used for image/imageGallery elements in a content body. Not scoped under a
 // specific Content id — the image may be uploaded before the content item
 // itself has ever been saved (e.g. mid-way through the "Create Content" form).
-// Returns an absolute URL (not a relative /storage path) since image/link/video
-// elements are validated against ^https?:// and, more importantly, so any
-// consuming frontend (a public site on a different domain than this API) can
-// use the URL as-is with no extra base-URL configuration of its own.
+// Returns just the bare filename (not a URL) — that's what gets stored in
+// the database; the admin panel reconstructs a displayable URL itself from
+// {kind: 'images', domain: 'content', filename} (client/src/utils/mediaUrl.ts).
 export async function uploadContentImage(req, res) {
   const { application } = req.body;
   if (!application)
@@ -519,9 +434,8 @@ export async function uploadContentImage(req, res) {
   if (!req.file)
     return res.status(400).json({ message: "image is required" });
 
-  const relativePath = await saveContentImage(req.file.buffer, req.file.mimetype);
-  const url = `${req.protocol}://${req.get("host")}${relativePath}`;
-  res.status(201).json({ url });
+  const filename = await saveContentImage(req.file.buffer, req.file.mimetype);
+  res.status(201).json({ filename });
 }
 
 // Self-hosted video upload for content's videoEmbed elements — an
@@ -537,9 +451,8 @@ export async function uploadContentVideo(req, res) {
   if (!req.file)
     return res.status(400).json({ message: "video is required" });
 
-  const relativePath = await saveVideo(req.file.buffer, req.file.mimetype, "content");
-  const url = `${req.protocol}://${req.get("host")}${relativePath}`;
-  res.status(201).json({ url });
+  const filename = await saveVideo(req.file.buffer, req.file.mimetype, "content");
+  res.status(201).json({ filename });
 }
 
 // No content element type consumes this yet (content has no document-bearing
@@ -555,7 +468,6 @@ export async function uploadContentDocument(req, res) {
   if (!req.file)
     return res.status(400).json({ message: "document is required" });
 
-  const relativePath = await saveDocument(req.file.buffer, req.file.mimetype, "content");
-  const url = `${req.protocol}://${req.get("host")}${relativePath}`;
-  res.status(201).json({ url });
+  const filename = await saveDocument(req.file.buffer, req.file.mimetype, "content");
+  res.status(201).json({ filename });
 }

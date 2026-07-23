@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { theme } from '../../theme'
 import { uploadContentImage, uploadPageImage } from '../../api/client'
+import { resolveMediaUrl } from '../../utils/mediaUrl'
 
 const MAX_BYTES = 2 * 1024 * 1024
 
@@ -36,8 +37,11 @@ export default function ImageUploadField({
     setUploading(true)
     try {
       const upload = domain === 'page' ? uploadPageImage : uploadContentImage
-      const { url: uploadedUrl } = await upload(applicationId, file)
-      onUploaded(uploadedUrl)
+      // `url` prop/onUploaded value is really "whatever's stored" — a bare
+      // filename for a fresh upload here, or (for existing data) a full URL;
+      // resolveMediaUrl below is what turns either into something <img> can load.
+      const { filename } = await upload(applicationId, file)
+      onUploaded(filename)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed')
     } finally {
@@ -70,7 +74,7 @@ export default function ImageUploadField({
         // Keyed by url so a fresh <img> mounts per upload — otherwise a
         // previous broken-image load's hidden state would stick around.
         <div className="mt-2 rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.inputBorder}` }}>
-          <img key={url} src={url} alt="" className="w-full max-h-48 object-cover" />
+          <img key={url} src={resolveMediaUrl('images', domain, url)} alt="" className="w-full max-h-48 object-cover" />
         </div>
       )}
     </div>

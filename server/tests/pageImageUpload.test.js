@@ -5,14 +5,13 @@ import { fileURLToPath } from "url";
 import { savePageImage } from "../src/utils/pageImageUpload.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const STORAGE_ROOT = path.resolve(__dirname, "../storage/images/page");
+const STORAGE_ROOT = path.resolve(__dirname, "../storage/images/pages");
 
 // Same isolation convention as contentImageUpload.test.js — track only the
 // files this test file writes so cleanup never touches unrelated uploads.
 const writtenFilenames = [];
 
-async function readSaved(url) {
-  const filename = url.split("/").pop();
+async function readSaved(filename) {
   writtenFilenames.push(filename);
   return fs.readFile(path.join(STORAGE_ROOT, filename));
 }
@@ -23,17 +22,17 @@ describe("savePageImage", () => {
     writtenFilenames.length = 0;
   });
 
-  test("saves under storage/images/page, not storage/images/content", async () => {
+  test("returns a bare filename, saved under storage/images/pages not storage/images/contents", async () => {
     const small = await sharp({
       create: { width: 100, height: 80, channels: 3, background: "#ffffff" },
     })
       .jpeg()
       .toBuffer();
 
-    const url = await savePageImage(small, "image/jpeg");
+    const filename = await savePageImage(small, "image/jpeg");
 
-    expect(url).toMatch(/^\/storage\/images\/page\//);
-    await readSaved(url); // confirms the file actually landed there
+    expect(filename).not.toMatch(/[/\\]/);
+    await readSaved(filename); // confirms the file actually landed under storage/images/pages
   });
 
   test("downscales an oversized image to the max dimension and shrinks its size", async () => {
@@ -43,8 +42,8 @@ describe("savePageImage", () => {
       .png()
       .toBuffer();
 
-    const url = await savePageImage(oversized, "image/png");
-    const saved = await readSaved(url);
+    const filename = await savePageImage(oversized, "image/png");
+    const saved = await readSaved(filename);
     const metadata = await sharp(saved).metadata();
 
     expect(metadata.width).toBe(2000);

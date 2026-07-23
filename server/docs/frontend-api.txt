@@ -70,6 +70,50 @@ If sortBy/sortOrder is given a value outside the allowed set, the request
 fails with 400 and a message listing the allowed values.
 
 
+MEDIA FILE URLS  (images, videos, documents referenced in content/page bodies)
+--------------------------------------------------------------------------------
+Any "url"-shaped field inside a content item's or page's body (image.url,
+videoEmbed.url, card.image, banner.logo, galleryItem.url, and so on — see
+CONTENT BODY SECTIONS / PAGE LAYOUT SECTIONS below for the full field lists)
+holds ONE of two things:
+
+  1. An absolute http(s) URL — an editor pasted an external link (e.g. a
+     YouTube URL for a video embed). Use it as-is.
+
+  2. A bare filename (e.g. "3f9e2b1a-6c4d-4e2a-9b1a-2c3d4e5f6a7b.png") — an
+     editor uploaded a file through the admin panel's own upload endpoints
+     (admin-only, not part of this public API). THIS API RETURNS THAT RAW
+     FILENAME AS-IS — it does not resolve it into a fetchable URL for you.
+     Detect this case by checking for the absence of an "http://" or
+     "https://" prefix.
+
+To turn a bare filename into a URL you can fetch, apply this pattern
+yourself, matching the server's on-disk storage layout:
+
+  {server origin} + /storage/{images|videos|documents}/{contents|pages}/{filename}
+
+  - The FIRST path segment (images/videos/documents) matches the kind of
+    field you're looking at — an image.url or card.image filename lives
+    under images/, a videoEmbed.url filename under videos/, a
+    galleryItem.url filename for mediaType "document" under documents/.
+  - The SECOND path segment is "contents" for anything returned from a
+    content item (#5 below) and "pages" for anything returned from a page
+    (#7 below) — it matches which endpoint you fetched the field from, not
+    anything present in the field value itself.
+
+Example: a page's banner.logo field comes back as "a1b2c3d4-....png" ->
+  http://localhost:5001/storage/images/pages/a1b2c3d4-....png
+
+This is a known v1 gap: this API does not yet resolve filenames to full URLs
+server-side, so every consumer must apply the convention above itself. It
+may be addressed in a future version — check back if you're implementing
+against this today.
+
+NOTE: this does NOT apply to `GET /settings`'s "logo" field (#1 below) —
+that's the application's own branding logo, uploaded through a separate,
+unrelated system, and is always returned as a full absolute URL already.
+
+
 ================================================================================
  ENDPOINTS
 ================================================================================
@@ -170,7 +214,7 @@ does not appear — it is not an error.
 Response 200 (paginated envelope, see above). Each item in `items`:
 {
   "id": "64f0c2...",             // Mongo id of the Content record
-  "slug": "how-to-brew-coffee",  // per-language slug — use this to fetch the full item (see #6)
+  "slug": "how-to-brew-coffee",  // per-language slug — use this to fetch the full item (see #5)
   "title": "How to Brew Coffee",
   "headline": "A quick guide for beginners",
   "abstract": "Short teaser text shown in listing/cards.",
@@ -184,7 +228,7 @@ Response 200 (paginated envelope, see above). Each item in `items`:
 }
 
 Note: this summary shape does NOT include the article body (`sections`) or
-SEO `metadata` — fetch the single-item endpoint (#6) for those.
+SEO `metadata` — fetch the single-item endpoint (#5) for those.
 
 Examples:
   # Contents in category "news", newest first, page 1
@@ -329,6 +373,10 @@ which of these it is):
   videoEmbed     { url: string, caption: string }
   link           { url: string, label: string, newTab: boolean }
 
+NOTE on "url"-shaped fields (image.url, videoEmbed.url, link.url, ...): see
+MEDIA FILE URLS above — each may be a full external URL or a bare uploaded
+filename you need to resolve yourself (domain segment: "contents").
+
 
 ================================================================================
  PAGE LAYOUT SECTIONS  (returned by #7's `sections` array)
@@ -340,7 +388,9 @@ Slider followed by a Cards block, both in one section):
 
 {
   "title": "About us",              // section's admin-facing label — also useful
-                                     // as a heading/aria-label when rendering
+                                     // as a heading/aria-label when rendering.
+                                     // NOT required editor-side — can be "" if
+                                     // never set; don't render an empty heading.
   "isVisible": true,
   "settings": {
     "backgroundColor": "",           // free-form CSS color, or ""
@@ -350,7 +400,7 @@ Slider followed by a Cards block, both in one section):
   },
   "components": [
     {
-      "type": "<one of the 25 component types below>",
+      "type": "<one of the 26 component types below>",
       "elements": [ <a homogeneous list of one element type, see below> ]
     }
   ]
@@ -396,6 +446,9 @@ Component types, the ONE element type each holds, and how many items:
   feature      1      feature
   heading      1      heading            (primitive — a standalone H1-H6)
   link         1      link               (primitive — a standalone link/button)
+
+NOTE: image/logo/photo/icon/video/document fields below have the same
+caveat — see MEDIA FILE URLS above (domain segment for pages: "pages").
 
 Element shapes:
 

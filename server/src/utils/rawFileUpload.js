@@ -1,13 +1,14 @@
 // Shared video/document upload plumbing — unlike images (imageStorage.js),
 // these are stored as-is with no processing, just validated and written to
-// storage/{video|document}/{domain}. One multer instance and one save
-// function per kind, reused by both the content and page domains (only the
-// destination subfolder varies).
+// storage/{videos|documents}/{contents|pages}. One multer instance and one
+// save function per kind, reused by both the content and page domains (only
+// the destination subfolder varies — see DOMAIN_FOLDER).
 import multer from 'multer'
 import path from 'path'
 import fs from 'fs/promises'
 import crypto from 'crypto'
 import { fileURLToPath } from 'url'
+import { DOMAIN_FOLDER } from './mediaDomain.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const STORAGE_ROOT = path.resolve(__dirname, '../../storage')
@@ -30,7 +31,7 @@ const DOCUMENT_EXTENSION_BY_MIME = {
 const KIND_CONFIG = {
   video: {
     fieldName: 'video',
-    folder: 'video',
+    folder: 'videos',
     extensionByMime: VIDEO_EXTENSION_BY_MIME,
     maxBytes: VIDEO_MAX_BYTES,
     typeErrorMessage: 'Video must be MP4, WebM, or MOV',
@@ -38,7 +39,7 @@ const KIND_CONFIG = {
   },
   document: {
     fieldName: 'document',
-    folder: 'document',
+    folder: 'documents',
     extensionByMime: DOCUMENT_EXTENSION_BY_MIME,
     maxBytes: DOCUMENT_MAX_BYTES,
     typeErrorMessage: 'Document must be PDF, DOC, or DOCX',
@@ -78,13 +79,19 @@ export const documentUploadMiddleware = buildUploadMiddleware('document')
 // domain: 'content' | 'page'. No content validation beyond mimetype
 // whitelisting (unlike images, there's no equivalent of re-encoding/resizing
 // a video or document) — the buffer is written to disk as-is.
+//
+// Returns just the bare filename, not a path/URL — that's what's stored in
+// the database (see models/content/Elements.js's urlField). The admin
+// panel reconstructs a displayable URL from {kind, domain, filename} itself
+// (client/src/utils/mediaUrl.ts), since it already knows kind/domain from
+// which upload field triggered the request.
 async function saveRawFile(kind, buffer, mimetype, domain) {
   const config = KIND_CONFIG[kind]
   const filename = `${crypto.randomUUID()}${config.extensionByMime[mimetype] ?? ''}`
-  const dir = path.join(STORAGE_ROOT, config.folder, domain)
+  const dir = path.join(STORAGE_ROOT, config.folder, DOMAIN_FOLDER[domain])
   await fs.mkdir(dir, { recursive: true })
   await fs.writeFile(path.join(dir, filename), buffer)
-  return `/storage/${config.folder}/${domain}/${filename}`
+  return filename
 }
 
 export function saveVideo(buffer, mimetype, domain) {

@@ -1,10 +1,9 @@
 import Category from "../models/Category.js";
 import Application from "../models/application/Application.js";
-import ApplicationSetting from "../models/application/ApplicationSetting.js";
 import { userCanAccessApplication } from "../middleware/auth.js";
 import { generatePublicId } from "../utils/publicId.js";
 import { slugify } from "../utils/slugify.js";
-import { LANGUAGE_VALUES } from "../constants/languages.js";
+import { getAllowedLanguages } from "../services/applicationSettingsService.js";
 
 const STATUS_VALUES = Category.schema.path("status").enumValues;
 const MAX_PUBLIC_ID_ATTEMPTS = 5;
@@ -24,13 +23,6 @@ async function createCategoryWithPublicId(data) {
 
 function isValidStatus(status) {
   return STATUS_VALUES.includes(status);
-}
-
-async function getAllowedLanguages(applicationId) {
-  const settings = await ApplicationSetting.findOne({
-    application: applicationId,
-  }).select("languages");
-  return settings?.languages?.length ? settings.languages : LANGUAGE_VALUES;
 }
 
 // Auto-derived slugs disambiguate silently on collision — e.g. "sport" ->

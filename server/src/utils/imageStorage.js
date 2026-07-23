@@ -4,6 +4,7 @@ import path from 'path'
 import fs from 'fs/promises'
 import crypto from 'crypto'
 import { fileURLToPath } from 'url'
+import { DOMAIN_FOLDER } from './mediaDomain.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const STORAGE_ROOT = path.resolve(__dirname, '../../storage/images')
@@ -77,8 +78,15 @@ function encodeForMimetype(pipeline, mimetype) {
 // time (e.g. while still filling out the "Create" form), so there's no
 // reliable id to nest under. Filenames are random, so flat storage per domain
 // is fine. `domain` ('content' | 'page') keeps the two editors' uploads in
-// their own storage/images/{domain} folder rather than a shared one, purely
-// so each domain's uploads can be reasoned about/cleaned up independently.
+// their own storage/images/{contents|pages} folder rather than a shared one,
+// purely so each domain's uploads can be reasoned about/cleaned up
+// independently (see DOMAIN_FOLDER for the singular->plural folder mapping).
+//
+// Returns just the bare filename, not a path/URL — that's what's stored in
+// the database (see models/content/Elements.js's urlField). The admin panel
+// reconstructs a displayable URL from {domain, filename} itself
+// (client/src/utils/mediaUrl.ts), since it already knows the domain from
+// which upload field triggered the request.
 export async function saveImage(buffer, mimetype, domain) {
   // `animated: true` makes sharp read (and later resize/encode) every frame
   // of a GIF instead of just the first — without it, an animated upload would
@@ -102,9 +110,9 @@ export async function saveImage(buffer, mimetype, domain) {
   const optimized = await encodeForMimetype(pipeline, mimetype)
 
   const filename = `${crypto.randomUUID()}${EXTENSION_BY_MIME[mimetype] ?? ''}`
-  const dir = path.join(STORAGE_ROOT, domain)
+  const dir = path.join(STORAGE_ROOT, DOMAIN_FOLDER[domain])
   await fs.mkdir(dir, { recursive: true })
   await fs.writeFile(path.join(dir, filename), optimized)
 
-  return `/storage/images/${domain}/${filename}`
+  return filename
 }

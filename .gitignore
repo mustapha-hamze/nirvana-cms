@@ -6,7 +6,11 @@ build/
 .DS_Store
 npm-debug.log*
 
-# Uploaded files — keep directory structure, ignore content
-server/storage/images/applications/*/
+# Uploaded files — keep directory structure via .gitkeep, ignore all
+# generated content under server/storage (images/videos/documents, each
+# split into contents|pages|applications subfolders).
+server/storage/**
+!server/storage/**/
+!server/storage/**/.gitkeep
 
 admin.crt.txt

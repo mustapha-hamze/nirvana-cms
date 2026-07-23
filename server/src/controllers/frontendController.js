@@ -1,5 +1,3 @@
-import Application from "../models/application/Application.js";
-import ApplicationSetting from "../models/application/ApplicationSetting.js";
 import Category from "../models/Category.js";
 import Tag from "../models/Tag.js";
 import Content from "../models/content/Content.js";
@@ -8,6 +6,8 @@ import Page from "../models/page/Page.js";
 import PageDetails from "../models/page/PageDetails.js";
 import { LANGUAGE_VALUES } from "../constants/languages.js";
 import { paginateList, SORT_ORDER_VALUES } from "../utils/paginateList.js";
+import { shapeTaxonomyRef, shapeCategory, shapeContent, shapePage } from "../services/frontendShapeService.js";
+import { resolveCategoryRef, resolveTagRef } from "../services/taxonomyResolverService.js";
 
 // "publishedAt", not admin's "createdAt" — a public listing's natural default
 // date sort is when something went live, not when the draft was first created.
@@ -17,133 +17,11 @@ const CONTENT_SORT_BY_VALUES = ["title", "publishedAt"];
 // website of an application — there's no logged-in user on that side, so
 // unlike every other controller here, none of this sits behind `authenticate`.
 // Identity instead comes from the application's own `appKey` (see
-// resolveFrontendApp), the same way a Content Delivery API key scopes a
-// request in headless CMSes generally.
+// middleware/resolveFrontendApp.js), the same way a Content Delivery API key
+// scopes a request in headless CMSes generally.
 
 const OBJECT_ID_RE = /^[0-9a-f]{24}$/i;
 const EMPTY_PAGE = (limit) => ({ items: [], total: 0, page: 1, limit: Number(limit) || 20, totalPages: 1 });
-
-// ── App/language resolution ─────────────────────────────────────────────────
-
-// Resolves `req.frontendApp`/`req.frontendSettings`/`req.langKey` from
-// `?appKey=` (or an `x-app-key` header) + `?lang=`, shared by every route
-// below. An inactive application 404s exactly like a nonexistent one — the
-// public site has no business distinguishing "disabled" from "never existed".
-export async function resolveFrontendApp(req, res, next) {
-  const appKey = req.query.appKey || req.headers["x-app-key"];
-  if (!appKey) return res.status(400).json({ message: "appKey is required" });
-
-  const application = await Application.findOne({ appKey, status: "active" });
-  if (!application) return res.status(404).json({ message: "Application not found" });
-
-  const settings = await ApplicationSetting.findOne({ application: application._id }).select(
-    "domain googleAnalyticsScript languages",
-  );
-  const allowedLanguages = settings?.languages?.length ? settings.languages : LANGUAGE_VALUES;
-
-  const { lang } = req.query;
-  if (lang && !allowedLanguages.includes(lang)) {
-    return res.status(400).json({ message: `lang must be one of: ${allowedLanguages.join(", ")}` });
-  }
-
-  req.frontendApp = application;
-  req.frontendSettings = settings;
-  req.langKey = lang || allowedLanguages[0];
-  next();
-}
-
-// ── Shaping helpers ──────────────────────────────────────────────────────────
-
-// Picks the translation/detail matching the resolved language, falling back
-// to whichever language comes first in LANGUAGE_VALUES order — same
-// fallback convention as utils/previewTitle.js's getPreviewTitle, but
-// returning the whole matched object (title + slug) rather than just a title.
-function pickTranslation(items, langKey) {
-  return (
-    items.find((t) => t.langKey === langKey) ??
-    LANGUAGE_VALUES.map((l) => items.find((t) => t.langKey === l)).find(Boolean) ??
-    null
-  );
-}
-
-// Shared shape for a Tag, or a Category referenced from a Content item —
-// {publicId, title, slug} is all either needs once we're not building the
-// category tree itself (see shapeCategory for that).
-function shapeTaxonomyRef(item, langKey) {
-  const translation = pickTranslation(item.translations, langKey);
-  return { publicId: item.publicId, title: translation?.title ?? "", slug: translation?.slug ?? "" };
-}
-
-function shapeCategory(category, langKey, publicIdByMongoId) {
-  return {
-    ...shapeTaxonomyRef(category, langKey),
-    parentPublicId: category.parentId ? (publicIdByMongoId.get(category.parentId.toString()) ?? null) : null,
-  };
-}
-
-function shapeContent(content, detail, langKey, { detail: includeDetail = false } = {}) {
-  const shaped = {
-    id: content._id,
-    slug: detail.slug,
-    title: detail.title,
-    headline: detail.headline,
-    abstract: detail.abstract,
-    publishedAt: detail.publishedAt,
-    categories: (content.categories ?? [])
-      .filter((c) => c.status === "active")
-      .map((c) => shapeTaxonomyRef(c, langKey)),
-    tags: (content.tags ?? []).filter((t) => t.status === "active").map((t) => shapeTaxonomyRef(t, langKey)),
-  };
-  if (includeDetail) {
-    shaped.metadata = detail.metadata;
-    shaped.sections = detail.sections;
-  }
-  return shaped;
-}
-
-function shapePage(page, detail, { detail: includeDetail = false } = {}) {
-  const shaped = {
-    id: page._id,
-    slug: detail.slug,
-    title: detail.title,
-    isHomepage: page.isHomepage,
-    publishedAt: detail.publishedAt,
-  };
-  if (includeDetail) {
-    shaped.metadata = detail.metadata;
-    // The admin API (pageController) returns every section, including ones
-    // an editor has hidden as a draft — but this is the public content
-    // delivery surface, so anything not meant to render on the live site is
-    // filtered out here rather than leaving that up to every frontend
-    // consumer to remember. `!== false` (not `=== true`) so a section saved
-    // before `isVisible` existed defaults to visible.
-    shaped.sections = (detail.sections ?? []).filter((s) => s.isVisible !== false);
-  }
-  return shaped;
-}
-
-// ── Category/tag ref resolution ─────────────────────────────────────────────
-// Accepts either a Category/Tag's publicId or its per-language slug, so the
-// frontend can link to a category/tag page however it wants — a stable
-// publicId, or a pretty per-language slug — and filter content by the same value.
-
-function resolveCategoryRef(applicationId, ref, langKey) {
-  if (!ref) return null;
-  return Category.findOne({
-    application: applicationId,
-    status: "active",
-    $or: [{ publicId: ref }, { translations: { $elemMatch: { langKey, slug: ref } } }],
-  });
-}
-
-function resolveTagRef(applicationId, ref, langKey) {
-  if (!ref) return null;
-  return Tag.findOne({
-    application: applicationId,
-    status: "active",
-    $or: [{ publicId: ref }, { translations: { $elemMatch: { langKey, slug: ref } } }],
-  });
-}
 
 // ── Settings ─────────────────────────────────────────────────────────────────
 
@@ -196,33 +74,36 @@ export async function getFrontendContents(req, res) {
     return res.status(400).json({ message: `sortOrder must be one of: ${SORT_ORDER_VALUES.join(", ")}` });
   }
 
-  const filter = { application: applicationId };
+  const contentFilter = { application: applicationId };
 
   if (category !== undefined) {
     const categoryDoc = await resolveCategoryRef(applicationId, category, langKey);
     if (!categoryDoc) return res.json(EMPTY_PAGE(limit));
-    filter.categories = categoryDoc._id;
+    contentFilter.categories = categoryDoc._id;
   }
   if (tag !== undefined) {
     const tagDoc = await resolveTagRef(applicationId, tag, langKey);
     if (!tagDoc) return res.json(EMPTY_PAGE(limit));
-    filter.tags = tagDoc._id;
+    contentFilter.tags = tagDoc._id;
   }
 
-  const contents = await Content.find(filter)
-    .sort({ createdAt: -1 })
+  // Start from ContentDetails (indexed on application+langKey, and small once
+  // scoped to "published") rather than from Content — a taxonomy-unfiltered
+  // list would otherwise populate() every Content item in the application,
+  // including drafts and translations that don't even exist in this
+  // language, just to throw most of them away below.
+  const details = await ContentDetails.find({ application: applicationId, langKey, status: "published" });
+  const detailByContentId = new Map(details.map((d) => [d.content.toString(), d]));
+
+  const contents = await Content.find({ ...contentFilter, _id: { $in: [...detailByContentId.keys()] } })
     .populate("categories", "publicId translations status parentId")
     .populate("tags", "publicId translations status");
 
-  const details = await ContentDetails.find({
-    content: { $in: contents.map((c) => c._id) },
-    langKey,
-    status: "published",
-  });
-  const detailByContentId = new Map(details.map((d) => [d.content.toString(), d]));
-
   // A content item not yet published (or not translated) in the requested
-  // language simply doesn't exist from this language's point of view.
+  // language simply doesn't exist from this language's point of view. (The
+  // detail lookup above already excludes these, but Content.find is
+  // re-checked here too since a mismatched _id list would otherwise shape
+  // undefined-detail content silently.)
   const shaped = contents
     .map((c) => {
       const detail = detailByContentId.get(c._id.toString());
@@ -269,13 +150,15 @@ export async function getFrontendPages(req, res) {
   const applicationId = req.frontendApp._id;
   const langKey = req.langKey;
 
-  const pages = await Page.find({ application: applicationId }).sort({ isHomepage: -1, createdAt: 1 });
-  const details = await PageDetails.find({
-    page: { $in: pages.map((p) => p._id) },
-    langKey,
-    status: "published",
-  });
+  // Start from PageDetails, same rationale as getFrontendContents — a page
+  // with no published translation in this language never needs fetching.
+  const details = await PageDetails.find({ application: applicationId, langKey, status: "published" });
   const detailByPageId = new Map(details.map((d) => [d.page.toString(), d]));
+
+  const pages = await Page.find({ application: applicationId, _id: { $in: [...detailByPageId.keys()] } }).sort({
+    isHomepage: -1,
+    createdAt: 1,
+  });
 
   const shaped = pages
     .map((p) => {

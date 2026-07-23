@@ -43,11 +43,13 @@ export async function uploadLogo(applicationId: string, file: File): Promise<{ l
 }
 
 // Shared multipart-upload plumbing for every file-upload endpoint below —
-// each just differs in path and the form field name multer expects.
-// Returns an absolute URL (not a relative /storage path) so it works for any
-// consumer, not just this admin panel — see contentController.js's
-// uploadContentImage for why.
-async function uploadFile(path: string, fieldName: string, applicationId: string, file: File): Promise<{ url: string }> {
+// each just differs in path and the form field name multer expects. Returns
+// just the bare filename the server saved (not a URL) — that's what gets
+// stored in the database; callers reconstruct a displayable URL themselves
+// via utils/mediaUrl.ts's resolveMediaUrl, which they can do because they
+// already know the media kind and domain (they picked which upload* function
+// to call).
+async function uploadFile(path: string, fieldName: string, applicationId: string, file: File): Promise<{ filename: string }> {
   const token = localStorage.getItem('token')
   const form = new FormData()
   form.append('application', applicationId)
@@ -66,30 +68,30 @@ async function uploadFile(path: string, fieldName: string, applicationId: string
 
 // Used by image/imageGallery content-body elements — stored under
 // storage/images/content.
-export function uploadContentImage(applicationId: string, file: File): Promise<{ url: string }> {
+export function uploadContentImage(applicationId: string, file: File): Promise<{ filename: string }> {
   return uploadFile('/content/images', 'image', applicationId, file)
 }
 
 // Self-hosted video for content's videoEmbed elements — stored under
-// storage/video/content.
-export function uploadContentVideo(applicationId: string, file: File): Promise<{ url: string }> {
+// storage/videos/content.
+export function uploadContentVideo(applicationId: string, file: File): Promise<{ filename: string }> {
   return uploadFile('/content/videos', 'video', applicationId, file)
 }
 
 // Used by page section elements (banner, cards, slides, ...) — stored under
 // storage/images/page, kept separate from content's uploads.
-export function uploadPageImage(applicationId: string, file: File): Promise<{ url: string }> {
+export function uploadPageImage(applicationId: string, file: File): Promise<{ filename: string }> {
   return uploadFile('/pages/images', 'image', applicationId, file)
 }
 
 // Self-hosted video for page's videoEmbed/gallery elements — stored under
-// storage/video/page.
-export function uploadPageVideo(applicationId: string, file: File): Promise<{ url: string }> {
+// storage/videos/page.
+export function uploadPageVideo(applicationId: string, file: File): Promise<{ filename: string }> {
   return uploadFile('/pages/videos', 'video', applicationId, file)
 }
 
 // Document upload for page's gallery elements (mediaType: "document") —
-// stored under storage/document/page.
-export function uploadPageDocument(applicationId: string, file: File): Promise<{ url: string }> {
+// stored under storage/documents/page.
+export function uploadPageDocument(applicationId: string, file: File): Promise<{ filename: string }> {
   return uploadFile('/pages/documents', 'document', applicationId, file)
 }

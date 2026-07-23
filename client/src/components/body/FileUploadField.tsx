@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { theme } from '../../theme'
 import { uploadContentVideo, uploadPageVideo, uploadPageDocument } from '../../api/client'
+import { resolveMediaUrl } from '../../utils/mediaUrl'
 
 const KIND_CONFIG = {
   video: {
@@ -55,8 +56,8 @@ export default function FileUploadField({
       // uploadContentDocument client function to pick here — only the
       // three combinations an editor can actually reach.
       const upload = domain === 'content' ? uploadContentVideo : kind === 'video' ? uploadPageVideo : uploadPageDocument
-      const { url: uploadedUrl } = await upload(applicationId, file)
-      onUploaded(uploadedUrl)
+      const { filename } = await upload(applicationId, file)
+      onUploaded(filename)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed')
     } finally {
@@ -88,7 +89,7 @@ export default function FileUploadField({
       )}
       {url && (
         <a
-          href={url}
+          href={resolveMediaUrl(kind === 'video' ? 'videos' : 'documents', domain, url)}
           target="_blank"
           rel="noreferrer"
           className="block text-xs mt-2 truncate underline"

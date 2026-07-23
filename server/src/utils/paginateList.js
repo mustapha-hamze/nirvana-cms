@@ -4,6 +4,16 @@ export const SORT_ORDER_VALUES = Object.freeze(["asc", "desc"]);
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 
+// Shared by paginateList below and by any caller doing its own DB-level
+// skip/limit (see getContents/getPages) — keeps the page/limit clamping
+// rules (and the resulting response envelope's page/limit values) identical
+// whether pagination happens in memory or in the query itself.
+export function normalizePaging(page, limit) {
+  const effectivePage = Math.max(1, Math.trunc(Number(page)) || 1);
+  const effectiveLimit = Math.min(MAX_LIMIT, Math.max(1, Math.trunc(Number(limit)) || DEFAULT_LIMIT));
+  return { page: effectivePage, limit: effectiveLimit };
+}
+
 // Generic search + sort + paginate over an already-fetched array — these
 // admin lists are small-scale (an application's own content/pages/tags, not
 // a public multi-tenant feed), and "title" isn't a plain top-level DB field
@@ -35,8 +45,7 @@ export function paginateList(items, { idOf, titleOf, createdAtOf, search, sortBy
     return (new Date(createdAtOf(a)).getTime() - new Date(createdAtOf(b)).getTime()) * direction;
   });
 
-  const effectivePage = Math.max(1, Math.trunc(Number(page)) || 1);
-  const effectiveLimit = Math.min(MAX_LIMIT, Math.max(1, Math.trunc(Number(limit)) || DEFAULT_LIMIT));
+  const { page: effectivePage, limit: effectiveLimit } = normalizePaging(page, limit);
   const total = sorted.length;
   const totalPages = Math.max(1, Math.ceil(total / effectiveLimit));
   const start = (effectivePage - 1) * effectiveLimit;

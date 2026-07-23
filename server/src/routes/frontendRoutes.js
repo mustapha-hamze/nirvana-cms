@@ -1,6 +1,6 @@
 import { Router } from "express";
+import { resolveFrontendApp } from "../middleware/resolveFrontendApp.js";
 import {
-  resolveFrontendApp,
   getFrontendSettings,
   getFrontendCategories,
   getFrontendTags,

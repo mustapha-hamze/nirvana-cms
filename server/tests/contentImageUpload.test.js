@@ -5,15 +5,14 @@ import { fileURLToPath } from "url";
 import { saveContentImage } from "../src/utils/contentImageUpload.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const STORAGE_ROOT = path.resolve(__dirname, "../storage/images/content");
+const STORAGE_ROOT = path.resolve(__dirname, "../storage/images/contents");
 
 // Tracks exactly the files *this test file* writes, so cleanup can remove
 // only those — never a blanket `readdir`-and-delete-everything, which would
 // also wipe real, unrelated uploads already sitting in shared storage.
 const writtenFilenames = [];
 
-async function readSaved(url) {
-  const filename = url.split("/").pop();
+async function readSaved(filename) {
   writtenFilenames.push(filename);
   return fs.readFile(path.join(STORAGE_ROOT, filename));
 }
@@ -24,6 +23,19 @@ describe("saveContentImage", () => {
     writtenFilenames.length = 0;
   });
 
+  test("returns a bare filename, not a URL or path", async () => {
+    const small = await sharp({
+      create: { width: 100, height: 80, channels: 3, background: "#ffffff" },
+    })
+      .jpeg()
+      .toBuffer();
+
+    const filename = await saveContentImage(small, "image/jpeg");
+
+    expect(filename).not.toMatch(/[/\\]/);
+    await readSaved(filename); // confirms the file actually landed under storage/images/contents
+  });
+
   test("downscales an oversized image to the max dimension and shrinks its size", async () => {
     const oversized = await sharp({
       create: { width: 3000, height: 1500, channels: 3, background: "#336699" },
@@ -31,8 +43,8 @@ describe("saveContentImage", () => {
       .png()
       .toBuffer();
 
-    const url = await saveContentImage(oversized, "image/png");
-    const saved = await readSaved(url);
+    const filename = await saveContentImage(oversized, "image/png");
+    const saved = await readSaved(filename);
     const metadata = await sharp(saved).metadata();
 
     expect(metadata.width).toBe(2000);
@@ -47,8 +59,8 @@ describe("saveContentImage", () => {
       .jpeg()
       .toBuffer();
 
-    const url = await saveContentImage(small, "image/jpeg");
-    const saved = await readSaved(url);
+    const filename = await saveContentImage(small, "image/jpeg");
+    const saved = await readSaved(filename);
     const metadata = await sharp(saved).metadata();
 
     expect(metadata.width).toBe(100);

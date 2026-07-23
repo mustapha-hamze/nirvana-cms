@@ -2,19 +2,26 @@ import mongoose from 'mongoose'
 import { ELEMENT_TYPES, HEADING_LEVELS } from '../../constants/elementTypes.js'
 import { sanitizeRichText } from '../../utils/sanitizeRichText.js'
 
-// Cheap defense-in-depth only — confirms the value is at least an http(s) URL
-// or a root-relative path (e.g. "/channels#series"), the latter so editors can
-// link within a frontend they don't want to hardcode a domain for — the
-// frontend resolves it against its own origin at render time. Real
-// embeddability (e.g. is this actually a YouTube/Vimeo link) is NOT validated
-// here; that's a known v1 gap, consistent with elements storing a plain URL
-// string rather than going through an upload/media pipeline.
-const URL_PATTERN = /^(https?:\/\/\S+|\/\S*)$/
+// Cheap defense-in-depth only — confirms the value is one of:
+//  - an absolute http(s) URL (an external link, e.g. a pasted YouTube URL)
+//  - a root-relative path (e.g. "/channels#series"), so editors can link
+//    within a frontend they don't want to hardcode a domain for — the
+//    frontend resolves it against its own origin at render time
+//  - a bare filename (e.g. "3f9e...-a1.png"), what image/video/document
+//    uploads now store (see utils/imageStorage.js, utils/rawFileUpload.js) —
+//    the admin panel reconstructs a displayable URL from {kind, domain,
+//    filename} itself (client/src/utils/mediaUrl.ts); the public frontend
+//    API returns this raw value as-is (a known v1 gap for uploaded media —
+//    only pasted external URLs resolve directly for public consumers today)
+// Real embeddability (e.g. is this actually a YouTube/Vimeo link) is NOT
+// validated here; that's a known v1 gap, consistent with elements storing a
+// plain string rather than going through full media-pipeline validation.
+const URL_PATTERN = /^(https?:\/\/\S+|\/\S*|[^\s/]+)$/
 
 // Not `required` — a section is allowed to be a half-filled draft (see note
 // on leaf fields below). Skips the pattern check on an empty string so an
 // unfinished field doesn't itself become a validation failure; once there's
-// a value, it must actually look like a URL.
+// a value, it must actually look like a URL or filename.
 // Exported so other element catalogs (e.g. models/page/Elements.js) can build
 // their own url-shaped fields without duplicating the validation pattern.
 export const urlField = (extra = {}) => ({
@@ -23,7 +30,7 @@ export const urlField = (extra = {}) => ({
   default: '',
   validate: {
     validator: (v) => !v || URL_PATTERN.test(v),
-    message: (props) => `${props.value} must be an absolute http(s) URL or a path starting with "/"`,
+    message: (props) => `${props.value} must be an absolute http(s) URL, a path starting with "/", or a filename`,
   },
   ...extra,
 })

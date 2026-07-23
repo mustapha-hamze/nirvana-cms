@@ -1,15 +1,18 @@
 import Page from "../models/page/Page.js";
 import PageDetails from "../models/page/PageDetails.js";
 import Application from "../models/application/Application.js";
-import ApplicationSetting from "../models/application/ApplicationSetting.js";
 import { userCanAccessApplication, userIsAppAdmin } from "../middleware/auth.js";
 import { LANGUAGE_VALUES } from "../constants/languages.js";
-import { PAGE_COMPONENT_TYPE_VALUES, PAGE_COMPONENT_LAYOUTS, MAX_COMPONENTS_PER_SECTION } from "../constants/pageComponentTypes.js";
 import { slugify } from "../utils/slugify.js";
-import { paginateList, SORT_BY_VALUES, SORT_ORDER_VALUES } from "../utils/paginateList.js";
+import { paginateList, normalizePaging, SORT_BY_VALUES, SORT_ORDER_VALUES } from "../utils/paginateList.js";
 import { getPreviewTitle } from "../utils/previewTitle.js";
 import { savePageImage } from "../utils/pageImageUpload.js";
 import { saveVideo, saveDocument } from "../utils/rawFileUpload.js";
+import { getAllowedLanguages } from "../services/applicationSettingsService.js";
+import { findAvailableDetailSlug } from "../services/detailSlugService.js";
+import { applyMetadata } from "../services/metadataService.js";
+import { attachDetailsToParents } from "../services/detailAttachmentService.js";
+import { validatePageSections } from "../validators/sectionValidators.js";
 
 const STATUS_VALUES = PageDetails.schema.path("status").enumValues;
 
@@ -17,97 +20,8 @@ function isValidStatus(status) {
   return STATUS_VALUES.includes(status);
 }
 
-async function getAllowedLanguages(applicationId) {
-  const settings = await ApplicationSetting.findOne({
-    application: applicationId,
-  }).select("languages");
-  return settings?.languages?.length ? settings.languages : LANGUAGE_VALUES;
-}
-
-// Auto-derived slugs (title unspecified by the caller) disambiguate silently on
-// collision — same behavior as content slugs. Checks soft-deleted rows too:
-// they still occupy the unique index.
-async function findAvailableSlug({ application, langKey, baseSlug }) {
-  let slug = baseSlug;
-  let suffix = 2;
-  while (
-    await PageDetails.exists({
-      application,
-      langKey,
-      slug,
-      isDeleted: { $in: [true, false] },
-    })
-  ) {
-    slug = `${baseSlug}-${suffix++}`;
-  }
-  return slug;
-}
-
-// Applies only the metadata subfields the caller actually sent, so a partial
-// update (e.g. just `author`) doesn't wipe out keywords/description.
-function applyMetadata(detail, metadata) {
-  if (!metadata || typeof metadata !== "object") return;
-  if (metadata.keywords !== undefined) {
-    detail.metadata.keywords = Array.isArray(metadata.keywords)
-      ? metadata.keywords.map((k) => String(k).trim()).filter(Boolean)
-      : [];
-  }
-  if (metadata.author !== undefined) detail.metadata.author = String(metadata.author).trim();
-  if (metadata.description !== undefined) detail.metadata.description = String(metadata.description).trim();
-}
-
-// Checks the one thing the Mongoose schema can't express: that each
-// component's `type` is a known page component and its `elements` are all
-// the one element type that component holds, within that type's min/max
-// count (see PAGE_COMPONENT_LAYOUTS). A section itself has no `type` and no
-// min/max — it's a generic container, so an empty `components` array is
-// valid (a freshly added, still-empty section). Per-field checks
-// (maxlength/enum/etc.) are intentionally NOT duplicated here — the schema's
-// own discriminators already enforce those and surface as a Mongoose
-// ValidationError on .save().
-function validatePageSections(sections) {
-  if (sections === undefined) return { valid: true };
-  if (!Array.isArray(sections)) {
-    return { valid: false, message: "sections must be an array" };
-  }
-  if (sections.length > 40) {
-    return { valid: false, message: "A page may have at most 40 sections" };
-  }
-  for (let i = 0; i < sections.length; i++) {
-    const components = Array.isArray(sections[i]?.components) ? sections[i].components : [];
-    if (components.length > MAX_COMPONENTS_PER_SECTION) {
-      return {
-        valid: false,
-        message: `sections[${i}]: a section may have at most ${MAX_COMPONENTS_PER_SECTION} components`,
-      };
-    }
-    for (let j = 0; j < components.length; j++) {
-      const component = components[j];
-      const layout = PAGE_COMPONENT_LAYOUTS[component?.type];
-      if (!layout) {
-        return {
-          valid: false,
-          message: `sections[${i}].components[${j}]: type must be one of: ${PAGE_COMPONENT_TYPE_VALUES.join(", ")}`,
-        };
-      }
-      const elements = Array.isArray(component.elements) ? component.elements : [];
-      if (elements.length < layout.min || elements.length > layout.max) {
-        const range = layout.min === layout.max ? `exactly ${layout.min}` : `between ${layout.min} and ${layout.max}`;
-        return {
-          valid: false,
-          message: `sections[${i}].components[${j}] (${component.type}) must contain ${range} element(s)`,
-        };
-      }
-      const wrongType = elements.find((el) => el?.elementType !== layout.elementType);
-      if (wrongType) {
-        return {
-          valid: false,
-          message: `sections[${i}].components[${j}] (${component.type}): every element must be of type "${layout.elementType}"`,
-        };
-      }
-    }
-  }
-  return { valid: true };
+function findAvailableSlug({ application, langKey, baseSlug }) {
+  return findAvailableDetailSlug(PageDetails, { application, langKey, baseSlug });
 }
 
 // Only replaces `sections` when the caller actually sent it, matching
@@ -129,25 +43,8 @@ async function demoteExistingHomepage(application, keepId) {
   );
 }
 
-async function attachDetails(pages, { langKey, status } = {}) {
-  const pageIds = pages.map((p) => p._id);
-  const filter = { page: { $in: pageIds } };
-  if (langKey) filter.langKey = langKey;
-  if (status) filter.status = status;
-
-  const details = await PageDetails.find(filter).sort({ langKey: 1 });
-
-  const byPageId = new Map();
-  for (const detail of details) {
-    const key = detail.page.toString();
-    if (!byPageId.has(key)) byPageId.set(key, []);
-    byPageId.get(key).push(detail);
-  }
-
-  return pages.map((p) => ({
-    ...p.toObject(),
-    details: byPageId.get(p._id.toString()) ?? [],
-  }));
+function attachDetails(pages, { application, langKey, status } = {}) {
+  return attachDetailsToParents(PageDetails, "page", pages, { application, langKey, status });
 }
 
 export async function getPages(req, res) {
@@ -177,18 +74,30 @@ export async function getPages(req, res) {
 
   const filter = { application };
   // status/langKey live on PageDetails, so resolve matching Page ids first.
+  // `application` is included even though the ids are re-filtered by it via
+  // `filter` below — PageDetails denormalizes `application` specifically so
+  // this lookup isn't a status/langKey scan across every application.
   if (status || langKey) {
-    const detailFilter = {};
+    const detailFilter = { application };
     if (status) detailFilter.status = status;
     if (langKey) detailFilter.langKey = langKey;
     filter._id = { $in: await PageDetails.find(detailFilter).distinct("page") };
   }
 
-  const pages = await Page.find(filter).sort({ isHomepage: -1, createdAt: 1 });
-  const withDetails = await attachDetails(pages, { langKey, status });
+  res.json(await listPages(filter, { application, langKey, status, search, sortBy, sortOrder, page, limit }));
+}
 
-  res.json(
-    paginateList(withDetails, {
+// `title` isn't a field on Page itself (it lives per-language on
+// PageDetails), so a title search/sort can't be expressed as a plain Mongo
+// filter/sort without an aggregation join — for that path every matching
+// page is still fetched and paginated in memory (paginateList), same as
+// before. Otherwise (the common case: no search, default or createdAt sort)
+// skip/limit/sort go straight to MongoDB.
+async function listPages(filter, { application, langKey, status, search, sortBy, sortOrder, page, limit }) {
+  if (search || sortBy === "title") {
+    const pages = await Page.find(filter).sort({ isHomepage: -1, createdAt: 1 });
+    const withDetails = await attachDetails(pages, { application, langKey, status });
+    return paginateList(withDetails, {
       idOf: (p) => p._id.toString(),
       titleOf: (p) => getPreviewTitle(p.details),
       createdAtOf: (p) => p.createdAt,
@@ -197,8 +106,21 @@ export async function getPages(req, res) {
       sortOrder,
       page,
       limit,
-    }),
-  );
+    });
+  }
+
+  const direction = sortOrder === "asc" ? 1 : -1;
+  const { page: effectivePage, limit: effectiveLimit } = normalizePaging(page, limit);
+
+  const total = await Page.countDocuments(filter);
+  const totalPages = Math.max(1, Math.ceil(total / effectiveLimit));
+  const pages = await Page.find(filter)
+    .sort({ createdAt: direction, isHomepage: -1 })
+    .skip((effectivePage - 1) * effectiveLimit)
+    .limit(effectiveLimit);
+  const items = await attachDetails(pages, { application, langKey, status });
+
+  return { items, total, page: effectivePage, limit: effectiveLimit, totalPages };
 }
 
 export async function getPage(req, res) {
@@ -438,7 +360,10 @@ export async function deletePageDetails(req, res) {
 // Used for image elements across page sections (banner, cards, slides, ...).
 // Not scoped under a specific Page id — an image may be uploaded before the
 // page itself has ever been saved (e.g. mid-way through the "Create Page"
-// form). Returns an absolute URL for the same reason as uploadContentImage.
+// form). Returns just the bare filename (not a URL) — that's what gets
+// stored in the database; the admin panel reconstructs a displayable URL
+// itself from {kind: 'images', domain: 'page', filename}
+// (client/src/utils/mediaUrl.ts).
 export async function uploadPageImage(req, res) {
   const { application } = req.body;
   if (!application)
@@ -449,9 +374,8 @@ export async function uploadPageImage(req, res) {
   if (!req.file)
     return res.status(400).json({ message: "image is required" });
 
-  const relativePath = await savePageImage(req.file.buffer, req.file.mimetype);
-  const url = `${req.protocol}://${req.get("host")}${relativePath}`;
-  res.status(201).json({ url });
+  const filename = await savePageImage(req.file.buffer, req.file.mimetype);
+  res.status(201).json({ filename });
 }
 
 // Self-hosted video upload for page's videoEmbed/gallery elements — an
@@ -466,9 +390,8 @@ export async function uploadPageVideo(req, res) {
   if (!req.file)
     return res.status(400).json({ message: "video is required" });
 
-  const relativePath = await saveVideo(req.file.buffer, req.file.mimetype, "page");
-  const url = `${req.protocol}://${req.get("host")}${relativePath}`;
-  res.status(201).json({ url });
+  const filename = await saveVideo(req.file.buffer, req.file.mimetype, "page");
+  res.status(201).json({ filename });
 }
 
 // Document upload for page's gallery elements (mediaType: "document").
@@ -482,7 +405,6 @@ export async function uploadPageDocument(req, res) {
   if (!req.file)
     return res.status(400).json({ message: "document is required" });
 
-  const relativePath = await saveDocument(req.file.buffer, req.file.mimetype, "page");
-  const url = `${req.protocol}://${req.get("host")}${relativePath}`;
-  res.status(201).json({ url });
+  const filename = await saveDocument(req.file.buffer, req.file.mimetype, "page");
+  res.status(201).json({ filename });
 }
