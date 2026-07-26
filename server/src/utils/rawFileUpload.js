@@ -28,6 +28,25 @@ const DOCUMENT_EXTENSION_BY_MIME = {
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
 }
 
+// `file.mimetype` in fileFilter is just the client-supplied Content-Type
+// header — trivially spoofable — and multer's memoryStorage doesn't expose
+// the buffer until after upload, so it can't be checked there. This checks
+// the actual bytes once we have them, before anything is written to disk.
+// .docx is a zip container (PK\x03\x04) like a generic zip, not something we
+// can distinguish from other zip-based formats by magic bytes alone — this
+// still catches a file that isn't a zip/OLE2/box-container at all.
+const MAGIC_BYTES_BY_MIME = {
+  'application/pdf': (buf) => buf.subarray(0, 5).toString('latin1') === '%PDF-',
+  'application/msword': (buf) =>
+    buf.subarray(0, 8).equals(Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])),
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': (buf) =>
+    buf.subarray(0, 4).equals(Buffer.from([0x50, 0x4b, 0x03, 0x04])),
+  'video/mp4': (buf) => buf.subarray(4, 8).toString('latin1') === 'ftyp',
+  'video/quicktime': (buf) =>
+    ['ftyp', 'moov', 'mdat', 'wide', 'skip', 'free'].includes(buf.subarray(4, 8).toString('latin1')),
+  'video/webm': (buf) => buf.subarray(0, 4).equals(Buffer.from([0x1a, 0x45, 0xdf, 0xa3])),
+}
+
 const KIND_CONFIG = {
   video: {
     fieldName: 'video',
@@ -87,6 +106,10 @@ export const documentUploadMiddleware = buildUploadMiddleware('document')
 // which upload field triggered the request.
 async function saveRawFile(kind, buffer, mimetype, domain) {
   const config = KIND_CONFIG[kind]
+  const looksLikeDeclaredType = MAGIC_BYTES_BY_MIME[mimetype]?.(buffer)
+  if (!looksLikeDeclaredType) {
+    throw Object.assign(new Error(config.typeErrorMessage), { status: 400 })
+  }
   const filename = `${crypto.randomUUID()}${config.extensionByMime[mimetype] ?? ''}`
   const dir = path.join(STORAGE_ROOT, config.folder, DOMAIN_FOLDER[domain])
   await fs.mkdir(dir, { recursive: true })

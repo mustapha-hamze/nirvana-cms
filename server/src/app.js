@@ -14,9 +14,13 @@ import frontendRoutes from './routes/frontendRoutes.js'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // Comma-separated list of allowed origins (e.g. "https://admin.example.com,
-// https://example.com"). Unset (the default, including local dev via the
-// Vite proxy) reflects the request's own origin, matching cors()'s previous
-// wide-open default — this only narrows behavior when explicitly configured.
+// https://example.com"). Unset in development (including local dev via the
+// Vite proxy) reflects the request's own origin. In production, leaving it
+// unset is almost always an oversight rather than an intentional choice —
+// fail closed instead of silently reflecting any origin.
+if (process.env.NODE_ENV === 'production' && !process.env.CORS_ORIGIN) {
+  throw new Error('CORS_ORIGIN must be set in production')
+}
 const corsOrigin = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim())
   : true
@@ -35,7 +39,13 @@ export function createApp() {
   app.use(
     '/storage',
     express.static(path.resolve(__dirname, '../storage'), {
-      setHeaders: (res) => res.setHeader('Cache-Control', STORAGE_CACHE_CONTROL),
+      setHeaders: (res) => {
+        res.setHeader('Cache-Control', STORAGE_CACHE_CONTROL)
+        // Stops browsers from MIME-sniffing a served file into a more
+        // dangerous type than the one we stored/served it as (e.g. treating
+        // an uploaded document as HTML and executing embedded script).
+        res.setHeader('X-Content-Type-Options', 'nosniff')
+      },
     }),
   )
 

@@ -65,7 +65,7 @@ describe("categoryController", () => {
     // slug-collision lookups) — dispatch on the query shape: a slug check
     // always includes a `translations` filter, a parent check never does.
     Category.exists.mockImplementation((query) =>
-      query.translations ? Promise.resolve(false) : Promise.resolve({ _id: "parent-1" }),
+      query.translations ? Promise.resolve(false) : Promise.resolve({ _id: "507f1f77bcf86cd799439011" }),
     );
   });
 
@@ -147,7 +147,7 @@ describe("categoryController", () => {
           body: {
             application: "app-1",
             translations: [{ langKey: "en", title: "News" }],
-            parentId: "parent-1",
+            parentId: "507f1f77bcf86cd799439011",
             status: "active",
           },
           user: mockUser(),
@@ -156,11 +156,11 @@ describe("categoryController", () => {
       );
 
       expect(Application.exists).toHaveBeenCalledWith({ _id: "app-1" });
-      expect(Category.exists).toHaveBeenCalledWith({ _id: "parent-1", application: "app-1" });
+      expect(Category.exists).toHaveBeenCalledWith({ _id: "507f1f77bcf86cd799439011", application: "app-1" });
       expect(Category.create).toHaveBeenCalledWith({
         application: "app-1",
         translations: [{ langKey: "en", title: "News", slug: "news" }],
-        parentId: "parent-1",
+        parentId: "507f1f77bcf86cd799439011",
         status: "active",
         publicId: "public-id-1",
       });
@@ -242,7 +242,7 @@ describe("categoryController", () => {
       };
       Category.findById.mockImplementation((id) => {
         if (id === "cat-1") return Promise.resolve(category);
-        if (id === "parent-1") {
+        if (id === "507f1f77bcf86cd799439011") {
           return { select: jest.fn().mockResolvedValue({ parentId: null }) };
         }
         return Promise.resolve(null);
@@ -254,7 +254,7 @@ describe("categoryController", () => {
           params: { id: "cat-1" },
           body: {
             translations: [{ langKey: "en", title: "Updated" }],
-            parentId: "parent-1",
+            parentId: "507f1f77bcf86cd799439011",
             status: "inactive",
           },
           user: mockUser(),
@@ -263,7 +263,7 @@ describe("categoryController", () => {
       );
 
       expect(category.translations).toEqual([{ langKey: "en", title: "Updated", slug: "updated" }]);
-      expect(category.parentId).toBe("parent-1");
+      expect(category.parentId).toBe("507f1f77bcf86cd799439011");
       expect(category.status).toBe("inactive");
       expect(category.save).toHaveBeenCalled();
       expect(res.json).toHaveBeenCalledWith(category);
@@ -301,10 +301,10 @@ describe("categoryController", () => {
         application: "app-1",
         save: jest.fn(),
       };
-      Category.exists.mockResolvedValue({ _id: "parent-1" });
+      Category.exists.mockResolvedValue({ _id: "507f1f77bcf86cd799439011" });
       Category.findById.mockImplementation((id) => {
         if (id === "cat-1") return Promise.resolve(category);
-        if (id === "parent-1") {
+        if (id === "507f1f77bcf86cd799439011") {
           return { select: jest.fn().mockResolvedValue({ parentId: "cat-1" }) };
         }
         return Promise.resolve(null);
@@ -312,7 +312,7 @@ describe("categoryController", () => {
       const res = mockResponse();
 
       await updateCategory(
-        { params: { id: "cat-1" }, body: { parentId: "parent-1" }, user: mockUser() },
+        { params: { id: "cat-1" }, body: { parentId: "507f1f77bcf86cd799439011" }, user: mockUser() },
         res,
       );
 

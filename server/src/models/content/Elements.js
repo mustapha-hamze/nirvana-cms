@@ -16,7 +16,10 @@ import { sanitizeRichText } from '../../utils/sanitizeRichText.js'
 // Real embeddability (e.g. is this actually a YouTube/Vimeo link) is NOT
 // validated here; that's a known v1 gap, consistent with elements storing a
 // plain string rather than going through full media-pipeline validation.
-const URL_PATTERN = /^(https?:\/\/\S+|\/\S*|[^\s/]+)$/
+// The bare-filename branch excludes ":" so it can't match a dangerous
+// scheme (javascript:, vbscript:, data:, ...) — real filenames never
+// contain one, but a scheme prefix would otherwise slip through untyped.
+const URL_PATTERN = /^(https?:\/\/\S+|\/\S*|[^\s/:]+)$/
 
 // Not `required` — a section is allowed to be a half-filled draft (see note
 // on leaf fields below). Skips the pattern check on an empty string so an

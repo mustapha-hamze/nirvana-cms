@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Category from "../models/Category.js";
 import Application from "../models/application/Application.js";
 import { userCanAccessApplication } from "../middleware/auth.js";
@@ -23,6 +24,13 @@ async function createCategoryWithPublicId(data) {
 
 function isValidStatus(status) {
   return STATUS_VALUES.includes(status);
+}
+
+// Rejects anything that isn't a plain ObjectId string before it reaches a
+// query — a client-supplied parentId can otherwise carry a query-operator
+// shape (e.g. {"$ne": null}) into a Mongo filter.
+function isValidObjectIdString(value) {
+  return typeof value === "string" && mongoose.isValidObjectId(value);
 }
 
 // Auto-derived slugs disambiguate silently on collision — e.g. "sport" ->
@@ -118,6 +126,9 @@ export async function getCategories(req, res) {
       .status(400)
       .json({ message: `status must be one of: ${STATUS_VALUES.join(", ")}` });
   }
+  if (parentId !== undefined && parentId !== "null" && !isValidObjectIdString(parentId)) {
+    return res.status(400).json({ message: "parentId must be a valid id" });
+  }
 
   const filter = { application };
   if (status) filter.status = status;
@@ -159,6 +170,9 @@ export async function createCategory(req, res) {
       .status(400)
       .json({ message: `status must be one of: ${STATUS_VALUES.join(", ")}` });
   }
+  if (parentId && !isValidObjectIdString(parentId)) {
+    return res.status(400).json({ message: "parentId must be a valid id" });
+  }
   if (parentId && !(await assertParentInApplication(parentId, application))) {
     return res
       .status(400)
@@ -192,6 +206,9 @@ export async function updateCategory(req, res) {
 
   if (parentId !== undefined) {
     if (parentId) {
+      if (!isValidObjectIdString(parentId)) {
+        return res.status(400).json({ message: "parentId must be a valid id" });
+      }
       if (parentId.toString() === category._id.toString()) {
         return res.status(400).json({ message: "A category cannot be its own parent" });
       }

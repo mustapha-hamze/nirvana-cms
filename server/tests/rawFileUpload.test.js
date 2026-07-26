@@ -21,7 +21,7 @@ describe("saveVideo", () => {
   });
 
   test("returns a bare filename, saved under storage/videos/pages", async () => {
-    const buffer = Buffer.from("fake mp4 bytes");
+    const buffer = Buffer.from("....ftypisomfake mp4 bytes");
     const filename = await saveVideo(buffer, "video/mp4", "page");
 
     expect(filename).toMatch(/^.+\.mp4$/);
@@ -30,11 +30,16 @@ describe("saveVideo", () => {
   });
 
   test("saves a content video under storage/videos/contents", async () => {
-    const buffer = Buffer.from("fake webm bytes");
+    const buffer = Buffer.concat([Buffer.from([0x1a, 0x45, 0xdf, 0xa3]), Buffer.from("fake webm bytes")]);
     const filename = await saveVideo(buffer, "video/webm", "content");
 
     expect(filename).toMatch(/^.+\.webm$/);
     await readSaved("videos", "contents", filename); // registers the file for cleanup above
+  });
+
+  test("rejects a buffer whose bytes don't match the declared mimetype", async () => {
+    const buffer = Buffer.from("this is not actually a video file");
+    await expect(saveVideo(buffer, "video/mp4", "page")).rejects.toMatchObject({ status: 400 });
   });
 });
 
@@ -59,5 +64,10 @@ describe("saveDocument", () => {
 
     expect(filename).toMatch(/^.+\.pdf$/);
     await readSaved("documents", "contents", filename); // registers the file for cleanup above
+  });
+
+  test("rejects a buffer whose bytes don't match the declared mimetype", async () => {
+    const buffer = Buffer.from("<html><script>alert(1)</script></html>");
+    await expect(saveDocument(buffer, "application/pdf", "page")).rejects.toMatchObject({ status: 400 });
   });
 });

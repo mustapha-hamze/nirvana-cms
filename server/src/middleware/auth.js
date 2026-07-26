@@ -20,6 +20,7 @@ export async function authenticate(req, res, next) {
 
   const user = await User.findById(payload.sub).populate('applications', 'name')
   if (!user) return res.status(401).json({ message: 'User no longer exists' })
+  if (user.status === 'inactive') return res.status(401).json({ message: 'Account is inactive' })
 
   req.user = user
   next()

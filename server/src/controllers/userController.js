@@ -1,3 +1,4 @@
+import mongoose from 'mongoose'
 import User from '../models/User.js'
 import Application from '../models/application/Application.js'
 import { ROLES, APP_SCOPED_ROLES } from '../constants/roles.js'
@@ -21,6 +22,12 @@ function formatUser(user) {
 }
 
 async function validateApplicationIds(ids) {
+  // Reject anything that isn't a plain ObjectId string before it reaches the
+  // query — a client-supplied id array can otherwise carry query-operator
+  // shapes (e.g. {"$ne": null}) into $in.
+  if (!ids.every((id) => typeof id === 'string' && mongoose.isValidObjectId(id))) {
+    return false
+  }
   const found = await Application.countDocuments({ _id: { $in: ids } })
   return found === ids.length
 }
