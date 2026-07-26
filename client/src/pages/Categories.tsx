@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { api } from '../api/client'
 import type { AdminOutletContext } from '../components/AdminLayout'
-import { theme } from '../theme'
 import { EditIcon, TrashIcon, GridIcon } from '../components/icons'
 import CategoryModal from '../components/CategoryModal'
 import EmptyState from '../components/ui/EmptyState'
@@ -12,6 +11,7 @@ import IdCell from '../components/ui/IdCell'
 import SortableHeader, { type SortDirection } from '../components/ui/SortableHeader'
 import AdminPageHeader from '../components/ui/AdminPageHeader'
 import AdminTable, { AdminTableRow, AdminTableHeadCell } from '../components/ui/AdminTable'
+import { TableHeader, TableBody } from '@/components/ui/table'
 import AdminTableActionButton from '../components/ui/AdminTableActionButton'
 import StatusBadge from '../components/ui/StatusBadge'
 import { TranslationBadges } from '../components/ui/LanguageBadges'
@@ -117,8 +117,8 @@ export default function Categories() {
         />
       ) : (
         <AdminTable>
-          <thead>
-            <tr style={{ borderBottom: `1px solid ${theme.border}` }}>
+          <TableHeader>
+            <tr>
               <SortableHeader label="Title" active={sortBy === 'title'} direction={sortOrder} onClick={() => toggleSort('title')} />
               <AdminTableHeadCell>Public ID</AdminTableHeadCell>
               <AdminTableHeadCell>Languages</AdminTableHeadCell>
@@ -126,16 +126,16 @@ export default function Categories() {
               <SortableHeader label="Created" active={sortBy === 'createdAt'} direction={sortOrder} onClick={() => toggleSort('createdAt')} />
               {canManage && <AdminTableHeadCell align="right">Actions</AdminTableHeadCell>}
             </tr>
-          </thead>
-          <tbody>
+          </TableHeader>
+          <TableBody>
             {tree.map(({ category, depth }) => (
               <AdminTableRow key={category._id}>
                 <td className="px-5 py-3">
                   <div className="flex items-center" style={{ paddingLeft: depth * 24 }}>
                     {depth > 0 && (
-                      <span className="mr-2 text-sm" style={{ color: theme.textTertiary }}>└</span>
+                      <span className="mr-2 text-sm text-(--color-text-tertiary)">└</span>
                     )}
-                    <span className="font-medium" style={{ color: theme.textPrimary }}>
+                    <span className="font-medium text-foreground">
                       {getPreviewTitle(category.translations)}
                     </span>
                   </div>
@@ -164,7 +164,7 @@ export default function Categories() {
                 )}
               </AdminTableRow>
             ))}
-          </tbody>
+          </TableBody>
         </AdminTable>
       )}
 

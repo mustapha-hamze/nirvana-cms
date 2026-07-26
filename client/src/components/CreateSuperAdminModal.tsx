@@ -33,7 +33,7 @@ export default function CreateSuperAdminModal({ onClose, onCreated }: Props) {
   return (
     <Backdrop onClose={onClose}>
       <ModalPanel>
-        <ModalHeader title="Create Super Admin" subtitle="Grant another account full platform access" onClose={onClose} />
+        <ModalHeader title="Create Super Admin" subtitle="Grant another account full platform access" />
         <form onSubmit={handleSubmit}>
           <div className="px-6 py-5 space-y-4">
             {error && <ErrorBanner message={error} />}

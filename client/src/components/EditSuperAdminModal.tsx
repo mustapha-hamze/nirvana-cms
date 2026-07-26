@@ -42,7 +42,7 @@ export default function EditSuperAdminModal({
   return (
     <Backdrop onClose={onClose}>
       <ModalPanel>
-        <ModalHeader title="Edit Super Admin" subtitle="Update name, or set a new password" onClose={onClose} />
+        <ModalHeader title="Edit Super Admin" subtitle="Update name, or set a new password" />
         <form onSubmit={handleSubmit}>
           <div className="px-6 py-5 space-y-4">
             {error && <ErrorBanner message={error} />}

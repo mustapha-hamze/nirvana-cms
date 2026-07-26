@@ -3,14 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useAppSelector } from "../store/hooks";
 import { selectUser } from "../store/authSlice";
-import { theme } from "../theme";
-import { BackIcon, PlusIcon, EditIcon, TrashIcon } from "../components/icons";
+import { BackIcon, EditIcon, TrashIcon } from "../components/icons";
 import Layout from "../components/Layout";
 import CreateSuperAdminModal from "../components/CreateSuperAdminModal";
 import EditSuperAdminModal from "../components/EditSuperAdminModal";
-import Avatar from "../components/ui/Avatar";
+import Avatar from "../components/ui/UserAvatar";
 import SkeletonTable from "../components/ui/SkeletonTable";
 import ConfirmModal from "../components/ui/ConfirmModal";
+import AdminPageHeader from "../components/ui/AdminPageHeader";
+import AdminTable, { AdminTableRow, AdminTableHeadCell } from "../components/ui/AdminTable";
+import AdminTableActionButton from "../components/ui/AdminTableActionButton";
+import { TableHeader, TableBody } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 type SuperAdminUser = {
   _id: string;
@@ -44,194 +49,78 @@ export default function SuperAdmins() {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-6 py-10">
-        <button
-          onClick={() => navigate("/applications")}
-          className="flex items-center gap-1.5 text-sm font-medium mb-6 transition"
-          style={{ color: theme.textSecondary }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.color = theme.textPrimary)
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.color = theme.textSecondary)
-          }
-        >
+        <Button variant="link" className="mb-6 h-auto p-0 text-muted-foreground hover:text-foreground" onClick={() => navigate("/applications")}>
           <BackIcon size={16} />
           Applications
-        </button>
+        </Button>
 
-        {/* Header */}
-        <div className="flex items-start justify-between mb-10">
-          <div>
-            <h1
-              className="text-2xl font-bold tracking-tight"
-              style={{ color: theme.textPrimary }}
-            >
-              Super Admins
-            </h1>
-            <p
-              className="mt-1 text-[15px]"
-              style={{ color: theme.textSecondary }}
-            >
-              {loading
-                ? "…"
-                : `${admins.length} account${admins.length !== 1 ? "s" : ""} with full platform access`}
-            </p>
-          </div>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.97]"
-            style={{
-              background: theme.accentGradient,
-              boxShadow: "0 2px 16px rgba(124,58,237,0.35)",
-            }}
-          >
-            <PlusIcon />
-            Add Super Admin
-          </button>
-        </div>
+        <AdminPageHeader
+          title="Super Admins"
+          subtitle={loading ? "…" : `${admins.length} account${admins.length !== 1 ? "s" : ""} with full platform access`}
+          actionLabel="Add Super Admin"
+          onAction={() => setShowCreate(true)}
+        />
 
         {loading ? (
           <SkeletonTable rows={4} />
         ) : (
-          <div
-            className="rounded-2xl overflow-hidden"
-            style={{
-              background: theme.surface,
-              border: `1px solid ${theme.border}`,
-            }}
-          >
-            <table className="w-full text-sm">
-              <thead>
-                <tr style={{ borderBottom: `1px solid ${theme.border}` }}>
-                  <th
-                    className="text-left font-semibold px-5 py-3"
-                    style={{ color: theme.textTertiary }}
-                  >
-                    Name
-                  </th>
-                  <th
-                    className="text-left font-semibold px-5 py-3"
-                    style={{ color: theme.textTertiary }}
-                  >
-                    Email
-                  </th>
-                  <th
-                    className="text-left font-semibold px-5 py-3"
-                    style={{ color: theme.textTertiary }}
-                  >
-                    Joined
-                  </th>
-                  <th
-                    className="text-right font-semibold px-5 py-3"
-                    style={{ color: theme.textTertiary }}
-                  >
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {admins.map((admin) => {
-                  const isSelf = admin._id === currentUser?._id;
-                  return (
-                    <tr
-                      key={admin._id}
-                      style={{ borderBottom: `1px solid ${theme.border}` }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.background = theme.rowHover)
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.background = "transparent")
-                      }
-                    >
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-3">
-                          <Avatar name={admin.name} />
-                          <span
-                            className="font-medium"
-                            style={{ color: theme.textPrimary }}
-                          >
-                            {admin.name}
-                            {isSelf && (
-                              <span
-                                className="ml-2 text-[11px] font-semibold px-1.5 py-0.5 rounded-full"
-                                style={{
-                                  background: theme.accentBg,
-                                  color: theme.accentHover,
-                                }}
-                              >
-                                You
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                      </td>
-                      <td
-                        className="px-5 py-3"
-                        style={{ color: theme.textSecondary }}
-                      >
-                        {admin.displayEmail}
-                      </td>
-                      <td
-                        className="px-5 py-3"
-                        style={{ color: theme.textTertiary }}
-                      >
-                        {new Date(admin.createdAt).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </td>
-                      <td className="px-5 py-3">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => setEditAdmin(admin)}
-                            title="Edit"
-                            aria-label="Edit"
-                            className="p-2 rounded-lg transition-all"
-                            style={{ color: theme.accent }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.color = theme.accentHover;
-                              e.currentTarget.style.background = theme.accentBg;
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.color = theme.accent;
-                              e.currentTarget.style.background = "transparent";
-                            }}
-                          >
-                            <EditIcon />
-                          </button>
-                          <button
-                            onClick={() => setDeleteAdmin(admin)}
-                            disabled={isSelf}
-                            title={
-                              isSelf
-                                ? "You can't delete your own account"
-                                : "Delete"
-                            }
-                            aria-label="Delete"
-                            className="p-2 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                            style={{ color: theme.danger }}
-                            onMouseEnter={(e) => {
-                              if (isSelf) return;
-                              e.currentTarget.style.color = theme.dangerHover;
-                              e.currentTarget.style.background =
-                                theme.dangerBgHover;
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.color = theme.danger;
-                              e.currentTarget.style.background = "transparent";
-                            }}
-                          >
-                            <TrashIcon />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <AdminTable>
+            <TableHeader>
+              <tr>
+                <AdminTableHeadCell>Name</AdminTableHeadCell>
+                <AdminTableHeadCell>Email</AdminTableHeadCell>
+                <AdminTableHeadCell>Joined</AdminTableHeadCell>
+                <AdminTableHeadCell align="right">Actions</AdminTableHeadCell>
+              </tr>
+            </TableHeader>
+            <TableBody>
+              {admins.map((admin) => {
+                const isSelf = admin._id === currentUser?._id;
+                return (
+                  <AdminTableRow key={admin._id}>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar name={admin.name} />
+                        <span className="font-medium text-foreground">
+                          {admin.name}
+                          {isSelf && (
+                            <Badge variant="accent" className="ml-2 text-[11px] font-semibold">
+                              You
+                            </Badge>
+                          )}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3 text-muted-foreground">
+                      {admin.displayEmail}
+                    </td>
+                    <td className="px-5 py-3 text-(--color-text-tertiary)">
+                      {new Date(admin.createdAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center justify-end gap-1">
+                        <AdminTableActionButton onClick={() => setEditAdmin(admin)} title="Edit" variant="accent">
+                          <EditIcon />
+                        </AdminTableActionButton>
+                        <AdminTableActionButton
+                          onClick={() => setDeleteAdmin(admin)}
+                          title={isSelf ? "You can't delete your own account" : "Delete"}
+                          variant="danger"
+                          disabled={isSelf}
+                        >
+                          <TrashIcon />
+                        </AdminTableActionButton>
+                      </div>
+                    </td>
+                  </AdminTableRow>
+                );
+              })}
+            </TableBody>
+          </AdminTable>
         )}
       </div>
 

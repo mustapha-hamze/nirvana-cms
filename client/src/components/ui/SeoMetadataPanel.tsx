@@ -1,5 +1,5 @@
-import { theme } from '../../theme'
-import { ChevronIcon } from '../icons'
+import { Separator } from '@/components/ui/separator'
+import CollapsibleSectionHeader from './CollapsibleSectionHeader'
 import { TextField, TextAreaField } from './FormField'
 import KeywordsField from './KeywordsField'
 
@@ -22,20 +22,10 @@ export default function SeoMetadataPanel({
 }) {
   return (
     <>
-      <div style={{ borderTop: `1px solid ${theme.border}` }} />
+      <Separator />
 
       <div>
-        <button
-          type="button"
-          onClick={onToggle}
-          className="flex items-center gap-1.5 text-sm font-medium transition"
-          style={{ color: theme.textSecondary }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = theme.textPrimary)}
-          onMouseLeave={(e) => (e.currentTarget.style.color = theme.textSecondary)}
-        >
-          <ChevronIcon open={open} size={14} />
-          SEO &amp; Metadata
-        </button>
+        <CollapsibleSectionHeader open={open} onToggle={onToggle} label="SEO & Metadata" />
         {open && (
           <div className="mt-4 space-y-4">
             <TextField

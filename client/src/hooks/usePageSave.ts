@@ -1,6 +1,6 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { api } from '../api/client'
-import { useToast } from '../components/ui/useToast'
 import { toPersistableSections } from '../factories/pageElements'
 import type { LangKey } from '../types/content'
 import type { PageItem, PageDetail } from '../types/page'
@@ -23,7 +23,6 @@ export function usePageSave({
 }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const { showToast } = useToast()
   const isEdit = savedPage !== null
 
   async function handleSave(drafts: Partial<Record<LangKey, PageDraft>>) {
@@ -31,7 +30,7 @@ export function usePageSave({
     const entries = (Object.entries(drafts) as [LangKey, PageDraft][]).filter(([, d]) => d.title.trim())
     if (entries.length === 0) {
       setError('At least one language needs a title')
-      showToast('At least one language needs a title', 'error')
+      toast.error('At least one language needs a title')
       return
     }
     setLoading(true)
@@ -63,7 +62,7 @@ export function usePageSave({
             details: [...byLang.values()],
           }
         })
-        showToast('Page has been updated')
+        toast.success('Page has been updated')
       } else {
         const created = await api.post<PageItem>('/pages', {
           application: applicationId,
@@ -74,14 +73,14 @@ export function usePageSave({
             sections: toPersistableSections(d.sections),
           })),
         })
-        showToast('Page has been created')
+        toast.success('Page has been created')
         onCreated(created)
         return
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : `Failed to ${isEdit ? 'save' : 'create'} page`
       setError(message)
-      showToast(message, 'error')
+      toast.error(message)
     } finally {
       setLoading(false)
     }

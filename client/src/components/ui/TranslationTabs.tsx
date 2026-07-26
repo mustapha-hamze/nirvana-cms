@@ -1,6 +1,8 @@
-import { theme } from '../../theme'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PlusIcon } from '../icons'
 import { LANGUAGE_LABELS, type LangKey } from '../../types/content'
+
+const NEW_LANGUAGE = '__new__'
 
 // Language-switcher tab row shared by ContentForm and PageForm — one tab per
 // language already drafted (with a status dot), plus a "New Language" tab
@@ -19,45 +21,33 @@ export default function TranslationTabs({
   onSelect: (lang: LangKey | null) => void
 }) {
   return (
-    <div className="flex items-center gap-1 px-6 pt-4" style={{ borderBottom: `1px solid ${theme.border}` }}>
-      {existingLangs.map((lang) => {
-        const active = lang === activeLang
-        const langDraft = drafts[lang]
-        return (
-          <button
-            key={lang}
-            type="button"
-            onClick={() => onSelect(lang)}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-all -mb-px shrink-0"
-            style={active
-              ? { color: theme.textPrimary, borderBottom: '2px solid #7c3aed' }
-              : { color: theme.textSecondary, borderBottom: '2px solid transparent' }
-            }
-          >
-            {langDraft && (
-              <span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ background: langDraft.status === 'published' ? theme.success : theme.textTertiary }}
-              />
-            )}
-            {LANGUAGE_LABELS[lang]}
-          </button>
-        )
-      })}
-      {availableLangs.length > 0 && (
-        <button
-          type="button"
-          onClick={() => onSelect(null)}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-all -mb-px shrink-0"
-          style={activeLang === null
-            ? { color: theme.textPrimary, borderBottom: '2px solid #7c3aed' }
-            : { color: theme.textSecondary, borderBottom: '2px solid transparent' }
-          }
-        >
-          <PlusIcon size={14} />
-          New Language
-        </button>
-      )}
+    <div className="border-b px-6 pt-4">
+      <Tabs
+        value={activeLang ?? NEW_LANGUAGE}
+        onValueChange={(v) => onSelect(v === NEW_LANGUAGE ? null : (v as LangKey))}
+      >
+        <TabsList variant="line" className="h-auto gap-1 bg-transparent p-0">
+          {existingLangs.map((lang) => {
+            const langDraft = drafts[lang]
+            return (
+              <TabsTrigger key={lang} value={lang} className="gap-1.5 px-3 py-2 after:bg-primary">
+                {langDraft && (
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${langDraft.status === 'published' ? 'bg-(--color-success)' : 'bg-(--color-text-tertiary)'}`}
+                  />
+                )}
+                {LANGUAGE_LABELS[lang]}
+              </TabsTrigger>
+            )
+          })}
+          {availableLangs.length > 0 && (
+            <TabsTrigger value={NEW_LANGUAGE} className="gap-1.5 px-3 py-2 after:bg-primary">
+              <PlusIcon size={14} />
+              New Language
+            </TabsTrigger>
+          )}
+        </TabsList>
+      </Tabs>
     </div>
   )
 }

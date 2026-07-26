@@ -1,6 +1,8 @@
 import { SelectField, TextField } from '../ui/FormField'
 import StringListField from './StringListField'
-import { theme } from '../../theme'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { PlusIcon, TrashIcon } from '../icons'
 import type { ChartDataElement, ChartSeries } from '../../types/page'
 import { CHART_TYPE_VALUES, CHART_TYPE_LABELS } from '../../constants/pageSections'
@@ -65,49 +67,53 @@ export default function ChartDataElementEditor({
       <StringListField label="Labels" values={element.labels} onChange={updateLabels} placeholder="e.g. Q1" max={20} />
 
       <div>
-        <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textSecondary }}>
+        <Label className="mb-1.5 text-sm font-medium text-muted-foreground">
           Series ({element.series.length})
-        </label>
+        </Label>
         <div className="space-y-3">
           {element.series.map((series, si) => (
-            <div key={si} className="p-3 rounded-xl space-y-2" style={{ border: `1px solid ${theme.inputBorder}` }}>
+            <div key={si} className="p-3 rounded-xl border space-y-2">
               <div className="flex items-center gap-2">
-                <input
+                <Input
                   value={series.label}
                   onChange={(e) => updateSeries(si, { label: e.target.value })}
                   placeholder="Series name, e.g. 2026"
-                  className="flex-1 px-3 py-2 rounded-xl text-sm outline-none transition"
-                  style={{ background: theme.inputBg, border: `1px solid ${theme.inputBorder}`, color: theme.textPrimary }}
+                  className="flex-1"
                 />
                 <input
                   type="color"
                   value={series.color || '#7c3aed'}
                   onChange={(e) => updateSeries(si, { color: e.target.value })}
                   title="Series color"
-                  className="w-10 h-10 rounded-lg shrink-0 cursor-pointer"
-                  style={{ border: `1px solid ${theme.inputBorder}`, background: 'transparent' }}
+                  className="w-10 h-10 rounded-lg shrink-0 cursor-pointer border bg-transparent"
                 />
-                <button type="button" onClick={() => removeSeries(si)} title="Remove series" className="p-2 rounded-lg transition shrink-0" style={{ color: theme.danger }}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => removeSeries(si)}
+                  title="Remove series"
+                  className="icon-btn-danger shrink-0 hover:bg-transparent"
+                >
                   <TrashIcon size={14} />
-                </button>
+                </Button>
               </div>
               {element.labels.length === 0 ? (
-                <p className="text-xs" style={{ color: theme.textTertiary }}>
+                <p className="text-xs text-(--color-text-tertiary)">
                   Add labels above to enter this series' values.
                 </p>
               ) : (
                 <div className="grid grid-cols-4 gap-2">
                   {element.labels.map((label, li) => (
                     <div key={li}>
-                      <label className="block text-xs mb-1" style={{ color: theme.textTertiary }}>
+                      <Label className="mb-1 text-xs text-(--color-text-tertiary)">
                         {label || `#${li + 1}`}
-                      </label>
-                      <input
+                      </Label>
+                      <Input
                         type="number"
                         value={series.data[li] ?? 0}
                         onChange={(e) => updateDataPoint(si, li, Number(e.target.value))}
-                        className="w-full px-2.5 py-1.5 rounded-lg text-sm outline-none transition"
-                        style={{ background: theme.inputBg, border: `1px solid ${theme.inputBorder}`, color: theme.textPrimary }}
+                        className="h-auto px-2.5 py-1.5 text-sm"
                       />
                     </div>
                   ))}
@@ -117,9 +123,9 @@ export default function ChartDataElementEditor({
           ))}
         </div>
         {element.series.length < MAX_SERIES && (
-          <button type="button" onClick={addSeries} className="flex items-center gap-1.5 text-sm font-medium transition mt-2" style={{ color: theme.accent }}>
+          <Button type="button" variant="link" onClick={addSeries} className="h-auto gap-1.5 p-0 text-sm font-medium mt-2 hover:no-underline">
             <PlusIcon size={14} /> Add series
-          </button>
+          </Button>
         )}
       </div>
     </div>

@@ -1,4 +1,6 @@
-import { theme } from '../../theme'
+import { Separator } from '@/components/ui/separator'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { PlusIcon } from '../icons'
 import PageSectionCard from '../pageBody/PageSectionCard'
 import SortableSectionList from '../ui/SortableSectionList'
@@ -25,23 +27,20 @@ export default function PageSectionsPanel({
 }) {
   return (
     <>
-      <div style={{ borderTop: `1px solid ${theme.border}` }} />
+      <Separator />
 
       <div>
-        <div className="flex items-center gap-1.5 text-sm font-medium mb-4" style={{ color: theme.textPrimary }}>
+        <div className="flex items-center gap-1.5 text-sm font-medium mb-4 text-foreground">
           Sections
           {sections.length > 0 && (
-            <span
-              className="text-xs font-semibold px-1.5 py-0.5 rounded-full"
-              style={{ background: theme.accentBg, color: theme.accent }}
-            >
+            <Badge variant="accent" className="text-xs font-semibold">
               {sections.length}
-            </span>
+            </Badge>
           )}
         </div>
         <div className="space-y-3">
           {sections.length === 0 ? (
-            <p className="text-sm" style={{ color: theme.textTertiary }}>
+            <p className="text-sm text-(--color-text-tertiary)">
               No sections yet. Use "Add Section" to build this page, then fill each one in with components.
             </p>
           ) : (
@@ -64,15 +63,10 @@ export default function PageSectionsPanel({
           {/* Bottom, not top — with many sections already added, scrolling
               back up just to add the next one is the friction this avoids. */}
           <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={onAddSection}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.97]"
-              style={{ background: theme.accentGradient, boxShadow: '0 2px 16px rgba(124,58,237,0.35)' }}
-            >
+            <Button type="button" onClick={onAddSection}>
               <PlusIcon />
               Add Section
-            </button>
+            </Button>
           </div>
         </div>
       </div>

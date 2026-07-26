@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { theme } from '../../theme'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 import { uploadContentImage, uploadPageImage } from '../../api/client'
 import { resolveMediaUrl } from '../../utils/mediaUrl'
 
@@ -51,29 +52,28 @@ export default function ImageUploadField({
 
   return (
     <div>
-      <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textSecondary }}>
-        {label} {uploading && <span style={{ color: theme.textTertiary }}>— uploading…</span>}
-      </label>
-      <input
+      <Label className="mb-1.5 text-sm font-medium text-muted-foreground">
+        {label} {uploading && <span className="text-(--color-text-tertiary)">— uploading…</span>}
+      </Label>
+      <Input
         type="file"
         accept="image/png,image/jpeg,image/webp,image/gif"
         onChange={handleFileChange}
         disabled={uploading}
-        className="block w-full text-sm"
-        style={{ color: theme.textSecondary }}
+        className="h-auto py-1.5"
       />
-      <p className="text-xs mt-1" style={{ color: theme.textTertiary }}>
+      <p className="text-xs mt-1 text-(--color-text-tertiary)">
         PNG, JPEG, WEBP, or GIF — up to 2MB.
       </p>
       {error && (
-        <p className="text-xs mt-1" style={{ color: theme.danger }}>
+        <p className="text-xs mt-1 text-destructive">
           {error}
         </p>
       )}
       {url && (
         // Keyed by url so a fresh <img> mounts per upload — otherwise a
         // previous broken-image load's hidden state would stick around.
-        <div className="mt-2 rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.inputBorder}` }}>
+        <div className="mt-2 rounded-xl overflow-hidden border">
           <img key={url} src={resolveMediaUrl('images', domain, url)} alt="" className="w-full max-h-48 object-cover" />
         </div>
       )}

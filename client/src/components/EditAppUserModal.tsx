@@ -52,7 +52,7 @@ export default function EditAppUserModal({
   return (
     <Backdrop onClose={onClose}>
       <ModalPanel>
-        <ModalHeader title="Edit User" subtitle="Update name, role, or set a new password" onClose={onClose} />
+        <ModalHeader title="Edit User" subtitle="Update name, role, or set a new password" />
         <form onSubmit={handleSubmit}>
           <div className="px-6 py-5 space-y-4">
             {error && <ErrorBanner message={error} />}

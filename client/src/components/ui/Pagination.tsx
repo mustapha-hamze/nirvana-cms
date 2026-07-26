@@ -1,4 +1,4 @@
-import { theme } from '../../theme'
+import { Button } from '@/components/ui/button'
 import { ChevronLeftIcon, ChevronRightIcon } from '../icons'
 
 // Shared prev/next pagination footer for admin list tables (Contents, Tags,
@@ -24,38 +24,34 @@ export default function Pagination({
   const end = Math.min(page * limit, total)
 
   return (
-    <div className="flex items-center justify-between px-5 py-3" style={{ borderTop: `1px solid ${theme.border}` }}>
-      <p className="text-xs" style={{ color: theme.textTertiary }}>
+    <div className="flex items-center justify-between border-t px-5 py-3">
+      <p className="text-xs text-muted-foreground">
         Showing {start}–{end} of {total}
       </p>
       <div className="flex items-center gap-2">
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-sm"
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
           title="Previous page"
-          className="p-1.5 rounded-lg transition disabled:opacity-30"
-          style={{ color: theme.textSecondary }}
-          onMouseEnter={(e) => { if (page > 1) e.currentTarget.style.color = theme.textPrimary }}
-          onMouseLeave={(e) => (e.currentTarget.style.color = theme.textSecondary)}
         >
           <ChevronLeftIcon size={15} />
-        </button>
-        <span className="text-xs font-medium" style={{ color: theme.textSecondary }}>
+        </Button>
+        <span className="text-xs font-medium text-muted-foreground">
           Page {page} of {totalPages}
         </span>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-sm"
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages}
           title="Next page"
-          className="p-1.5 rounded-lg transition disabled:opacity-30"
-          style={{ color: theme.textSecondary }}
-          onMouseEnter={(e) => { if (page < totalPages) e.currentTarget.style.color = theme.textPrimary }}
-          onMouseLeave={(e) => (e.currentTarget.style.color = theme.textSecondary)}
         >
           <ChevronRightIcon size={15} />
-        </button>
+        </Button>
       </div>
     </div>
   )

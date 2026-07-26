@@ -1,5 +1,6 @@
 import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core'
-import { theme } from '../../theme'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { ChevronIcon, DragHandleIcon, TrashIcon, EyeIcon, EyeOffIcon, GearIcon } from '../icons'
 import type { PageSection } from '../../types/page'
 
@@ -35,68 +36,63 @@ export default function PageSectionCardHeader({
           type="button"
           {...dragHandleProps.attributes}
           {...dragHandleProps.listeners}
-          className="cursor-grab touch-none shrink-0"
-          style={{ color: theme.textTertiary }}
+          className="cursor-grab touch-none shrink-0 text-(--color-text-tertiary)"
         >
           <DragHandleIcon />
         </button>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-xs"
           onClick={onToggleOpen}
           title={open ? 'Collapse this section' : 'Expand this section'}
-          className="p-1 rounded-lg transition shrink-0"
-          style={{ color: theme.textTertiary }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = theme.textPrimary)}
-          onMouseLeave={(e) => (e.currentTarget.style.color = theme.textTertiary)}
+          className="shrink-0 text-muted-foreground hover:text-foreground"
         >
           <ChevronIcon open={open} size={16} />
-        </button>
-        <span className="text-sm font-semibold" style={{ color: theme.textPrimary }}>
+        </Button>
+        <span className="text-sm font-semibold text-foreground">
           {section.title || 'Untitled section'}
         </span>
         {!section.isVisible && (
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full shrink-0" style={{ background: theme.hoverBgSubtle, color: theme.textTertiary }}>
+          <Badge variant="neutral" className="shrink-0 text-xs font-semibold">
             Hidden
-          </span>
+          </Badge>
         )}
-        <span className="text-xs shrink-0" style={{ color: theme.textTertiary }}>
+        <span className="text-xs shrink-0 text-(--color-text-tertiary)">
           {componentCount === 1 ? '1 component' : `${componentCount} components`}
         </span>
       </div>
       <div className="flex items-center gap-1 shrink-0">
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-sm"
           onClick={onToggleSettings}
           title="Section settings"
-          className="p-1.5 rounded-lg transition"
-          style={settingsOpen ? { color: theme.accent, background: theme.accentBg } : { color: theme.textTertiary }}
-          onMouseEnter={(e) => { if (!settingsOpen) e.currentTarget.style.color = theme.textPrimary }}
-          onMouseLeave={(e) => { if (!settingsOpen) e.currentTarget.style.color = theme.textTertiary }}
+          className={settingsOpen ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground'}
         >
           <GearIcon size={15} />
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-sm"
           onClick={onToggleVisibility}
           title={section.isVisible ? 'Hide this section' : 'Show this section'}
-          className="p-1.5 rounded-lg transition"
-          style={{ color: theme.textTertiary }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = theme.textPrimary)}
-          onMouseLeave={(e) => (e.currentTarget.style.color = theme.textTertiary)}
+          className="text-muted-foreground hover:text-foreground"
         >
           {section.isVisible ? <EyeIcon size={16} /> : <EyeOffIcon size={16} />}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-sm"
           onClick={onRemove}
           title="Remove section"
-          className="p-1.5 rounded-lg transition"
-          style={{ color: theme.danger }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = theme.dangerBgHover)}
-          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+          className="icon-btn-danger hover:bg-transparent"
         >
           <TrashIcon size={14} />
-        </button>
+        </Button>
       </div>
     </div>
   )

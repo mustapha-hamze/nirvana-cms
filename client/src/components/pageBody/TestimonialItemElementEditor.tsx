@@ -1,6 +1,7 @@
 import { TextField, TextAreaField } from '../ui/FormField'
 import ImageUploadField from '../body/ImageUploadField'
-import { theme } from '../../theme'
+import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
 import { ReviewIcon } from '../icons'
 import type { TestimonialItemElement } from '../../types/page'
 
@@ -26,31 +27,32 @@ export default function TestimonialItemElementEditor({
       <ImageUploadField domain="page" applicationId={applicationId} url={element.avatar} onUploaded={(avatar) => onChange({ ...element, avatar })} />
 
       <div>
-        <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textSecondary }}>
+        <Label className="mb-1.5 text-sm font-medium text-muted-foreground">
           Rating (optional)
-        </label>
+        </Label>
         <div className="flex items-center gap-1">
           {[1, 2, 3, 4, 5].map((star) => (
-            <button
+            <Button
               key={star}
               type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={() => onChange({ ...element, rating: element.rating === star ? null : star })}
               title={`${star} star${star > 1 ? 's' : ''}`}
-              className="transition"
-              style={{ color: element.rating !== null && star <= element.rating ? '#facc15' : theme.textTertiary }}
+              className={`hover:bg-transparent ${element.rating !== null && star <= element.rating ? 'text-yellow-400' : 'text-(--color-text-tertiary)'}`}
             >
               <ReviewIcon size={22} />
-            </button>
+            </Button>
           ))}
           {element.rating !== null && (
-            <button
+            <Button
               type="button"
+              variant="link"
               onClick={() => onChange({ ...element, rating: null })}
-              className="ml-2 text-xs font-medium transition"
-              style={{ color: theme.textSecondary }}
+              className="ml-2 h-auto p-0 text-xs font-medium text-muted-foreground hover:no-underline"
             >
               Clear
-            </button>
+            </Button>
           )}
         </div>
       </div>

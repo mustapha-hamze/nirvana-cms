@@ -12,6 +12,7 @@ import SortableHeader from '../components/ui/SortableHeader'
 import AdminPageHeader from '../components/ui/AdminPageHeader'
 import ListSearchInput from '../components/ui/ListSearchInput'
 import AdminTable, { AdminTableRow, AdminTableHeadCell, EmptyResultsRow } from '../components/ui/AdminTable'
+import { TableHeader, TableBody } from '@/components/ui/table'
 import AdminTableActionButton from '../components/ui/AdminTableActionButton'
 import StatusBadge from '../components/ui/StatusBadge'
 import { TranslationBadges } from '../components/ui/LanguageBadges'
@@ -67,16 +68,16 @@ export default function Tags() {
         <AdminTable
           footer={<Pagination page={page} totalPages={totalPages} total={total} limit={limit} onPageChange={setPage} />}
         >
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+          <TableHeader>
+            <tr>
               <SortableHeader label="Title" active={sortBy === 'title'} direction={sortOrder} onClick={() => toggleSort('title')} />
               <AdminTableHeadCell>Languages</AdminTableHeadCell>
               <AdminTableHeadCell>Status</AdminTableHeadCell>
               <SortableHeader label="Created" active={sortBy === 'createdAt'} direction={sortOrder} onClick={() => toggleSort('createdAt')} />
               {canManage && <AdminTableHeadCell align="right">Actions</AdminTableHeadCell>}
             </tr>
-          </thead>
-          <tbody>
+          </TableHeader>
+          <TableBody>
             {tags.map((tag) => (
               <AdminTableRow key={tag._id}>
                 <td className="px-5 py-3">
@@ -105,7 +106,7 @@ export default function Tags() {
                 )}
               </AdminTableRow>
             ))}
-          </tbody>
+          </TableBody>
         </AdminTable>
       )}
 

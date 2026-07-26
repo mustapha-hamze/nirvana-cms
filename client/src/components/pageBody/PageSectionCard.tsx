@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { theme } from '../../theme'
 import { TextField } from '../ui/FormField'
 import PageSectionCardHeader from './PageSectionCardHeader'
 import SectionSettingsPanel from './SectionSettingsPanel'
@@ -60,10 +59,8 @@ export default function PageSectionCard({
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : section.isVisible ? 1 : 0.55,
-        background: theme.surface,
-        border: `1px solid ${theme.border}`,
       }}
-      className="rounded-2xl p-5"
+      className="rounded-2xl border bg-card p-5"
     >
       <PageSectionCardHeader
         section={section}
@@ -94,7 +91,7 @@ export default function PageSectionCard({
           )}
 
           {section.components.length === 0 ? (
-            <p className="text-sm" style={{ color: theme.textTertiary }}>
+            <p className="text-sm text-(--color-text-tertiary)">
               This section is empty. Use "Add Component" to fill it in — mix and match Hero Sliders,
               Cards, Headings, and more.
             </p>

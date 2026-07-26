@@ -1,7 +1,6 @@
 import { TextField, TextAreaField } from '../ui/FormField'
 import ImageUploadField from '../body/ImageUploadField'
 import StringListField from './StringListField'
-import { theme } from '../../theme'
 import type { FeatureElement } from '../../types/page'
 
 export default function FeatureElementEditor({
@@ -30,7 +29,7 @@ export default function FeatureElementEditor({
           placeholder="e.g. WORLD"
         />
       </div>
-      <p className="text-xs" style={{ color: theme.textTertiary }}>
+      <p className="text-xs text-(--color-text-tertiary)">
         The highlighted word is appended after the heading and shown in the accent color.
       </p>
 
@@ -44,7 +43,7 @@ export default function FeatureElementEditor({
         max={12}
       />
 
-      <p className="text-xs font-semibold pt-1" style={{ color: theme.textTertiary }}>Badge (optional)</p>
+      <p className="text-xs font-semibold pt-1 text-(--color-text-tertiary)">Badge (optional)</p>
       <ImageUploadField domain="page" label="Badge image" applicationId={applicationId} url={element.badgeImage} onUploaded={(badgeImage) => onChange({ ...element, badgeImage })} />
       <TextField label="Badge alt text" value={element.badgeImageAlt} onChange={(badgeImageAlt) => onChange({ ...element, badgeImageAlt })} />
     </div>

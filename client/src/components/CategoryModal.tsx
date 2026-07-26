@@ -1,3 +1,4 @@
+import { toast } from 'sonner'
 import { useState } from 'react'
 import { api } from '../api/client'
 import { Backdrop, ModalPanel, ModalHeader, ModalFooter, ErrorBanner, CancelButton, PrimaryButton } from './ui/Modal'
@@ -6,8 +7,7 @@ import StatusToggle from './ui/StatusToggle'
 import TranslatedTitleTabs from './ui/TranslatedTitleTabs'
 import TranslatedTitleField from './ui/TranslatedTitleField'
 import { useTranslatedTitleForm } from '../hooks/useTranslatedTitleForm'
-import { useToast } from './ui/useToast'
-import { theme } from '../theme'
+import { Label } from '@/components/ui/label'
 import { getPreviewTitle } from '../utils/translations'
 import type { LangKey } from '../types/content'
 import type { Category } from '../types/category'
@@ -57,7 +57,6 @@ export default function CategoryModal({
   const [parentId, setParentId] = useState(category?.parentId ?? '')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const { showToast } = useToast()
 
   const excluded = excludedIds(category, categories)
   const parentOptions = [
@@ -82,7 +81,7 @@ export default function CategoryModal({
       } else {
         await api.post('/categories', { application: applicationId, ...payload })
       }
-      showToast(isEdit ? 'Category has been updated' : 'Category has been created')
+      toast.success(isEdit ? 'Category has been updated' : 'Category has been created')
       onSaved()
       onClose()
     } catch (err) {
@@ -97,7 +96,6 @@ export default function CategoryModal({
         <ModalHeader
           title={isEdit ? 'Edit Category' : 'Create Category'}
           subtitle={isEdit ? 'Update this category' : 'Add a new category to organize content'}
-          onClose={onClose}
         />
 
         <TranslatedTitleTabs allowedLanguages={allowedLanguages} activeLang={activeLang} titles={titles} onSelect={setActiveLang} />
@@ -117,9 +115,9 @@ export default function CategoryModal({
             options={parentOptions}
           />
           <div>
-            <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textSecondary }}>
+            <Label className="block text-sm font-medium mb-1.5 text-muted-foreground">
               Status
-            </label>
+            </Label>
             <div className="flex items-center gap-2">
               <StatusToggle
                 checked={active}
@@ -127,10 +125,7 @@ export default function CategoryModal({
                 onLabel="Activate"
                 offLabel="Deactivate"
               />
-              <span
-                className="text-sm font-medium"
-                style={{ color: active ? theme.success : theme.textSecondary }}
-              >
+              <span className={`text-sm font-medium ${active ? 'text-(--color-success)' : 'text-muted-foreground'}`}>
                 {active ? 'Active' : 'Inactive'}
               </span>
             </div>

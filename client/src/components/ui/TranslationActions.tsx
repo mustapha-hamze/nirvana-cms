@@ -1,4 +1,5 @@
-import { theme } from '../../theme'
+import { Separator } from '@/components/ui/separator'
+import { Button } from '@/components/ui/button'
 import { TrashIcon } from '../icons'
 import { PrimaryButton } from './Modal'
 import { LANGUAGE_LABELS, type LangKey } from '../../types/content'
@@ -27,7 +28,7 @@ export default function TranslationActions({
 }) {
   return (
     <>
-      <div style={{ borderTop: `1px solid ${theme.border}` }} />
+      <Separator />
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-5">
@@ -38,30 +39,26 @@ export default function TranslationActions({
 
         {isPersisted ? (
           canManage && (
-            <button
+            <Button
               type="button"
+              variant="link"
               onClick={onRemove}
-              className="flex items-center gap-1.5 text-sm font-medium transition"
-              style={{ color: theme.danger }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = theme.dangerHover)}
-              onMouseLeave={(e) => (e.currentTarget.style.color = theme.danger)}
+              className="h-auto gap-1.5 p-0 text-sm font-medium text-destructive hover:text-destructive/80"
             >
               <TrashIcon size={14} />
               Remove {LANGUAGE_LABELS[activeLang]} translation
-            </button>
+            </Button>
           )
         ) : (
-          <button
+          <Button
             type="button"
+            variant="link"
             onClick={onDiscard}
-            className="flex items-center gap-1.5 text-sm font-medium transition"
-            style={{ color: theme.textSecondary }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = theme.textPrimary)}
-            onMouseLeave={(e) => (e.currentTarget.style.color = theme.textSecondary)}
+            className="h-auto gap-1.5 p-0 text-sm font-medium text-muted-foreground hover:text-foreground"
           >
             <TrashIcon size={14} />
             Discard {LANGUAGE_LABELS[activeLang]} draft
-          </button>
+          </Button>
         )}
       </div>
     </>

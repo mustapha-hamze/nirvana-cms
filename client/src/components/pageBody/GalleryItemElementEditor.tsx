@@ -1,7 +1,6 @@
 import { TextField, TextAreaField, SelectField } from '../ui/FormField'
 import ImageUploadField from '../body/ImageUploadField'
 import FileUploadField from '../body/FileUploadField'
-import { theme } from '../../theme'
 import type { GalleryItemElement } from '../../types/page'
 import { GALLERY_MEDIA_TYPE_VALUES, GALLERY_MEDIA_TYPE_LABELS } from '../../constants/pageSections'
 
@@ -41,7 +40,7 @@ export default function GalleryItemElementEditor({
             onChange={(url) => onChange({ ...element, url })}
             placeholder={element.mediaType === 'video' ? 'https://youtube.com/watch?v=…' : 'https://…/brochure.pdf'}
           />
-          <p className="text-xs -mt-1.5" style={{ color: theme.textTertiary }}>
+          <p className="text-xs -mt-1.5 text-(--color-text-tertiary)">
             Or upload a file below instead of pasting a link — it fills the same URL field above.
           </p>
           <FileUploadField

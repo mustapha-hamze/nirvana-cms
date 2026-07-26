@@ -1,5 +1,4 @@
 import { TextField, TextAreaField } from '../ui/FormField'
-import { theme } from '../../theme'
 import type { CtaElement } from '../../types/page'
 
 export default function CtaElementEditor({
@@ -15,7 +14,7 @@ export default function CtaElementEditor({
       <TextAreaField label="Subheading" value={element.subheading} onChange={(subheading) => onChange({ ...element, subheading })} rows={2} />
 
       <div>
-        <p className="text-xs font-semibold mb-1.5" style={{ color: theme.textTertiary }}>Primary button</p>
+        <p className="text-xs font-semibold mb-1.5 text-(--color-text-tertiary)">Primary button</p>
         <div className="grid grid-cols-2 gap-3">
           <TextField label="Label" value={element.ctaLabel} onChange={(ctaLabel) => onChange({ ...element, ctaLabel })} placeholder="Get started" />
           <TextField label="Link" value={element.ctaUrl} onChange={(ctaUrl) => onChange({ ...element, ctaUrl })} placeholder="https://…" />
@@ -23,7 +22,7 @@ export default function CtaElementEditor({
       </div>
 
       <div>
-        <p className="text-xs font-semibold mb-1.5" style={{ color: theme.textTertiary }}>Secondary button (optional)</p>
+        <p className="text-xs font-semibold mb-1.5 text-(--color-text-tertiary)">Secondary button (optional)</p>
         <div className="grid grid-cols-2 gap-3">
           <TextField
             label="Label" value={element.secondaryCtaLabel}

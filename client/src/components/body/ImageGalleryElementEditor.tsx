@@ -3,7 +3,8 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type D
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { TextField } from '../ui/FormField'
-import { theme } from '../../theme'
+import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
 import { DragHandleIcon, TrashIcon, PlusIcon } from '../icons'
 import ImageUploadField from './ImageUploadField'
 import type { ImageGalleryElement, GalleryImage } from '../../types/content'
@@ -30,15 +31,14 @@ function GalleryRow({
   return (
     <div
       ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1, border: `1px solid ${theme.inputBorder}` }}
-      className="flex items-start gap-2 p-3 rounded-xl"
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }}
+      className="flex items-start gap-2 rounded-xl border p-3"
     >
       <button
         type="button"
         {...attributes}
         {...listeners}
-        className="mt-2.5 cursor-grab touch-none shrink-0"
-        style={{ color: theme.textTertiary }}
+        className="mt-2.5 cursor-grab touch-none shrink-0 text-(--color-text-tertiary)"
       >
         <DragHandleIcon />
       </button>
@@ -46,16 +46,17 @@ function GalleryRow({
         <ImageUploadField applicationId={applicationId} url={image.url} onUploaded={(url) => onChange({ ...image, url })} />
         <TextField label="Alt text" required value={image.alt} onChange={(alt) => onChange({ ...image, alt })} />
       </div>
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="icon-sm"
         onClick={onRemove}
         disabled={!canRemove}
         title={canRemove ? 'Remove image' : `A gallery needs at least ${MIN_IMAGES} images`}
-        className="mt-2.5 p-1.5 rounded-lg transition disabled:opacity-30 shrink-0"
-        style={{ color: theme.danger }}
+        className="icon-btn-danger mt-2.5 shrink-0 hover:bg-transparent"
       >
         <TrashIcon size={14} />
-      </button>
+      </Button>
     </div>
   )
 }
@@ -107,9 +108,9 @@ export default function ImageGalleryElementEditor({
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>
+      <Label className="mb-1 text-sm font-medium text-muted-foreground">
         Gallery Images ({element.images.length})
-      </label>
+      </Label>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={ids} strategy={verticalListSortingStrategy}>
           <div className="space-y-2">
@@ -127,9 +128,9 @@ export default function ImageGalleryElementEditor({
           </div>
         </SortableContext>
       </DndContext>
-      <button type="button" onClick={addImage} className="flex items-center gap-1.5 text-sm font-medium transition" style={{ color: theme.accent }}>
+      <Button type="button" variant="link" onClick={addImage} className="h-auto gap-1.5 p-0 text-sm font-medium hover:no-underline">
         <PlusIcon size={14} /> Add Image
-      </button>
+      </Button>
     </div>
   )
 }

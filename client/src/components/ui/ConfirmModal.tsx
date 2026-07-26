@@ -1,6 +1,15 @@
 import { useState } from 'react'
-import { theme } from '../../theme'
-import { Backdrop, ModalPanel, ErrorBanner, CancelButton, PrimaryButton } from './Modal'
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
+import { ErrorBanner } from './Modal'
 
 type Props = {
   title: string
@@ -28,20 +37,20 @@ export default function ConfirmModal({ title, message, confirmLabel, loadingLabe
   }
 
   return (
-    <Backdrop onClose={onClose}>
-      <ModalPanel>
-        <div className="px-6 pt-6 pb-5">
-          <h2 className="text-lg font-semibold" style={{ color: theme.textPrimary }}>{title}</h2>
-          <p className="text-sm mt-2 leading-relaxed" style={{ color: theme.textSecondary }}>{message}</p>
-          {error && <div className="mt-4"><ErrorBanner message={error} /></div>}
-        </div>
-        <div className="flex items-center justify-end gap-3 px-6 pb-6">
-          <CancelButton onClick={onClose} disabled={loading} />
-          <PrimaryButton onClick={handleConfirm} disabled={loading} danger>
+    <AlertDialog open onOpenChange={(open) => { if (!open) onClose() }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{message}</AlertDialogDescription>
+        </AlertDialogHeader>
+        {error && <ErrorBanner message={error} />}
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+          <Button variant="destructive" disabled={loading} onClick={handleConfirm}>
             {loading ? loadingLabel : confirmLabel}
-          </PrimaryButton>
-        </div>
-      </ModalPanel>
-    </Backdrop>
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }

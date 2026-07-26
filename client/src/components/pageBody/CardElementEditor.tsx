@@ -1,6 +1,7 @@
 import { TextField, TextAreaField } from '../ui/FormField'
 import ImageUploadField from '../body/ImageUploadField'
-import { theme } from '../../theme'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 import type { CardElement } from '../../types/page'
 
 export default function CardElementEditor({
@@ -23,10 +24,10 @@ export default function CardElementEditor({
         <TextField label="Link" value={element.ctaUrl} onChange={(ctaUrl) => onChange({ ...element, ctaUrl })} placeholder="https://…" />
       </div>
       <TextField label="Link label" value={element.ctaLabel} onChange={(ctaLabel) => onChange({ ...element, ctaLabel })} placeholder="Read more" />
-      <label className="flex items-center gap-2 text-sm" style={{ color: theme.textSecondary }}>
-        <input type="checkbox" checked={element.highlighted} onChange={(e) => onChange({ ...element, highlighted: e.target.checked })} />
+      <Label className="flex items-center gap-2 text-sm font-normal text-muted-foreground">
+        <Checkbox checked={element.highlighted} onCheckedChange={(checked) => onChange({ ...element, highlighted: checked === true })} />
         Highlight this card with an accent color
-      </label>
+      </Label>
     </div>
   )
 }

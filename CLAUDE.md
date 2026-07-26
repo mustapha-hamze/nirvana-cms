@@ -92,6 +92,22 @@ homepage) are **not** equivalent. A ContentCreator can only save `status: draft`
 
 ## Client architecture
 
+- **UI components are shadcn/ui** (`client/src/components/ui/*` — Button, Dialog, AlertDialog,
+  Sonner/toast, Badge, Table, Input, Select, Tabs, Checkbox, Switch, Avatar, DropdownMenu, Separator,
+  Skeleton, Tooltip, Card, Alert). Built on Radix primitives via the single `radix-ui` package, styled
+  with Tailwind v4 + `class-variance-authority`, composed with `cn()` from `lib/utils.ts`
+  (clsx + tailwind-merge). **Default to an existing shadcn primitive (or add one via the shadcn CLI)
+  over hand-rolled markup/plain Tailwind** for any new UI — dialogs, dropdowns, forms, tables, badges,
+  toggles, toasts all have one. Domain-specific wrappers (`AdminTable`, `FormField`'s `TextField`,
+  `StatusToggle`, `CollapsibleSectionHeader`, etc.) are thin compositions over these primitives, not
+  competing implementations — extend them rather than reaching for raw `<button>`/`<input>`.
+  Dark/light theming flows through CSS variables: `theme.ts`/`index.css`'s `--color-*` tokens are
+  bridged to shadcn's semantic tokens (`--background`, `--primary`, `--border`, etc.) in `index.css`'s
+  `@theme inline` block, toggled by `ThemeModeProvider` setting `data-theme` on `<html>`. Reference
+  `--color-*` tokens directly (e.g. `text-(--color-text-tertiary)`) when a semantic shadcn token doesn't
+  fit. `Login.tsx` is the one exception — a fixed light surface with hardcoded slate/violet Tailwind
+  classes that intentionally ignores the dark/light toggle, so shadcn components there carry explicit
+  override classNames instead of the default theme-variable-driven styling.
 - Routing (`App.tsx`) is gated by `ProtectedRoute` (role check + app-assignment check, mirroring
   `userCanAccessApplication`). Redux holds only auth state; everything else is local/hook state.
 - Content/Page editors use an **element editor registry** (`components/body/elementEditorRegistry.tsx`,

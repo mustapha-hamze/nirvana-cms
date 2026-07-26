@@ -1,6 +1,9 @@
 import { Link } from 'react-router-dom'
-import { theme } from '../../theme'
-import { ChevronIcon, SearchIcon } from '../icons'
+import { Separator } from '@/components/ui/separator'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import CollapsibleSectionHeader from '../ui/CollapsibleSectionHeader'
+import { SearchIcon } from '../icons'
 import { getTitleForLang } from '../../utils/translations'
 import type { Category } from '../../types/category'
 import type { Tag } from '../../types/tag'
@@ -53,34 +56,21 @@ export default function ContentTaxonomyPanel({
 }) {
   return (
     <>
-      <div style={{ borderTop: `1px solid ${theme.border}` }} />
+      <Separator />
 
       <div>
-        <button
-          type="button"
-          onClick={onToggleCategories}
-          className="flex items-center gap-1.5 text-sm font-medium transition"
-          style={{ color: theme.textSecondary }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = theme.textPrimary)}
-          onMouseLeave={(e) => (e.currentTarget.style.color = theme.textSecondary)}
-        >
-          <ChevronIcon open={categoriesOpen} size={14} />
-          Categories
-          {selectedCategoryIds.length > 0 && (
-            <span
-              className="text-xs font-semibold px-1.5 py-0.5 rounded-full"
-              style={{ background: theme.accentBg, color: theme.accent }}
-            >
-              {selectedCategoryIds.length}
-            </span>
-          )}
-        </button>
+        <CollapsibleSectionHeader
+          open={categoriesOpen}
+          onToggle={onToggleCategories}
+          label="Categories"
+          count={selectedCategoryIds.length}
+        />
         {categoriesOpen && (
           <div className="mt-4">
             {categories.length === 0 ? (
-              <p className="text-sm" style={{ color: theme.textTertiary }}>
+              <p className="text-sm text-(--color-text-tertiary)">
                 No categories yet.{' '}
-                <Link to={`/applications/${applicationId}/categories`} className="underline" style={{ color: theme.accent }}>
+                <Link to={`/applications/${applicationId}/categories`} className="text-primary underline">
                   Create one
                 </Link>
                 .
@@ -88,19 +78,18 @@ export default function ContentTaxonomyPanel({
             ) : (
               <div className="space-y-3">
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: theme.textTertiary }}>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-(--color-text-tertiary)">
                     <SearchIcon size={14} />
                   </span>
-                  <input
+                  <Input
                     value={categorySearch}
                     onChange={(e) => onCategorySearchChange(e.target.value)}
                     placeholder="Search categories…"
-                    className="w-full pl-9 pr-3 py-2 rounded-xl text-sm outline-none transition"
-                    style={{ background: theme.inputBg, border: `1px solid ${theme.inputBorder}`, color: theme.textPrimary }}
+                    className="pl-9"
                   />
                 </div>
                 {filteredCategories.length === 0 ? (
-                  <p className="text-sm" style={{ color: theme.textTertiary }}>
+                  <p className="text-sm text-(--color-text-tertiary)">
                     No categories match "{categorySearch}".
                   </p>
                 ) : (
@@ -108,18 +97,16 @@ export default function ContentTaxonomyPanel({
                     {filteredCategories.map((cat) => {
                       const selected = selectedCategoryIds.includes(cat._id)
                       return (
-                        <button
+                        <Button
                           key={cat._id}
                           type="button"
+                          variant={selected ? 'default' : 'outline'}
+                          size="sm"
+                          className="rounded-full"
                           onClick={() => onToggleCategory(cat._id)}
-                          className="px-3.5 py-1.5 rounded-full text-sm font-medium transition"
-                          style={selected
-                            ? { background: theme.accentBg, border: '1px solid rgba(124,58,237,0.5)', color: theme.accent }
-                            : { background: theme.inputBg, border: `1px solid ${theme.inputBorder}`, color: theme.textSecondary }
-                          }
                         >
                           {categoryLabel(cat)}
-                        </button>
+                        </Button>
                       )
                     })}
                   </div>
@@ -130,34 +117,16 @@ export default function ContentTaxonomyPanel({
         )}
       </div>
 
-      <div style={{ borderTop: `1px solid ${theme.border}` }} />
+      <Separator />
 
       <div>
-        <button
-          type="button"
-          onClick={onToggleTags}
-          className="flex items-center gap-1.5 text-sm font-medium transition"
-          style={{ color: theme.textSecondary }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = theme.textPrimary)}
-          onMouseLeave={(e) => (e.currentTarget.style.color = theme.textSecondary)}
-        >
-          <ChevronIcon open={tagsOpen} size={14} />
-          Tags
-          {selectedTagIds.length > 0 && (
-            <span
-              className="text-xs font-semibold px-1.5 py-0.5 rounded-full"
-              style={{ background: theme.accentBg, color: theme.accent }}
-            >
-              {selectedTagIds.length}
-            </span>
-          )}
-        </button>
+        <CollapsibleSectionHeader open={tagsOpen} onToggle={onToggleTags} label="Tags" count={selectedTagIds.length} />
         {tagsOpen && (
           <div className="mt-4">
             {tags.length === 0 ? (
-              <p className="text-sm" style={{ color: theme.textTertiary }}>
+              <p className="text-sm text-(--color-text-tertiary)">
                 No tags yet.{' '}
-                <Link to={`/applications/${applicationId}/tags`} className="underline" style={{ color: theme.accent }}>
+                <Link to={`/applications/${applicationId}/tags`} className="text-primary underline">
                   Create one
                 </Link>
                 .
@@ -165,19 +134,18 @@ export default function ContentTaxonomyPanel({
             ) : (
               <div className="space-y-3">
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: theme.textTertiary }}>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-(--color-text-tertiary)">
                     <SearchIcon size={14} />
                   </span>
-                  <input
+                  <Input
                     value={tagSearch}
                     onChange={(e) => onTagSearchChange(e.target.value)}
                     placeholder="Search tags…"
-                    className="w-full pl-9 pr-3 py-2 rounded-xl text-sm outline-none transition"
-                    style={{ background: theme.inputBg, border: `1px solid ${theme.inputBorder}`, color: theme.textPrimary }}
+                    className="pl-9"
                   />
                 </div>
                 {filteredTags.length === 0 ? (
-                  <p className="text-sm" style={{ color: theme.textTertiary }}>
+                  <p className="text-sm text-(--color-text-tertiary)">
                     No tags match "{tagSearch}".
                   </p>
                 ) : (
@@ -185,18 +153,16 @@ export default function ContentTaxonomyPanel({
                     {filteredTags.map((tag) => {
                       const selected = selectedTagIds.includes(tag._id)
                       return (
-                        <button
+                        <Button
                           key={tag._id}
                           type="button"
+                          variant={selected ? 'default' : 'outline'}
+                          size="sm"
+                          className="rounded-full"
                           onClick={() => onToggleTag(tag._id)}
-                          className="px-3.5 py-1.5 rounded-full text-sm font-medium transition"
-                          style={selected
-                            ? { background: theme.accentBg, border: '1px solid rgba(124,58,237,0.5)', color: theme.accent }
-                            : { background: theme.inputBg, border: `1px solid ${theme.inputBorder}`, color: theme.textSecondary }
-                          }
                         >
                           {getTitleForLang(tag.translations, activeLang)}
-                        </button>
+                        </Button>
                       )
                     })}
                   </div>

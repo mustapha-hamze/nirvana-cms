@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams, useOutletContext } from "react-router-dom";
 import { api } from "../api/client";
-import { theme } from "../theme";
 import type { AdminOutletContext } from "../components/AdminLayout";
 import { BackIcon } from "../components/icons";
 import { ErrorBanner, CancelButton, PrimaryButton } from "../components/ui/Modal";
 import { TextField } from "../components/ui/FormField";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import StatusToggle from "../components/ui/StatusToggle";
 import SkeletonTable from "../components/ui/SkeletonTable";
 import TranslationTabs from "../components/ui/TranslationTabs";
@@ -55,9 +56,9 @@ export default function PageForm() {
   if (pageId && loadError) {
     return (
       <div className="mx-10 my-10">
-        <p style={{ color: theme.textSecondary }}>
+        <p className="text-muted-foreground">
           That page couldn't be found.{" "}
-          <Link to={`/applications/${app._id}/pages`} className="underline" style={{ color: theme.accent }}>
+          <Link to={`/applications/${app._id}/pages`} className="text-primary underline">
             Back to Pages
           </Link>
           .
@@ -128,28 +129,22 @@ function PageEditor({
     <div className="mx-10 my-10">
       <div className="flex items-start justify-between mb-8">
         <div className="flex items-center gap-3">
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={onBack}
             title="Back to Pages"
             aria-label="Back to Pages"
-            className="p-2 rounded-lg transition shrink-0"
-            style={{ color: theme.textSecondary }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = theme.textPrimary;
-              e.currentTarget.style.background = theme.hoverBgSubtle;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = theme.textSecondary;
-              e.currentTarget.style.background = "transparent";
-            }}
+            className="shrink-0 text-muted-foreground hover:text-foreground"
           >
             <BackIcon />
-          </button>
+          </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight" style={{ color: theme.textPrimary }}>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
               {isEdit ? "Edit Page" : "Create Page"}
             </h1>
-            <p className="mt-1 text-[15px]" style={{ color: theme.textSecondary }}>
+            <p className="mt-1 text-[15px] text-muted-foreground">
               {isEdit ? "Manage translations for this page" : "Add one or more languages, then create"}
             </p>
           </div>
@@ -168,7 +163,7 @@ function PageEditor({
         </div>
       )}
 
-      <div className="rounded-2xl overflow-hidden" style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
+      <div className="rounded-2xl overflow-hidden border bg-card">
         <TranslationTabs
           existingLangs={existingLangs}
           availableLangs={availableLangs}
@@ -216,12 +211,12 @@ function PageEditor({
                 />
               )}
 
-              <div style={{ borderTop: `1px solid ${theme.border}` }} />
+              <Separator />
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-5">
                   <div>
-                    <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textSecondary }}>
+                    <label className="block text-sm font-medium mb-1.5 text-muted-foreground">
                       Page Status
                     </label>
                     <div className="flex items-center gap-2">
@@ -235,10 +230,7 @@ function PageEditor({
                           offLabel="Unpublish"
                         />
                       )}
-                      <span
-                        className="text-sm font-medium"
-                        style={{ color: draft.status === "published" ? theme.success : theme.textSecondary }}
-                      >
+                      <span className={`text-sm font-medium ${draft.status === "published" ? "text-(--color-success)" : "text-muted-foreground"}`}>
                         {draft.status === "published" ? "Published" : "Draft"}
                       </span>
                     </div>

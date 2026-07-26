@@ -1,6 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { theme } from '../../theme'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { DragHandleIcon, TrashIcon } from '../icons'
 import { ElementEditor } from './elementEditorRegistry'
 import type { ContentSection, ContentElement, ElementType } from '../../types/content'
@@ -45,31 +46,28 @@ export default function SectionCard({
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
-        background: theme.surface,
-        border: `1px solid ${theme.border}`,
       }}
-      className="rounded-2xl p-5"
+      className="rounded-2xl border bg-card p-5"
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
-          <button type="button" {...attributes} {...listeners} className="cursor-grab touch-none" style={{ color: theme.textTertiary }}>
+          <button type="button" {...attributes} {...listeners} className="cursor-grab touch-none text-(--color-text-tertiary)">
             <DragHandleIcon />
           </button>
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: theme.accentBg, color: theme.accent }}>
+          <Badge variant="accent" className="text-xs font-semibold">
             {SECTION_TYPE_LABELS[section.type]}
-          </span>
+          </Badge>
         </div>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-sm"
           onClick={onRemove}
           title="Remove section"
-          className="p-1.5 rounded-lg transition"
-          style={{ color: theme.danger }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = theme.dangerBgHover)}
-          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+          className="icon-btn-danger hover:bg-transparent"
         >
           <TrashIcon size={14} />
-        </button>
+        </Button>
       </div>
       <div className={layoutClass}>
         {section.elements.map((element, i) => {
@@ -81,18 +79,16 @@ export default function SectionCard({
                   {allowedTypes.map((t) => {
                     const active = t === element.elementType
                     return (
-                      <button
+                      <Button
                         key={t}
                         type="button"
+                        variant={active ? 'default' : 'outline'}
+                        size="sm"
+                        className="h-auto rounded-full px-2.5 py-1 text-xs"
                         onClick={() => changeElementType(i, t)}
-                        className="px-2.5 py-1 rounded-full text-xs font-medium transition"
-                        style={active
-                          ? { background: theme.accentBg, color: theme.accent }
-                          : { background: theme.inputBg, color: theme.textSecondary, border: `1px solid ${theme.inputBorder}` }
-                        }
                       >
                         {ELEMENT_TYPE_LABELS[t]}
-                      </button>
+                      </Button>
                     )
                   })}
                 </div>

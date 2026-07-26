@@ -2,19 +2,21 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import type { ReactNode } from 'react'
-import { theme } from '../../theme'
+import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
 import type { RichTextElement } from '../../types/content'
 
 function ToolbarButton({ active, onClick, children }: { active?: boolean; onClick: () => void; children: ReactNode }) {
   return (
-    <button
+    <Button
       type="button"
+      variant={active ? 'secondary' : 'ghost'}
+      size="sm"
       onClick={onClick}
-      className="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition"
-      style={active ? { background: theme.accentBg, color: theme.accent } : { color: theme.textSecondary }}
+      className="h-auto px-2.5 py-1.5 text-xs font-semibold"
     >
       {children}
-    </button>
+    </Button>
   )
 }
 
@@ -41,14 +43,11 @@ export default function RichTextElementEditor({
 
   return (
     <div>
-      <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textSecondary }}>
+      <Label className="mb-1.5 text-sm font-medium text-muted-foreground">
         Rich Text
-      </label>
-      <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.inputBorder}` }}>
-        <div
-          className="flex items-center gap-1 px-2 py-1.5"
-          style={{ borderBottom: `1px solid ${theme.border}`, background: theme.inputBg }}
-        >
+      </Label>
+      <div className="rounded-xl overflow-hidden border">
+        <div className="flex items-center gap-1 border-b bg-input/30 px-2 py-1.5">
           <ToolbarButton active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()}>
             B
           </ToolbarButton>
@@ -90,7 +89,7 @@ export default function RichTextElementEditor({
             Link
           </ToolbarButton>
         </div>
-        <EditorContent editor={editor} className="px-4 py-2.5 text-sm" style={{ color: theme.textPrimary, minHeight: '120px' }} />
+        <EditorContent editor={editor} className="min-h-[120px] px-4 py-2.5 text-sm text-foreground" />
       </div>
     </div>
   )

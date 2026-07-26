@@ -1,4 +1,4 @@
-import { theme } from '../../theme'
+import { Input } from '@/components/ui/input'
 import { SearchIcon } from '../icons'
 
 // Shared search box for admin list pages — debounced search state itself
@@ -14,15 +14,14 @@ export default function ListSearchInput({
 }) {
   return (
     <div className="relative mb-4 max-w-sm">
-      <span className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: theme.textTertiary }}>
+      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-(--color-text-tertiary)">
         <SearchIcon size={14} />
       </span>
-      <input
+      <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full pl-9 pr-3 py-2 rounded-xl text-sm outline-none transition"
-        style={{ background: theme.inputBg, border: `1px solid ${theme.inputBorder}`, color: theme.textPrimary }}
+        className="pl-9"
       />
     </div>
   )

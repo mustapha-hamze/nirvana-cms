@@ -1,3 +1,4 @@
+import { toast } from 'sonner'
 import { useState } from 'react'
 import { api } from '../api/client'
 import { Backdrop, ModalPanel, ModalHeader, ModalFooter, ErrorBanner, CancelButton, PrimaryButton } from './ui/Modal'
@@ -5,8 +6,7 @@ import StatusToggle from './ui/StatusToggle'
 import TranslatedTitleTabs from './ui/TranslatedTitleTabs'
 import TranslatedTitleField from './ui/TranslatedTitleField'
 import { useTranslatedTitleForm } from '../hooks/useTranslatedTitleForm'
-import { useToast } from './ui/useToast'
-import { theme } from '../theme'
+import { Label } from '@/components/ui/label'
 import type { LangKey } from '../types/content'
 import type { Tag } from '../types/tag'
 
@@ -33,7 +33,6 @@ export default function TagModal({
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const { showToast } = useToast()
 
   async function handleSave() {
     setError('')
@@ -50,7 +49,7 @@ export default function TagModal({
       } else {
         await api.post('/tags', { application: applicationId, ...payload })
       }
-      showToast(isEdit ? 'Tag has been updated' : 'Tag has been created')
+      toast.success(isEdit ? 'Tag has been updated' : 'Tag has been created')
       onSaved()
       onClose()
     } catch (err) {
@@ -65,7 +64,6 @@ export default function TagModal({
         <ModalHeader
           title={isEdit ? 'Edit Tag' : 'Create Tag'}
           subtitle={isEdit ? 'Update this tag' : 'Add a new tag to label content'}
-          onClose={onClose}
         />
 
         <TranslatedTitleTabs allowedLanguages={allowedLanguages} activeLang={activeLang} titles={titles} onSelect={setActiveLang} />
@@ -80,9 +78,9 @@ export default function TagModal({
             placeholder="e.g. Breaking"
           />
           <div>
-            <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textSecondary }}>
+            <Label className="block text-sm font-medium mb-1.5 text-muted-foreground">
               Status
-            </label>
+            </Label>
             <div className="flex items-center gap-2">
               <StatusToggle
                 checked={active}
@@ -90,10 +88,7 @@ export default function TagModal({
                 onLabel="Activate"
                 offLabel="Deactivate"
               />
-              <span
-                className="text-sm font-medium"
-                style={{ color: active ? theme.success : theme.textSecondary }}
-              >
+              <span className={`text-sm font-medium ${active ? 'text-(--color-success)' : 'text-muted-foreground'}`}>
                 {active ? 'Active' : 'Inactive'}
               </span>
             </div>

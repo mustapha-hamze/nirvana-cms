@@ -1,21 +1,22 @@
 import { useId, useState } from 'react'
-import { theme } from '../../theme'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
 import { EyeIcon, EyeOffIcon } from '../icons'
-
-const inputStyle = { background: theme.inputBg, border: `1px solid ${theme.inputBorder}`, color: theme.textPrimary }
-
-function focusBorder(e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
-  e.currentTarget.style.borderColor = 'rgba(124,58,237,0.7)'
-}
-function blurBorder(e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
-  e.currentTarget.style.borderColor = theme.inputBorder
-}
 
 function FieldLabel({ htmlFor, label, required }: { htmlFor: string; label: string; required?: boolean }) {
   return (
-    <label htmlFor={htmlFor} className="block text-sm font-medium mb-1.5" style={{ color: theme.textSecondary }}>
-      {label} {required && <span style={{ color: theme.danger }}>*</span>}
-    </label>
+    <Label htmlFor={htmlFor} className="mb-1.5 text-sm font-medium text-muted-foreground">
+      {label} {required && <span className="text-destructive">*</span>}
+    </Label>
   )
 }
 
@@ -42,13 +43,10 @@ export function TextField({
   return (
     <div>
       <FieldLabel htmlFor={id} label={label} required={required} />
-      <input
+      <Input
         id={id}
         type={type} value={value} onChange={(e) => onChange(e.target.value)}
         required={required} placeholder={placeholder} autoComplete={autoComplete} dir={dir}
-        className="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition"
-        style={inputStyle}
-        onFocus={focusBorder} onBlur={blurBorder}
       />
     </div>
   )
@@ -75,13 +73,11 @@ export function TextAreaField({
   return (
     <div>
       <FieldLabel htmlFor={id} label={label} required={required} />
-      <textarea
+      <Textarea
         id={id}
         value={value} onChange={(e) => onChange(e.target.value)}
         rows={rows} placeholder={placeholder} dir={dir}
-        className="w-full px-4 py-2.5 rounded-xl text-sm resize-none outline-none transition"
-        style={inputStyle}
-        onFocus={focusBorder} onBlur={blurBorder}
+        className="resize-none"
       />
     </div>
   )
@@ -104,19 +100,18 @@ export function SelectField<T extends string>({
   return (
     <div>
       <FieldLabel htmlFor={id} label={label} required={required} />
-      <select
-        id={id}
-        value={value} onChange={(e) => onChange(e.target.value as T)}
-        className="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition"
-        style={inputStyle}
-        onFocus={focusBorder} onBlur={blurBorder}
-      >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value} style={{ background: theme.inputBg }}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+      <Select value={value} onValueChange={(v) => onChange(v as T)}>
+        <SelectTrigger id={id} className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((opt) => (
+            <SelectItem key={opt.value} value={opt.value}>
+              {opt.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   )
 }
@@ -142,23 +137,21 @@ export function PasswordField({
     <div>
       <FieldLabel htmlFor={id} label={label} required={required} />
       <div className="relative">
-        <input
+        <Input
           id={id}
           type={show ? 'text' : 'password'} value={value} onChange={(e) => onChange(e.target.value)}
           required={required} autoComplete={autoComplete} placeholder={placeholder}
-          className="w-full px-4 py-2.5 pr-11 rounded-xl text-sm outline-none transition"
-          style={inputStyle}
-          onFocus={focusBorder} onBlur={blurBorder}
+          className="pr-11"
         />
-        <button
-          type="button" onClick={() => setShow((v) => !v)}
-          className="absolute right-3.5 top-1/2 -translate-y-1/2 transition"
-          style={{ color: theme.textFaint }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = theme.textSecondary)}
-          onMouseLeave={(e) => (e.currentTarget.style.color = theme.textFaint)}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          onClick={() => setShow((v) => !v)}
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
         >
           {show ? <EyeOffIcon /> : <EyeIcon />}
-        </button>
+        </Button>
       </div>
     </div>
   )

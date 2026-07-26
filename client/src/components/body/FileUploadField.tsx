@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { theme } from '../../theme'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 import { uploadContentVideo, uploadPageVideo, uploadPageDocument } from '../../api/client'
 import { resolveMediaUrl } from '../../utils/mediaUrl'
 
@@ -67,23 +68,22 @@ export default function FileUploadField({
 
   return (
     <div>
-      <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textSecondary }}>
+      <Label className="mb-1.5 text-sm font-medium text-muted-foreground">
         {label ?? (kind === 'video' ? 'Upload video' : 'Upload document')}{' '}
-        {uploading && <span style={{ color: theme.textTertiary }}>— uploading…</span>}
-      </label>
-      <input
+        {uploading && <span className="text-(--color-text-tertiary)">— uploading…</span>}
+      </Label>
+      <Input
         type="file"
         accept={config.accept}
         onChange={handleFileChange}
         disabled={uploading}
-        className="block w-full text-sm"
-        style={{ color: theme.textSecondary }}
+        className="h-auto py-1.5"
       />
-      <p className="text-xs mt-1" style={{ color: theme.textTertiary }}>
+      <p className="text-xs mt-1 text-(--color-text-tertiary)">
         {config.hint}
       </p>
       {error && (
-        <p className="text-xs mt-1" style={{ color: theme.danger }}>
+        <p className="text-xs mt-1 text-destructive">
           {error}
         </p>
       )}
@@ -92,8 +92,7 @@ export default function FileUploadField({
           href={resolveMediaUrl(kind === 'video' ? 'videos' : 'documents', domain, url)}
           target="_blank"
           rel="noreferrer"
-          className="block text-xs mt-2 truncate underline"
-          style={{ color: theme.accent }}
+          className="block text-xs mt-2 truncate text-primary underline"
         >
           {url}
         </a>

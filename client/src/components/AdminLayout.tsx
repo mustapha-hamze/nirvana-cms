@@ -3,7 +3,9 @@ import { useNavigate, useParams, useLocation, Outlet } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { logout, selectUser } from '../store/authSlice'
 import { api } from '../api/client'
-import { theme } from '../theme'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
 import { BackIcon, LogoutIcon, MenuIcon } from './icons'
 import Sidebar, { MobileSidebarDrawer } from './Sidebar'
 import ThemeToggle from './ui/ThemeToggle'
@@ -44,60 +46,50 @@ export default function AdminLayout() {
     .toUpperCase()
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: theme.bg }}>
+    <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
-      <header
-        className="sticky top-0 z-40"
-        style={{ background: theme.headerBg, borderBottom: `1px solid ${theme.border}` }}
-      >
+      <header className="sticky top-0 z-40 border-b bg-(--color-header-bg)">
         <div className="px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4 min-w-0">
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={() => setMobileNavOpen(true)}
               title="Open menu"
-              className="p-2 -ml-2 rounded-lg transition shrink-0 md:hidden"
-              style={{ color: theme.textMuted }}
+              className="-ml-2 shrink-0 text-muted-foreground hover:text-foreground md:hidden"
             >
               <MenuIcon />
-            </button>
+            </Button>
 
             {user?.role === 'SuperAdmin' && (
               <>
-                <button
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => navigate('/applications')}
                   title="Back to Applications"
-                  className="p-2 rounded-lg transition shrink-0"
-                  style={{ color: theme.textMuted }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = theme.textPrimary
-                    e.currentTarget.style.background = theme.hoverBgSubtle
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = theme.textMuted
-                    e.currentTarget.style.background = 'transparent'
-                  }}
+                  className="shrink-0 text-muted-foreground hover:text-foreground"
                 >
                   <BackIcon />
-                </button>
+                </Button>
 
-                <div className="w-px h-6 shrink-0" style={{ background: theme.border }} />
+                <Separator orientation="vertical" className="h-6 shrink-0" />
               </>
             )}
 
             <div className="flex items-center gap-2.5 min-w-0">
               <div
-                className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center overflow-hidden"
-                style={app?.logo
-                  ? { border: `1px solid ${theme.border}` }
-                  : { background: theme.accentGradientDiag }
-                }
+                className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center overflow-hidden ${app?.logo ? 'border' : ''}`}
+                style={app?.logo ? undefined : { background: 'var(--color-accent-gradient-diag)' }}
               >
                 {app?.logo
                   ? <img src={app.logo} alt={app.name} className="w-full h-full object-cover" />
                   : <span className="text-white text-xs font-bold">{app?.name?.[0]?.toUpperCase() ?? ''}</span>
                 }
               </div>
-              <span className="font-semibold text-[15px] truncate" style={{ color: theme.textPrimary }}>
+              <span className="font-semibold text-[15px] truncate text-foreground">
                 {loading ? 'Loading…' : app?.name ?? 'Application'}
               </span>
             </div>
@@ -105,38 +97,34 @@ export default function AdminLayout() {
 
           <div className="flex items-center gap-4 shrink-0">
             <div className="flex items-center gap-2.5">
-              <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0"
-                style={{ background: theme.accentGradientDiag }}
-              >
-                {initials}
-              </div>
+              <Avatar>
+                <AvatarFallback className="bg-[image:var(--color-accent-gradient-diag)] text-white">{initials}</AvatarFallback>
+              </Avatar>
               <div className="hidden sm:block">
-                <p className="text-sm font-medium leading-none" style={{ color: theme.textStrong }}>
+                <p className="text-sm font-medium leading-none text-(--color-text-strong)">
                   {user?.name}
                 </p>
-                <p className="text-xs mt-0.5" style={{ color: theme.textFaint }}>
+                <p className="text-xs mt-0.5 text-(--color-text-faint)">
                   {user?.role}
                 </p>
               </div>
             </div>
 
-            <div className="w-px h-5" style={{ background: theme.divider }} />
+            <Separator orientation="vertical" className="h-5" />
 
             <ThemeToggle />
 
-            <div className="w-px h-5" style={{ background: theme.divider }} />
+            <Separator orientation="vertical" className="h-5" />
 
-            <button
+            <Button
+              type="button"
+              variant="ghost"
               onClick={handleLogout}
-              className="flex items-center gap-1.5 text-sm transition"
-              style={{ color: theme.textMuted }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = theme.danger)}
-              onMouseLeave={(e) => (e.currentTarget.style.color = theme.textMuted)}
+              className="h-auto gap-1.5 p-0 text-sm text-(--color-text-muted) hover:bg-transparent hover:text-destructive"
             >
               <LogoutIcon />
               <span className="hidden sm:inline">Logout</span>
-            </button>
+            </Button>
           </div>
         </div>
       </header>

@@ -1,4 +1,4 @@
-import { theme } from '../../theme'
+import { Button } from '@/components/ui/button'
 import { LANGUAGE_LABELS, type LangKey } from '../../types/content'
 
 // "Select a language to add a translation for" block shown when a
@@ -13,20 +13,14 @@ export default function TranslationPicker({
 }) {
   return (
     <div className="space-y-3">
-      <p className="text-sm" style={{ color: theme.textSecondary }}>
+      <p className="text-sm text-muted-foreground">
         Select a language to add a translation for:
       </p>
       <div className="flex flex-wrap gap-2">
         {availableLangs.map((lang) => (
-          <button
-            key={lang}
-            type="button"
-            onClick={() => onPick(lang)}
-            className="px-4 py-2 rounded-xl text-sm font-medium transition"
-            style={{ background: theme.inputBg, border: `1px solid ${theme.inputBorder}`, color: theme.textPrimary }}
-          >
+          <Button key={lang} type="button" variant="outline" onClick={() => onPick(lang)}>
             {LANGUAGE_LABELS[lang]}
-          </button>
+          </Button>
         ))}
       </div>
     </div>

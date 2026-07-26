@@ -1,6 +1,6 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { api } from '../api/client'
-import { useToast } from '../components/ui/useToast'
 import { toPersistableSections } from '../factories/contentElements'
 import type { LangKey, ContentItem, ContentDetail } from '../types/content'
 import type { ContentDraft } from './useContentDrafts'
@@ -24,7 +24,6 @@ export function useContentSave({
 }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const { showToast } = useToast()
   const isEdit = savedContent !== null
 
   async function handleSave(drafts: Partial<Record<LangKey, ContentDraft>>) {
@@ -32,7 +31,7 @@ export function useContentSave({
     const entries = (Object.entries(drafts) as [LangKey, ContentDraft][]).filter(([, d]) => d.title.trim())
     if (entries.length === 0) {
       setError('At least one language needs a title')
-      showToast('At least one language needs a title', 'error')
+      toast.error('At least one language needs a title')
       return
     }
     setLoading(true)
@@ -68,7 +67,7 @@ export function useContentSave({
             details: [...byLang.values()],
           }
         })
-        showToast('Content has been updated')
+        toast.success('Content has been updated')
       } else {
         const created = await api.post<ContentItem>('/content', {
           application: applicationId,
@@ -80,14 +79,14 @@ export function useContentSave({
             sections: toPersistableSections(d.sections),
           })),
         })
-        showToast('Content has been created')
+        toast.success('Content has been created')
         onCreated(created)
         return
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : `Failed to ${isEdit ? 'save' : 'create'} content`
       setError(message)
-      showToast(message, 'error')
+      toast.error(message)
     } finally {
       setLoading(false)
     }

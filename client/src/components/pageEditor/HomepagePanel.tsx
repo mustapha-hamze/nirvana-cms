@@ -1,4 +1,4 @@
-import { theme } from '../../theme'
+import { Separator } from '@/components/ui/separator'
 import StatusToggle from '../ui/StatusToggle'
 
 // Homepage toggle — admin-only, shared across every language of a page (a
@@ -13,11 +13,11 @@ export default function HomepagePanel({
 }) {
   return (
     <>
-      <div style={{ borderTop: `1px solid ${theme.border}` }} />
+      <Separator />
 
       <div className="flex items-center justify-between">
         <div>
-          <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textSecondary }}>
+          <label className="block text-sm font-medium mb-1.5 text-muted-foreground">
             Homepage
           </label>
           <div className="flex items-center gap-2">
@@ -27,7 +27,7 @@ export default function HomepagePanel({
               onLabel="Set as homepage"
               offLabel="Unset as homepage"
             />
-            <span className="text-sm font-medium" style={{ color: theme.textSecondary }}>
+            <span className="text-sm font-medium text-muted-foreground">
               {isHomepage ? "This is the site's homepage" : 'Not the homepage'}
             </span>
           </div>

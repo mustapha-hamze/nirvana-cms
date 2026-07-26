@@ -1,5 +1,4 @@
 import { TextField } from '../ui/FormField'
-import { theme } from '../../theme'
 import type { MapElement } from '../../types/page'
 
 export default function MapElementEditor({
@@ -18,7 +17,7 @@ export default function MapElementEditor({
         onChange={(embedUrl) => onChange({ ...element, embedUrl })}
         placeholder="Paste a Google Maps embed link"
       />
-      <p className="text-xs -mt-2" style={{ color: theme.textTertiary }}>
+      <p className="text-xs -mt-2 text-(--color-text-tertiary)">
         Preferred when set. Otherwise the coordinates below are used.
       </p>
 

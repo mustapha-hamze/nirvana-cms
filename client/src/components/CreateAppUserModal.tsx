@@ -43,7 +43,7 @@ export default function CreateAppUserModal({ applicationId, onClose, onCreated }
   return (
     <Backdrop onClose={onClose}>
       <ModalPanel>
-        <ModalHeader title="Create User" subtitle="Add a new user to this application" onClose={onClose} />
+        <ModalHeader title="Create User" subtitle="Add a new user to this application" />
         <form onSubmit={handleSubmit}>
           <div className="px-6 py-5 space-y-4">
             {error && <ErrorBanner message={error} />}

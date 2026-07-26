@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { api } from "../api/client";
 import type { AdminOutletContext } from "../components/AdminLayout";
-import { theme } from "../theme";
 import { EditIcon, TrashIcon } from "../components/icons";
+import { Badge } from "@/components/ui/badge";
 import EmptyState from "../components/ui/EmptyState";
 import SkeletonTable from "../components/ui/SkeletonTable";
 import ConfirmModal from "../components/ui/ConfirmModal";
@@ -13,6 +13,7 @@ import IdCell from "../components/ui/IdCell";
 import AdminPageHeader from "../components/ui/AdminPageHeader";
 import ListSearchInput from "../components/ui/ListSearchInput";
 import AdminTable, { AdminTableRow, AdminTableHeadCell, EmptyResultsRow } from "../components/ui/AdminTable";
+import { TableHeader, TableBody } from "@/components/ui/table";
 import AdminTableActionButton from "../components/ui/AdminTableActionButton";
 import { LanguageStatusBadges } from "../components/ui/LanguageBadges";
 import CreatedAtCell from "../components/ui/CreatedAtCell";
@@ -73,32 +74,29 @@ export default function Pages() {
         <AdminTable
           footer={<Pagination page={page} totalPages={totalPages} total={total} limit={limit} onPageChange={setPage} />}
         >
-          <thead>
-            <tr style={{ borderBottom: `1px solid ${theme.border}` }}>
+          <TableHeader>
+            <tr>
               <SortableHeader label="Title" active={sortBy === "title"} direction={sortOrder} onClick={() => toggleSort("title")} />
               <AdminTableHeadCell>ID</AdminTableHeadCell>
               <AdminTableHeadCell>Languages</AdminTableHeadCell>
               <SortableHeader label="Created" active={sortBy === "createdAt"} direction={sortOrder} onClick={() => toggleSort("createdAt")} />
               <AdminTableHeadCell align="right">Actions</AdminTableHeadCell>
             </tr>
-          </thead>
-          <tbody>
+          </TableHeader>
+          <TableBody>
             {pages.map((page) => {
               const preview = getPreviewDetail(page);
               return (
                 <AdminTableRow key={page._id}>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium" style={{ color: theme.textPrimary }}>
+                      <span className="font-medium text-foreground">
                         {preview?.title ?? "—"}
                       </span>
                       {page.isHomepage && (
-                        <span
-                          className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                          style={{ background: theme.accentBg, color: theme.accent }}
-                        >
+                        <Badge variant="accent" className="text-[11px] font-semibold">
                           Homepage
-                        </span>
+                        </Badge>
                       )}
                     </div>
                   </td>
@@ -128,7 +126,7 @@ export default function Pages() {
                 </AdminTableRow>
               );
             })}
-          </tbody>
+          </TableBody>
         </AdminTable>
       )}
 
@@ -154,7 +152,8 @@ function BigPageIcon() {
       height="28"
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#7c3aed"
+      className="text-primary"
+      stroke="currentColor"
       strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"

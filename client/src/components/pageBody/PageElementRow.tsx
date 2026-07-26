@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { theme } from '../../theme'
+import { Button } from '@/components/ui/button'
 import { DragHandleIcon, TrashIcon } from '../icons'
 import { PageElementEditor } from './pageElementEditorRegistry'
 import type { PageElement } from '../../types/page'
@@ -36,28 +36,27 @@ export default function PageElementRow({
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
-        background: theme.inputBg,
-        border: `1px solid ${theme.inputBorder}`,
       }}
-      className="rounded-xl p-4 h-full"
+      className="rounded-xl border bg-input/30 p-4 h-full"
     >
       <div className="flex items-center gap-2 mb-3">
-        <button type="button" {...attributes} {...listeners} className="cursor-grab touch-none shrink-0" style={{ color: theme.textTertiary }}>
+        <button type="button" {...attributes} {...listeners} className="cursor-grab touch-none shrink-0 text-(--color-text-tertiary)">
           <DragHandleIcon />
         </button>
-        <span className="text-xs font-semibold flex-1" style={{ color: theme.textSecondary }}>
+        <span className="text-xs font-semibold flex-1 text-muted-foreground">
           {itemLabel} {index + 1}
         </span>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-sm"
           onClick={onRemove}
           disabled={!canRemove}
           title={canRemove ? `Remove this ${itemLabel.toLowerCase()}` : 'This section is already at its minimum'}
-          className="p-1.5 rounded-lg transition disabled:opacity-30 shrink-0"
-          style={{ color: theme.danger }}
+          className="icon-btn-danger shrink-0 hover:bg-transparent"
         >
           <TrashIcon size={14} />
-        </button>
+        </Button>
       </div>
       <PageElementEditor applicationId={applicationId} element={element} onChange={onChange} />
     </div>

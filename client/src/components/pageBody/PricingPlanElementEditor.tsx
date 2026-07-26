@@ -1,6 +1,7 @@
 import { TextField } from '../ui/FormField'
 import StringListField from './StringListField'
-import { theme } from '../../theme'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 import type { PricingPlanElement } from '../../types/page'
 
 export default function PricingPlanElementEditor({
@@ -28,10 +29,10 @@ export default function PricingPlanElementEditor({
         <TextField label="Button label" value={element.ctaLabel} onChange={(ctaLabel) => onChange({ ...element, ctaLabel })} placeholder="Choose plan" />
         <TextField label="Button link" value={element.ctaUrl} onChange={(ctaUrl) => onChange({ ...element, ctaUrl })} placeholder="https://…" />
       </div>
-      <label className="flex items-center gap-2 text-sm" style={{ color: theme.textSecondary }}>
-        <input type="checkbox" checked={element.highlighted} onChange={(e) => onChange({ ...element, highlighted: e.target.checked })} />
+      <Label className="flex items-center gap-2 text-sm font-normal text-muted-foreground">
+        <Checkbox checked={element.highlighted} onCheckedChange={(checked) => onChange({ ...element, highlighted: checked === true })} />
         Highlight this plan as recommended
-      </label>
+      </Label>
     </div>
   )
 }

@@ -1,8 +1,8 @@
+import { toast } from 'sonner'
 import { useState, type FormEvent } from 'react'
 import { api } from '../api/client'
 import { Backdrop, ModalPanel, ModalHeader, ModalFooter, ErrorBanner, CancelButton, PrimaryButton } from './ui/Modal'
 import { TextField, TextAreaField } from './ui/FormField'
-import { useToast } from './ui/useToast'
 
 type Props = {
   onClose: () => void
@@ -14,7 +14,6 @@ export default function CreateApplicationModal({ onClose, onCreated }: Props) {
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const { showToast } = useToast()
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -22,7 +21,7 @@ export default function CreateApplicationModal({ onClose, onCreated }: Props) {
     setLoading(true)
     try {
       await api.post('/applications', { name, description })
-      showToast('Application has been created')
+      toast.success('Application has been created')
       onCreated()
       onClose()
     } catch (err) {
@@ -35,7 +34,7 @@ export default function CreateApplicationModal({ onClose, onCreated }: Props) {
   return (
     <Backdrop onClose={onClose}>
       <ModalPanel>
-        <ModalHeader title="Create Application" subtitle="Add a new website to your CMS" onClose={onClose} />
+        <ModalHeader title="Create Application" subtitle="Add a new website to your CMS" />
         <form onSubmit={handleSubmit}>
           <div className="px-6 py-5 space-y-4">
             {error && <ErrorBanner message={error} />}

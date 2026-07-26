@@ -1,6 +1,8 @@
 import { TextField, TextAreaField, SelectField } from '../ui/FormField'
 import ImageUploadField from '../body/ImageUploadField'
-import { theme } from '../../theme'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { PlusIcon, TrashIcon } from '../icons'
 import type { TeamMemberElement, SocialPlatform } from '../../types/page'
 import { SOCIAL_PLATFORM_VALUES, SOCIAL_PLATFORM_LABELS } from '../../constants/pageSections'
@@ -41,9 +43,9 @@ export default function TeamMemberElementEditor({
       <TextAreaField label="Bio" value={element.bio} onChange={(bio) => onChange({ ...element, bio })} rows={3} />
 
       <div>
-        <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textSecondary }}>
+        <Label className="mb-1.5 text-sm font-medium text-muted-foreground">
           Social links ({element.socialLinks.length})
-        </label>
+        </Label>
         <div className="space-y-2">
           {element.socialLinks.map((link, i) => (
             <div key={i} className="flex items-center gap-2">
@@ -55,23 +57,29 @@ export default function TeamMemberElementEditor({
                   options={PLATFORM_OPTIONS}
                 />
               </div>
-              <input
+              <Input
                 value={link.url}
                 onChange={(e) => updateLink(i, { url: e.target.value })}
                 placeholder="https://…"
-                className="flex-1 px-3 py-2 rounded-xl text-sm outline-none transition"
-                style={{ background: theme.inputBg, border: `1px solid ${theme.inputBorder}`, color: theme.textPrimary }}
+                className="flex-1"
               />
-              <button type="button" onClick={() => removeLink(i)} title="Remove" className="p-2 rounded-lg transition shrink-0" style={{ color: theme.danger }}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => removeLink(i)}
+                title="Remove"
+                className="icon-btn-danger shrink-0 hover:bg-transparent"
+              >
                 <TrashIcon size={14} />
-              </button>
+              </Button>
             </div>
           ))}
         </div>
         {element.socialLinks.length < MAX_SOCIAL_LINKS && (
-          <button type="button" onClick={addLink} className="flex items-center gap-1.5 text-sm font-medium transition mt-2" style={{ color: theme.accent }}>
+          <Button type="button" variant="link" onClick={addLink} className="h-auto gap-1.5 p-0 text-sm font-medium mt-2 hover:no-underline">
             <PlusIcon size={14} /> Add social link
-          </button>
+          </Button>
         )}
       </div>
     </div>

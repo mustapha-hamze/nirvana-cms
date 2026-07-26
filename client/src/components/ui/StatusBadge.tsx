@@ -1,4 +1,4 @@
-import { theme } from '../../theme'
+import { Badge } from '@/components/ui/badge'
 
 // Active/inactive pill used by Tags and Categories' Status column.
 export default function StatusBadge({
@@ -11,14 +11,8 @@ export default function StatusBadge({
   inactiveLabel?: string
 }) {
   return (
-    <span
-      className="text-[11px] font-semibold px-2 py-1 rounded-full"
-      style={active
-        ? { background: theme.successBg, color: theme.success }
-        : { background: theme.subtleBg, color: theme.textTertiary }
-      }
-    >
+    <Badge variant={active ? 'success' : 'neutral'} className="rounded-full text-[11px] font-semibold">
       {active ? activeLabel : inactiveLabel}
-    </span>
+    </Badge>
   )
 }

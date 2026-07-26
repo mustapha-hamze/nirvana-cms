@@ -1,4 +1,4 @@
-import { theme } from '../../theme'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { LANGUAGE_LABELS, type LangKey } from '../../types/content'
 
 // Language tab row for TagModal/CategoryModal — unlike TranslationTabs (used
@@ -19,26 +19,20 @@ export default function TranslatedTitleTabs({
   if (allowedLanguages.length <= 1) return null
 
   return (
-    <div className="flex items-center gap-1 px-6 pt-4" style={{ borderBottom: `1px solid ${theme.border}` }}>
-      {allowedLanguages.map((lang) => {
-        const isActive = lang === activeLang
-        const filled = !!titles[lang]?.trim()
-        return (
-          <button
-            key={lang}
-            type="button"
-            onClick={() => onSelect(lang)}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-all -mb-px shrink-0"
-            style={isActive
-              ? { color: theme.textPrimary, borderBottom: '2px solid #7c3aed' }
-              : { color: theme.textSecondary, borderBottom: '2px solid transparent' }
-            }
-          >
-            {filled && <span className="w-1.5 h-1.5 rounded-full" style={{ background: theme.accent }} />}
-            {LANGUAGE_LABELS[lang]}
-          </button>
-        )
-      })}
+    <div className="border-b px-6 pt-4">
+      <Tabs value={activeLang} onValueChange={(v) => onSelect(v as LangKey)}>
+        <TabsList variant="line" className="h-auto gap-1 bg-transparent p-0">
+          {allowedLanguages.map((lang) => {
+            const filled = !!titles[lang]?.trim()
+            return (
+              <TabsTrigger key={lang} value={lang} className="gap-1.5 px-3 py-2 after:bg-primary">
+                {filled && <span className="h-1.5 w-1.5 rounded-full bg-primary" />}
+                {LANGUAGE_LABELS[lang]}
+              </TabsTrigger>
+            )
+          })}
+        </TabsList>
+      </Tabs>
     </div>
   )
 }

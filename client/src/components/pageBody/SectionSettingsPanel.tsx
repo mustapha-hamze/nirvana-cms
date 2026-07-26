@@ -1,4 +1,6 @@
-import { theme } from '../../theme'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import {
   SECTION_SPACING_VALUES, SECTION_SPACING_LABELS, SECTION_WIDTH_VALUES, SECTION_WIDTH_LABELS,
   SECTION_TEXT_ALIGN_VALUES,
@@ -23,18 +25,16 @@ function PillGroup<T extends string>({
       {options.map((option) => {
         const active = option === value
         return (
-          <button
+          <Button
             key={option}
             type="button"
+            variant={active ? 'default' : 'outline'}
+            size="sm"
+            className="h-auto rounded-full px-3 py-1.5 text-xs"
             onClick={() => onChange(option)}
-            className="px-3 py-1.5 rounded-full text-xs font-medium transition"
-            style={active
-              ? { background: theme.accentBg, border: '1px solid rgba(124,58,237,0.5)', color: theme.accent }
-              : { background: theme.inputBg, border: `1px solid ${theme.inputBorder}`, color: theme.textSecondary }
-            }
           >
             {labels[option]}
-          </button>
+          </Button>
         )
       })}
     </div>
@@ -56,33 +56,31 @@ export default function SectionSettingsPanel({
   const swatchValue = /^#[0-9a-f]{6}$/i.test(settings.backgroundColor) ? settings.backgroundColor : '#0d1635'
 
   return (
-    <div className="rounded-xl p-4 mb-3 space-y-3" style={{ background: theme.inputBg, border: `1px solid ${theme.inputBorder}` }}>
+    <div className="rounded-xl border bg-input/30 p-4 mb-3 space-y-3">
       <div>
-        <label className="block text-xs font-medium mb-1.5" style={{ color: theme.textSecondary }}>
+        <Label className="mb-1.5 text-xs font-medium text-muted-foreground">
           Background color
-        </label>
+        </Label>
         <div className="flex items-center gap-2">
           <input
             type="color"
             value={swatchValue}
             onChange={(e) => onChange({ ...settings, backgroundColor: e.target.value })}
-            className="w-9 h-9 rounded-lg cursor-pointer shrink-0"
-            style={{ border: `1px solid ${theme.inputBorder}`, background: 'transparent' }}
+            className="w-9 h-9 rounded-lg cursor-pointer shrink-0 border bg-transparent"
           />
-          <input
+          <Input
             value={settings.backgroundColor}
             onChange={(e) => onChange({ ...settings, backgroundColor: e.target.value })}
             placeholder="Default — e.g. #0d1635 or transparent"
-            className="flex-1 px-3 py-2 rounded-xl text-sm outline-none transition"
-            style={{ background: theme.surface, border: `1px solid ${theme.inputBorder}`, color: theme.textPrimary }}
+            className="flex-1"
           />
         </div>
       </div>
 
       <div>
-        <label className="block text-xs font-medium mb-1.5" style={{ color: theme.textSecondary }}>
+        <Label className="mb-1.5 text-xs font-medium text-muted-foreground">
           Spacing
-        </label>
+        </Label>
         <PillGroup
           value={settings.spacing}
           options={SECTION_SPACING_VALUES}
@@ -92,9 +90,9 @@ export default function SectionSettingsPanel({
       </div>
 
       <div>
-        <label className="block text-xs font-medium mb-1.5" style={{ color: theme.textSecondary }}>
+        <Label className="mb-1.5 text-xs font-medium text-muted-foreground">
           Width
-        </label>
+        </Label>
         <PillGroup
           value={settings.width}
           options={SECTION_WIDTH_VALUES}
@@ -104,9 +102,9 @@ export default function SectionSettingsPanel({
       </div>
 
       <div>
-        <label className="block text-xs font-medium mb-1.5" style={{ color: theme.textSecondary }}>
+        <Label className="mb-1.5 text-xs font-medium text-muted-foreground">
           Text alignment
-        </label>
+        </Label>
         <PillGroup
           value={settings.textAlign}
           options={SECTION_TEXT_ALIGN_VALUES}

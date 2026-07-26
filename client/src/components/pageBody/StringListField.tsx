@@ -1,4 +1,6 @@
-import { theme } from '../../theme'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { PlusIcon, TrashIcon } from '../icons'
 
 // Plain add/remove list of short strings — used where order doesn't carry
@@ -30,40 +32,35 @@ export default function StringListField({
 
   return (
     <div>
-      <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textSecondary }}>
+      <Label className="mb-1.5 text-sm font-medium text-muted-foreground">
         {label} ({values.length})
-      </label>
+      </Label>
       <div className="space-y-2">
         {values.map((value, i) => (
           <div key={i} className="flex items-center gap-2">
-            <input
+            <Input
               value={value}
               onChange={(e) => updateAt(i, e.target.value)}
               placeholder={placeholder}
-              className="flex-1 px-3 py-2 rounded-xl text-sm outline-none transition"
-              style={{ background: theme.inputBg, border: `1px solid ${theme.inputBorder}`, color: theme.textPrimary }}
+              className="flex-1"
             />
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={() => removeAt(i)}
               title="Remove"
-              className="p-2 rounded-lg transition shrink-0"
-              style={{ color: theme.danger }}
+              className="icon-btn-danger shrink-0 hover:bg-transparent"
             >
               <TrashIcon size={14} />
-            </button>
+            </Button>
           </div>
         ))}
       </div>
       {values.length < max && (
-        <button
-          type="button"
-          onClick={() => onChange([...values, ''])}
-          className="flex items-center gap-1.5 text-sm font-medium transition mt-2"
-          style={{ color: theme.accent }}
-        >
+        <Button type="button" variant="link" onClick={() => onChange([...values, ''])} className="h-auto gap-1.5 p-0 text-sm font-medium mt-2 hover:no-underline">
           <PlusIcon size={14} /> Add
-        </button>
+        </Button>
       )}
     </div>
   )

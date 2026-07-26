@@ -1,5 +1,5 @@
-import { theme } from '../../theme'
-import { ChevronIcon } from '../icons'
+import { Separator } from '@/components/ui/separator'
+import CollapsibleSectionHeader from '../ui/CollapsibleSectionHeader'
 import SectionCard from '../body/SectionCard'
 import SectionTypePicker from '../body/SectionTypePicker'
 import SortableSectionList from '../ui/SortableSectionList'
@@ -29,35 +29,17 @@ export default function ContentBodySection({
 }) {
   return (
     <>
-      <div style={{ borderTop: `1px solid ${theme.border}` }} />
+      <Separator />
 
       <div>
-        <button
-          type="button"
-          onClick={onToggle}
-          className="flex items-center gap-1.5 text-sm font-medium transition"
-          style={{ color: theme.textSecondary }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = theme.textPrimary)}
-          onMouseLeave={(e) => (e.currentTarget.style.color = theme.textSecondary)}
-        >
-          <ChevronIcon open={open} size={14} />
-          Body
-          {sections.length > 0 && (
-            <span
-              className="text-xs font-semibold px-1.5 py-0.5 rounded-full"
-              style={{ background: theme.accentBg, color: theme.accent }}
-            >
-              {sections.length}
-            </span>
-          )}
-        </button>
+        <CollapsibleSectionHeader open={open} onToggle={onToggle} label="Body" count={sections.length} />
         {open && (
           <div className="mt-4 space-y-3">
             <div className="flex justify-end">
               <SectionTypePicker onPick={onAddSection} />
             </div>
             {sections.length === 0 ? (
-              <p className="text-sm" style={{ color: theme.textTertiary }}>
+              <p className="text-sm text-(--color-text-tertiary)">
                 No sections yet. Use "Add Section" to build this page's body.
               </p>
             ) : (

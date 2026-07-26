@@ -1,5 +1,5 @@
 import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core'
-import { theme } from '../../theme'
+import { Button } from '@/components/ui/button'
 import { ChevronIcon, DragHandleIcon, TrashIcon } from '../icons'
 import { PAGE_COMPONENT_TYPE_LABELS } from '../../constants/pageSections'
 import { getPageComponentPreview } from '../../utils/pageComponentPreview'
@@ -36,45 +36,42 @@ export default function PageComponentCardHeader({
           type="button"
           {...dragHandleProps.attributes}
           {...dragHandleProps.listeners}
-          className="cursor-grab touch-none shrink-0"
-          style={{ color: theme.textTertiary }}
+          className="cursor-grab touch-none shrink-0 text-(--color-text-tertiary)"
         >
           <DragHandleIcon size={14} />
         </button>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-xs"
           onClick={onToggleOpen}
           title={open ? 'Collapse this component' : 'Expand this component'}
-          className="p-1 rounded-lg transition shrink-0"
-          style={{ color: theme.textTertiary }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = theme.textPrimary)}
-          onMouseLeave={(e) => (e.currentTarget.style.color = theme.textTertiary)}
+          className="shrink-0 text-muted-foreground hover:text-foreground"
         >
           <ChevronIcon open={open} size={14} />
-        </button>
-        <span className="text-sm font-semibold shrink-0" style={{ color: theme.textPrimary }}>
+        </Button>
+        <span className="text-sm font-semibold shrink-0 text-foreground">
           {PAGE_COMPONENT_TYPE_LABELS[component.type]}
         </span>
-        <span className="text-xs shrink-0" style={{ color: theme.textTertiary }}>
+        <span className="text-xs shrink-0 text-(--color-text-tertiary)">
           {elementCount} / {maxElements}
         </span>
         {preview && (
-          <span className="text-xs truncate" style={{ color: theme.textTertiary }}>
+          <span className="text-xs truncate text-(--color-text-tertiary)">
             — {preview}
           </span>
         )}
       </div>
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="icon-sm"
         onClick={onRemove}
         title="Remove this component"
-        className="p-1.5 rounded-lg transition shrink-0"
-        style={{ color: theme.danger }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = theme.dangerBgHover)}
-        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+        className="icon-btn-danger shrink-0 hover:bg-transparent"
       >
         <TrashIcon size={14} />
-      </button>
+      </Button>
     </div>
   )
 }

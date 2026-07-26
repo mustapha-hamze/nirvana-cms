@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { theme } from '../../theme'
+import { Button } from '@/components/ui/button'
 import { CopyIcon, CheckCircleIcon } from '../icons'
 
 // Truncated, monospace id with a click-to-copy button — used wherever an
@@ -19,24 +19,19 @@ export default function IdCell({ id }: { id: string }) {
 
   return (
     <div className="flex items-center gap-1.5">
-      <span
-        title={id}
-        className="font-mono text-xs"
-        style={{ color: theme.textTertiary }}
-      >
+      <span title={id} className="font-mono text-xs text-(--color-text-tertiary)">
         {truncated ? `${id.slice(0, 8)}…` : id}
       </span>
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="icon-xs"
         onClick={handleCopy}
         title={copied ? 'Copied!' : 'Copy id'}
-        className="p-1 rounded-md transition"
-        style={{ color: copied ? theme.success : theme.textTertiary }}
-        onMouseEnter={(e) => { if (!copied) e.currentTarget.style.color = theme.textPrimary }}
-        onMouseLeave={(e) => { if (!copied) e.currentTarget.style.color = theme.textTertiary }}
+        className={copied ? 'text-(--color-success) hover:text-(--color-success)' : 'text-(--color-text-tertiary) hover:text-foreground'}
       >
         {copied ? <CheckCircleIcon size={13} /> : <CopyIcon size={13} />}
-      </button>
+      </Button>
     </div>
   )
 }

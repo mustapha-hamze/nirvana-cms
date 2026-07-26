@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { theme } from '../../theme'
+import { useId, useState } from 'react'
+import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import { CloseIcon } from '../icons'
 
 // Free-form tag input for SEO keywords — shared by ContentForm and PageForm's
@@ -8,6 +9,7 @@ import { CloseIcon } from '../icons'
 // empty input pops the last one.
 export default function KeywordsField({ value, onChange }: { value: string[]; onChange: (next: string[]) => void }) {
   const [input, setInput] = useState('')
+  const id = useId()
 
   function commit() {
     const trimmed = input.trim()
@@ -26,33 +28,26 @@ export default function KeywordsField({ value, onChange }: { value: string[]; on
 
   return (
     <div>
-      <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textSecondary }}>
+      <Label htmlFor={id} className="mb-1.5 text-sm font-medium text-muted-foreground">
         Keywords
-      </label>
-      <div
-        className="w-full px-3 py-2 rounded-xl flex flex-wrap items-center gap-1.5"
-        style={{ background: theme.inputBg, border: `1px solid ${theme.inputBorder}` }}
-      >
+      </Label>
+      <div className="flex w-full flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent px-3 py-2 shadow-xs dark:bg-input/30">
         {value.map((kw) => (
-          <span
-            key={kw}
-            className="flex items-center gap-1 text-xs font-medium pl-2 pr-1.5 py-1 rounded-full"
-            style={{ background: theme.accentBg, color: theme.accent }}
-          >
+          <Badge key={kw} variant="accent" className="gap-1 py-1 pr-1.5 pl-2 text-xs">
             {kw}
             <button type="button" onClick={() => onChange(value.filter((k) => k !== kw))} className="leading-none">
               <CloseIcon size={11} />
             </button>
-          </span>
+          </Badge>
         ))}
         <input
+          id={id}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           onBlur={commit}
           placeholder={value.length === 0 ? 'Type a keyword and press Enter…' : ''}
-          className="flex-1 min-w-24 bg-transparent outline-none text-sm py-1"
-          style={{ color: theme.textPrimary }}
+          className="min-w-24 flex-1 bg-transparent py-1 text-sm text-foreground outline-none placeholder:text-muted-foreground"
         />
       </div>
     </div>

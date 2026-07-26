@@ -1,4 +1,4 @@
-import { theme } from '../../theme'
+import { Switch } from '@/components/ui/switch'
 
 export default function StatusToggle({
   checked,
@@ -14,23 +14,13 @@ export default function StatusToggle({
   offLabel?: string
 }) {
   return (
-    <button
-      type="button"
-      onClick={onToggle}
+    <Switch
+      checked={checked}
+      onCheckedChange={onToggle}
       disabled={disabled}
       title={checked ? offLabel : onLabel}
       aria-label={checked ? offLabel : onLabel}
-      aria-pressed={checked}
-      className="relative w-9 h-5 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-      style={{ background: checked ? 'rgba(52,211,153,0.4)' : theme.inputBorder }}
-    >
-      <span
-        className="absolute top-0.5 w-4 h-4 rounded-full transition-all"
-        style={{
-          left: checked ? '18px' : '2px',
-          background: checked ? '#34d399' : theme.textSubtle,
-        }}
-      />
-    </button>
+      className="data-[state=checked]:bg-(--color-success)"
+    />
   )
 }

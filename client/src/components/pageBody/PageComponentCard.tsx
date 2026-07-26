@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useSortable, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { theme } from '../../theme'
+import { Button } from '@/components/ui/button'
 import { PlusIcon } from '../icons'
 import PageComponentCardHeader from './PageComponentCardHeader'
 import SortablePageElementList from './SortablePageElementList'
@@ -76,10 +76,8 @@ export default function PageComponentCard({
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
-        background: theme.inputBg,
-        border: `1px solid ${theme.inputBorder}`,
       }}
-      className="rounded-xl p-4"
+      className="rounded-xl border bg-input/30 p-4"
     >
       <PageComponentCardHeader
         component={component}
@@ -113,14 +111,9 @@ export default function PageComponentCard({
           />
 
           {component.elements.length < layout.max && (
-            <button
-              type="button"
-              onClick={addElement}
-              className="flex items-center gap-1.5 text-sm font-medium transition mt-3"
-              style={{ color: theme.accent }}
-            >
+            <Button type="button" variant="link" onClick={addElement} className="h-auto gap-1.5 p-0 text-sm font-medium mt-3 hover:no-underline">
               <PlusIcon size={14} /> Add {itemLabel.toLowerCase()}
-            </button>
+            </Button>
           )}
         </div>
       )}

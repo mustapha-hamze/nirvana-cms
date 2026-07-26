@@ -1,5 +1,4 @@
 import { TextField, TextAreaField } from '../ui/FormField'
-import { theme } from '../../theme'
 import FileUploadField from './FileUploadField'
 import type { VideoEmbedElement } from '../../types/content'
 
@@ -21,10 +20,10 @@ export default function VideoEmbedElementEditor({
         onChange={(url) => onChange({ ...element, url })}
         placeholder="Paste a YouTube or Vimeo URL"
       />
-      <p className="text-xs" style={{ color: theme.textTertiary }}>
+      <p className="text-xs text-(--color-text-tertiary)">
         Not validated as an embeddable link server-side yet — double-check it plays before publishing.
       </p>
-      <p className="text-xs" style={{ color: theme.textTertiary }}>
+      <p className="text-xs text-(--color-text-tertiary)">
         Or upload a video file instead of pasting a link — it fills the same URL field above.
       </p>
       <FileUploadField

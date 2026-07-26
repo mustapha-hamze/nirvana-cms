@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import { useAppDispatch } from '../store/hooks'
 import { loginSuccess, type AuthUser } from '../store/authSlice'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export default function Login() {
   const dispatch = useAppDispatch()
@@ -118,19 +121,19 @@ export default function Login() {
           </div>
 
           {error && (
-            <div className="mb-5 px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm">
-              {error}
-            </div>
+            <Alert variant="destructive" className="mb-5 border-red-100 bg-red-50">
+              <AlertDescription className="text-red-600">{error}</AlertDescription>
+            </Alert>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor={emailId} className="block text-sm font-medium text-slate-700 mb-1.5">Email address</label>
-              <input
+              <Input
                 id={emailId}
                 type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                 required autoComplete="email" placeholder="you@example.com"
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 text-[15px] transition focus:outline-none focus:ring-2 focus:ring-violet-500/60 focus:border-violet-500"
+                className="h-auto w-full rounded-xl border-slate-200 bg-white px-4 py-3 text-[15px] text-slate-900 placeholder:text-slate-400 focus-visible:border-violet-500 focus-visible:ring-violet-500/60"
               />
             </div>
 
@@ -142,12 +145,12 @@ export default function Login() {
                 </button>
               </div>
               <div className="relative">
-                <input
+                <Input
                   id={passwordId}
                   type={showPassword ? 'text' : 'password'} value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required autoComplete="current-password" placeholder="••••••••"
-                  className="w-full px-4 py-3 pr-12 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 text-[15px] transition focus:outline-none focus:ring-2 focus:ring-violet-500/60 focus:border-violet-500"
+                  className="h-auto w-full rounded-xl border-slate-200 bg-white px-4 py-3 pr-12 text-[15px] text-slate-900 placeholder:text-slate-400 focus-visible:border-violet-500 focus-visible:ring-violet-500/60"
                 />
                 <button type="button" onClick={() => setShowPassword((v) => !v)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition">
@@ -156,13 +159,13 @@ export default function Login() {
               </div>
             </div>
 
-            <button type="submit" disabled={loading}
-              className="w-full py-3 rounded-xl text-white font-semibold text-[15px] transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+            <Button type="submit" disabled={loading}
+              className="mt-2 h-auto w-full rounded-xl py-3 text-[15px] font-semibold text-white transition-all active:scale-[0.98]"
               style={{ background: 'linear-gradient(90deg, #7c3aed, #4f46e5)', boxShadow: '0 4px 24px rgba(124, 58, 237, 0.35)' }}>
               {loading
                 ? <span className="flex items-center justify-center gap-2"><Spinner /> Signing in…</span>
                 : 'Sign in'}
-            </button>
+            </Button>
           </form>
         </div>
       </div>

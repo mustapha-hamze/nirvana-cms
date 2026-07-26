@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
-import { theme } from '../theme'
 import { ShieldIcon, PlusIcon } from '../components/icons'
 import Layout from '../components/Layout'
 import CreateApplicationModal from '../components/CreateApplicationModal'
@@ -9,6 +8,9 @@ import ApplicationSettingsModal from '../components/ApplicationSettingsModal'
 import AppCard, { type Application } from '../components/AppCard'
 import EmptyState from '../components/ui/EmptyState'
 import ConfirmModal from '../components/ui/ConfirmModal'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export default function Applications() {
   const navigate = useNavigate()
@@ -54,30 +56,22 @@ export default function Applications() {
         {/* Header */}
         <div className="flex items-start justify-between mb-10">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight" style={{ color: theme.textPrimary }}>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
               Applications
             </h1>
-            <p className="mt-1 text-[15px]" style={{ color: theme.textSecondary }}>
+            <p className="mt-1 text-[15px] text-muted-foreground">
               {loading ? '…' : `${apps.length} website${apps.length !== 1 ? 's' : ''} managed`}
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate('/super-admins')}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.97]"
-              style={{ color: theme.textPrimary, background: theme.hoverBgSubtle, border: `1px solid ${theme.border}` }}
-            >
+            <Button type="button" variant="outline" onClick={() => navigate('/super-admins')}>
               <ShieldIcon />
               Manage Super Admins
-            </button>
-            <button
-              onClick={() => setShowCreate(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.97]"
-              style={{ background: theme.accentGradient, boxShadow: '0 2px 16px rgba(124,58,237,0.35)' }}
-            >
+            </Button>
+            <Button type="button" onClick={() => setShowCreate(true)}>
               <PlusIcon />
               Create Application
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -137,29 +131,23 @@ export default function Applications() {
 
 function SkeletonCard() {
   return (
-    <div
-      className="rounded-2xl p-5 animate-pulse"
-      style={{ background: theme.surface, border: `1px solid ${theme.border}` }}
-    >
+    <Card className="gap-4 rounded-2xl p-5 py-0">
       <div className="flex items-start gap-4">
-        <div className="w-14 h-14 rounded-2xl shrink-0" style={{ background: theme.subtleBg }} />
+        <Skeleton className="h-14 w-14 shrink-0 rounded-2xl" />
         <div className="flex-1 space-y-2 pt-1">
-          <div className="h-4 rounded-lg w-2/3" style={{ background: theme.subtleBg }} />
-          <div className="h-3 rounded-lg w-full" style={{ background: theme.subtleBg }} />
-          <div className="h-3 rounded-lg w-4/5" style={{ background: theme.subtleBg }} />
+          <Skeleton className="h-4 w-2/3 rounded-lg" />
+          <Skeleton className="h-3 w-full rounded-lg" />
+          <Skeleton className="h-3 w-4/5 rounded-lg" />
         </div>
       </div>
-      <div
-        className="mt-4 pt-3 flex justify-between"
-        style={{ borderTop: `1px solid ${theme.border}` }}
-      >
-        <div className="h-3 rounded-lg w-20" style={{ background: theme.subtleBg }} />
-        <div className="h-3 rounded-lg w-16" style={{ background: theme.subtleBg }} />
+      <div className="flex justify-between border-t pt-3 pb-5">
+        <Skeleton className="h-3 w-20 rounded-lg" />
+        <Skeleton className="h-3 w-16 rounded-lg" />
       </div>
-    </div>
+    </Card>
   )
 }
 
 function BigGridIcon() {
-  return <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1" /><rect width="7" height="7" x="14" y="3" rx="1" /><rect width="7" height="7" x="14" y="14" rx="1" /><rect width="7" height="7" x="3" y="14" rx="1" /></svg>
+  return <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" className="text-primary" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1" /><rect width="7" height="7" x="14" y="3" rx="1" /><rect width="7" height="7" x="14" y="14" rx="1" /><rect width="7" height="7" x="3" y="14" rx="1" /></svg>
 }

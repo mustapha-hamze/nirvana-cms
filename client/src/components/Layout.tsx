@@ -2,7 +2,9 @@ import { type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { logout, selectUser } from '../store/authSlice'
-import { theme } from '../theme'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
 import { LogoutIcon } from './icons'
 import ThemeToggle from './ui/ThemeToggle'
 
@@ -24,59 +26,49 @@ export default function Layout({ children }: { children: ReactNode }) {
     .toUpperCase()
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: theme.bg }}>
+    <div className="min-h-screen flex flex-col bg-background">
       {/* Nav */}
-      <header
-        className="sticky top-0 z-40"
-        style={{ background: theme.headerBg, borderBottom: `1px solid ${theme.border}` }}
-      >
+      <header className="sticky top-0 z-40 border-b bg-(--color-header-bg)">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: 'rgba(124,58,237,0.5)', border: `1px solid ${theme.divider}` }}
-            >
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center border bg-primary/50">
               <NLogo />
             </div>
-            <span className="font-semibold text-[15px] tracking-wide" style={{ color: theme.textStrong }}>
+            <span className="font-semibold text-[15px] tracking-wide text-(--color-text-strong)">
               Nirvana CMS
             </span>
           </div>
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2.5">
-              <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0"
-                style={{ background: theme.accentGradientDiag }}
-              >
-                {initials}
-              </div>
+              <Avatar>
+                <AvatarFallback className="bg-[image:var(--color-accent-gradient-diag)] text-white">{initials}</AvatarFallback>
+              </Avatar>
               <div className="hidden sm:block">
-                <p className="text-sm font-medium leading-none" style={{ color: theme.textStrong }}>
+                <p className="text-sm font-medium leading-none text-(--color-text-strong)">
                   {user?.name}
                 </p>
-                <p className="text-xs mt-0.5" style={{ color: theme.textFaint }}>
+                <p className="text-xs mt-0.5 text-(--color-text-faint)">
                   {user?.role}
                 </p>
               </div>
             </div>
 
-            <div className="w-px h-5" style={{ background: theme.divider }} />
+            <Separator orientation="vertical" className="h-5" />
 
             <ThemeToggle />
 
-            <div className="w-px h-5" style={{ background: theme.divider }} />
+            <Separator orientation="vertical" className="h-5" />
 
-            <button
+            <Button
+              type="button"
+              variant="ghost"
               onClick={handleLogout}
-              className="flex items-center gap-1.5 text-sm transition"
-              style={{ color: theme.textMuted }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = theme.danger)}
-              onMouseLeave={(e) => (e.currentTarget.style.color = theme.textMuted)}
+              className="h-auto gap-1.5 p-0 text-sm text-(--color-text-muted) hover:bg-transparent hover:text-destructive"
             >
               <LogoutIcon />
               <span className="hidden sm:inline">Logout</span>
-            </button>
+            </Button>
           </div>
         </div>
       </header>

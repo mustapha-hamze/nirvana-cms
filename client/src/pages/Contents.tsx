@@ -1,8 +1,8 @@
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { api } from "../api/client";
 import type { AdminOutletContext } from "../components/AdminLayout";
-import { theme } from "../theme";
 import { EditIcon, TrashIcon } from "../components/icons";
+import { Badge } from "@/components/ui/badge";
 import EmptyState from "../components/ui/EmptyState";
 import SkeletonTable from "../components/ui/SkeletonTable";
 import ConfirmModal from "../components/ui/ConfirmModal";
@@ -11,6 +11,7 @@ import SortableHeader from "../components/ui/SortableHeader";
 import AdminPageHeader from "../components/ui/AdminPageHeader";
 import ListSearchInput from "../components/ui/ListSearchInput";
 import AdminTable, { AdminTableRow, AdminTableHeadCell, EmptyResultsRow } from "../components/ui/AdminTable";
+import { TableHeader, TableBody } from "@/components/ui/table";
 import AdminTableActionButton from "../components/ui/AdminTableActionButton";
 import { LanguageStatusBadges } from "../components/ui/LanguageBadges";
 import CreatedAtCell from "../components/ui/CreatedAtCell";
@@ -76,8 +77,8 @@ export default function Contents() {
         <AdminTable
           footer={<Pagination page={page} totalPages={totalPages} total={total} limit={limit} onPageChange={setPage} />}
         >
-          <thead>
-            <tr style={{ borderBottom: `1px solid ${theme.border}` }}>
+          <TableHeader>
+            <tr>
               <SortableHeader label="Title" active={sortBy === "title"} direction={sortOrder} onClick={() => toggleSort("title")} />
               <AdminTableHeadCell>Languages</AdminTableHeadCell>
               {canManage && <AdminTableHeadCell>Categories</AdminTableHeadCell>}
@@ -85,14 +86,14 @@ export default function Contents() {
               <SortableHeader label="Created" active={sortBy === "createdAt"} direction={sortOrder} onClick={() => toggleSort("createdAt")} />
               <AdminTableHeadCell align="right">Actions</AdminTableHeadCell>
             </tr>
-          </thead>
-          <tbody>
+          </TableHeader>
+          <TableBody>
             {contents.map((content) => {
               const preview = getPreviewDetail(content);
               return (
                 <AdminTableRow key={content._id}>
                   <td className="px-5 py-3">
-                    <span className="font-medium" style={{ color: theme.textPrimary }}>
+                    <span className="font-medium text-foreground">
                       {preview?.title ?? "—"}
                     </span>
                   </td>
@@ -102,17 +103,13 @@ export default function Contents() {
                   {canManage && (
                     <td className="px-5 py-3">
                       {content.categories.length === 0 ? (
-                        <span style={{ color: theme.textTertiary }}>—</span>
+                        <span className="text-(--color-text-tertiary)">—</span>
                       ) : (
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {content.categories.map((cat) => (
-                            <span
-                              key={cat._id}
-                              className="text-[11px] font-semibold px-2 py-1 rounded-full"
-                              style={{ background: theme.accentBg, color: theme.accent }}
-                            >
+                            <Badge key={cat._id} variant="accent" className="text-[11px] font-semibold">
                               {getPreviewTitle(cat.translations)}
-                            </span>
+                            </Badge>
                           ))}
                         </div>
                       )}
@@ -121,17 +118,13 @@ export default function Contents() {
                   {canManage && (
                     <td className="px-5 py-3">
                       {content.tags.length === 0 ? (
-                        <span style={{ color: theme.textTertiary }}>—</span>
+                        <span className="text-(--color-text-tertiary)">—</span>
                       ) : (
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {content.tags.map((tag) => (
-                            <span
-                              key={tag._id}
-                              className="text-[11px] font-semibold px-2 py-1 rounded-full"
-                              style={{ background: theme.subtleBg, color: theme.textSecondary }}
-                            >
+                            <Badge key={tag._id} variant="neutral" className="text-[11px] font-semibold">
                               {getPreviewTitle(tag.translations)}
-                            </span>
+                            </Badge>
                           ))}
                         </div>
                       )}
@@ -157,7 +150,7 @@ export default function Contents() {
                 </AdminTableRow>
               );
             })}
-          </tbody>
+          </TableBody>
         </AdminTable>
       )}
 
@@ -185,7 +178,8 @@ function BigContentIcon() {
       height="28"
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#7c3aed"
+      className="text-primary"
+      stroke="currentColor"
       strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
