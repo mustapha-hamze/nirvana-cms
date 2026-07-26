@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useId, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import { useAppDispatch } from '../store/hooks'
@@ -12,6 +12,8 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const emailId = useId()
+  const passwordId = useId()
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -23,6 +25,14 @@ export default function Login() {
 
       if (user.role !== 'SuperAdmin' && user.applications.length === 0) {
         setError('Your account is not assigned to any application yet.')
+        return
+      }
+      // WebsiteUser has no screens in this admin panel today — every /applications/:id
+      // route excludes it (see ProtectedRoute in App.tsx). Without this check the user
+      // would authenticate successfully and then get silently bounced back to /login,
+      // which reads as a broken login rather than a permissions gap.
+      if (user.role === 'WebsiteUser') {
+        setError("Your account doesn't have access to the admin panel.")
         return
       }
 
@@ -115,8 +125,9 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Email address</label>
+              <label htmlFor={emailId} className="block text-sm font-medium text-slate-700 mb-1.5">Email address</label>
               <input
+                id={emailId}
                 type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                 required autoComplete="email" placeholder="you@example.com"
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 text-[15px] transition focus:outline-none focus:ring-2 focus:ring-violet-500/60 focus:border-violet-500"
@@ -125,13 +136,14 @@ export default function Login() {
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-slate-700">Password</label>
+                <label htmlFor={passwordId} className="block text-sm font-medium text-slate-700">Password</label>
                 <button type="button" className="text-xs font-medium text-violet-600 hover:text-violet-800 transition">
                   Forgot password?
                 </button>
               </div>
               <div className="relative">
                 <input
+                  id={passwordId}
                   type={showPassword ? 'text' : 'password'} value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required autoComplete="current-password" placeholder="••••••••"

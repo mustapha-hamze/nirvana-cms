@@ -7,7 +7,9 @@ import { theme } from '../../theme'
 export default function AdminTable({ children, footer }: { children: ReactNode; footer?: ReactNode }) {
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
-      <table className="w-full text-sm">{children}</table>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">{children}</table>
+      </div>
       {footer}
     </div>
   )

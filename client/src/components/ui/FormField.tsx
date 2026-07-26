@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { theme } from '../../theme'
 import { EyeIcon, EyeOffIcon } from '../icons'
 
@@ -11,9 +11,9 @@ function blurBorder(e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | H
   e.currentTarget.style.borderColor = theme.inputBorder
 }
 
-function FieldLabel({ label, required }: { label: string; required?: boolean }) {
+function FieldLabel({ htmlFor, label, required }: { htmlFor: string; label: string; required?: boolean }) {
   return (
-    <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textSecondary }}>
+    <label htmlFor={htmlFor} className="block text-sm font-medium mb-1.5" style={{ color: theme.textSecondary }}>
       {label} {required && <span style={{ color: theme.danger }}>*</span>}
     </label>
   )
@@ -38,10 +38,12 @@ export function TextField({
   autoComplete?: string
   dir?: 'ltr' | 'rtl'
 }) {
+  const id = useId()
   return (
     <div>
-      <FieldLabel label={label} required={required} />
+      <FieldLabel htmlFor={id} label={label} required={required} />
       <input
+        id={id}
         type={type} value={value} onChange={(e) => onChange(e.target.value)}
         required={required} placeholder={placeholder} autoComplete={autoComplete} dir={dir}
         className="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition"
@@ -69,10 +71,12 @@ export function TextAreaField({
   placeholder?: string
   dir?: 'ltr' | 'rtl'
 }) {
+  const id = useId()
   return (
     <div>
-      <FieldLabel label={label} required={required} />
+      <FieldLabel htmlFor={id} label={label} required={required} />
       <textarea
+        id={id}
         value={value} onChange={(e) => onChange(e.target.value)}
         rows={rows} placeholder={placeholder} dir={dir}
         className="w-full px-4 py-2.5 rounded-xl text-sm resize-none outline-none transition"
@@ -96,10 +100,12 @@ export function SelectField<T extends string>({
   onChange: (value: T) => void
   options: { value: T; label: string }[]
 }) {
+  const id = useId()
   return (
     <div>
-      <FieldLabel label={label} required={required} />
+      <FieldLabel htmlFor={id} label={label} required={required} />
       <select
+        id={id}
         value={value} onChange={(e) => onChange(e.target.value as T)}
         className="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition"
         style={inputStyle}
@@ -131,11 +137,13 @@ export function PasswordField({
   autoComplete?: string
 }) {
   const [show, setShow] = useState(false)
+  const id = useId()
   return (
     <div>
-      <FieldLabel label={label} required={required} />
+      <FieldLabel htmlFor={id} label={label} required={required} />
       <div className="relative">
         <input
+          id={id}
           type={show ? 'text' : 'password'} value={value} onChange={(e) => onChange(e.target.value)}
           required={required} autoComplete={autoComplete} placeholder={placeholder}
           className="w-full px-4 py-2.5 pr-11 rounded-xl text-sm outline-none transition"

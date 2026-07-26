@@ -2,6 +2,7 @@ import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/
 import { theme } from '../../theme'
 import { ChevronIcon, DragHandleIcon, TrashIcon } from '../icons'
 import { PAGE_COMPONENT_TYPE_LABELS } from '../../constants/pageSections'
+import { getPageComponentPreview } from '../../utils/pageComponentPreview'
 import type { PageComponent } from '../../types/page'
 
 // Header for one component within a section — the component's type is its
@@ -25,6 +26,9 @@ export default function PageComponentCardHeader({
   onToggleOpen: () => void
   onRemove: () => void
 }) {
+  // Only shown collapsed — once open, the actual editors below make this redundant.
+  const preview = open ? '' : getPageComponentPreview(component)
+
   return (
     <div className="flex items-center justify-between gap-3">
       <div className="flex items-center gap-2.5 flex-wrap min-w-0">
@@ -48,12 +52,17 @@ export default function PageComponentCardHeader({
         >
           <ChevronIcon open={open} size={14} />
         </button>
-        <span className="text-sm font-semibold" style={{ color: theme.textPrimary }}>
+        <span className="text-sm font-semibold shrink-0" style={{ color: theme.textPrimary }}>
           {PAGE_COMPONENT_TYPE_LABELS[component.type]}
         </span>
         <span className="text-xs shrink-0" style={{ color: theme.textTertiary }}>
           {elementCount} / {maxElements}
         </span>
+        {preview && (
+          <span className="text-xs truncate" style={{ color: theme.textTertiary }}>
+            — {preview}
+          </span>
+        )}
       </div>
       <button
         type="button"

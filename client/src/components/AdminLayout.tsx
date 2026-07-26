@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams, Outlet } from 'react-router-dom'
+import { useNavigate, useParams, useLocation, Outlet } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { logout, selectUser } from '../store/authSlice'
 import { api } from '../api/client'
 import { theme } from '../theme'
-import { BackIcon, LogoutIcon } from './icons'
-import Sidebar from './Sidebar'
+import { BackIcon, LogoutIcon, MenuIcon } from './icons'
+import Sidebar, { MobileSidebarDrawer } from './Sidebar'
 import ThemeToggle from './ui/ThemeToggle'
 import type { Application } from '../types/application'
 
@@ -14,10 +14,14 @@ export type AdminOutletContext = { app: Application | null }
 export default function AdminLayout() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const dispatch = useAppDispatch()
   const user = useAppSelector(selectUser)
   const [app, setApp] = useState<Application | null>(null)
   const [loading, setLoading] = useState(true)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+
+  useEffect(() => { setMobileNavOpen(false) }, [location.pathname])
 
   useEffect(() => {
     if (!id) return
@@ -48,6 +52,15 @@ export default function AdminLayout() {
       >
         <div className="px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4 min-w-0">
+            <button
+              onClick={() => setMobileNavOpen(true)}
+              title="Open menu"
+              className="p-2 -ml-2 rounded-lg transition shrink-0 md:hidden"
+              style={{ color: theme.textMuted }}
+            >
+              <MenuIcon />
+            </button>
+
             {user?.role === 'SuperAdmin' && (
               <>
                 <button
@@ -130,6 +143,7 @@ export default function AdminLayout() {
 
       <div className="flex flex-1">
         <Sidebar appId={id ?? ''} />
+        <MobileSidebarDrawer appId={id ?? ''} open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
         <main className="flex-1 min-w-0">
           <Outlet context={{ app } satisfies AdminOutletContext} />
         </main>
