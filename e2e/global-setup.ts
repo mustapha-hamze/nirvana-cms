@@ -2,7 +2,16 @@ import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { chromium } from '@playwright/test'
-import { SERVER_DIR, MONGO_URI, ADMIN_EMAIL, ADMIN_PASSWORD, CLIENT_URL, STORAGE_STATE_PATH } from './env'
+import {
+  SERVER_DIR,
+  MONGO_URI,
+  ADMIN_EMAIL,
+  ADMIN_PASSWORD,
+  CREATOR_EMAIL,
+  CREATOR_PASSWORD,
+  CLIENT_URL,
+  STORAGE_STATE_PATH,
+} from './env'
 
 // Seeds the e2e database directly (bypassing the API — there's no
 // bootstrap-the-first-admin endpoint, same as a real deployment) by shelling
@@ -16,6 +25,8 @@ function seedDatabase(): string {
       MONGO_URI,
       E2E_ADMIN_EMAIL: ADMIN_EMAIL,
       E2E_ADMIN_PASSWORD: ADMIN_PASSWORD,
+      E2E_CREATOR_EMAIL: CREATOR_EMAIL,
+      E2E_CREATOR_PASSWORD: CREATOR_PASSWORD,
     },
     encoding: 'utf-8',
   })

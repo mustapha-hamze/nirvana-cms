@@ -13,6 +13,10 @@ import { ROLES } from '../src/constants/roles.js'
 const MONGO_URI = process.env.MONGO_URI
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL
 const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD
+// Optional — a WebSiteContentCreator assigned to the seeded app, for RBAC
+// tests. Both must be set together or neither is created.
+const CREATOR_EMAIL = process.env.E2E_CREATOR_EMAIL
+const CREATOR_PASSWORD = process.env.E2E_CREATOR_PASSWORD
 
 if (!MONGO_URI || !ADMIN_EMAIL || !ADMIN_PASSWORD) {
   throw new Error('MONGO_URI, E2E_ADMIN_EMAIL, and E2E_ADMIN_PASSWORD must be set')
@@ -35,6 +39,16 @@ await User.create({
   role: ROLES.SUPER_ADMIN,
   applications: [],
 })
+
+if (CREATOR_EMAIL && CREATOR_PASSWORD) {
+  await User.create({
+    email: CREATOR_EMAIL,
+    password: CREATOR_PASSWORD,
+    name: 'E2E Creator',
+    role: ROLES.CONTENT_CREATOR,
+    applications: [application._id],
+  })
+}
 
 await mongoose.disconnect()
 

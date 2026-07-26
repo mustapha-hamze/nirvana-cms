@@ -8,7 +8,10 @@ test.describe('admin categories', () => {
   test('lists, creates, edits, and deletes a category against the real API', async ({ page }) => {
     await page.goto(`/applications/${applicationId}/categories`)
 
-    await expect(page.getByRole('heading', { name: 'Categories' })).toBeVisible()
+    // { exact: true } avoids a strict-mode collision with the empty state's
+    // "No categories yet" heading — non-exact matching is a case-insensitive
+    // substring match, and "categories" is a substring of that too.
+    await expect(page.getByRole('heading', { name: 'Categories', exact: true })).toBeVisible()
     await expect(page.getByText('0 categories in E2E Test App')).toBeVisible()
     await expect(page.getByText('No categories yet')).toBeVisible()
 

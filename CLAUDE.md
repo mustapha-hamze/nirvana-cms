@@ -54,6 +54,13 @@ afterward. One-time browser binary install: `npx playwright install chromium`.
 npm run test:e2e   # playwright, see e2e/playwright.config.ts — requires a local mongod
 ```
 
+Use the `e2e-test-writer` subagent (`~/.claude/agents/e2e-test-writer.md`) for writing or updating
+anything under `e2e/tests/` — new specs for a flow, fixes to a failing/flaky spec, or extending
+`e2e/global-setup.ts`/`server/scripts/e2eSeed.js` to seed more test data. It knows to read the
+existing specs and real component source for selectors instead of guessing, and to actually run
+`npm run test:e2e` and fix real failures before calling a spec done — don't write or edit e2e specs
+directly without it.
+
 ## Server architecture
 
 - `src/app.js` builds/configures the Express app and exports `createApp()`; `src/index.js` loads env,
