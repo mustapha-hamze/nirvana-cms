@@ -36,12 +36,22 @@ node --experimental-vm-modules node_modules/jest/bin/jest.js tests/pageControlle
 node --experimental-vm-modules node_modules/jest/bin/jest.js -t "rejects a component"       # by test name
 ```
 
-Client (`client/`) — no unit-test runner; `test:e2e` (Playwright) drives a built/served app, not
-component tests:
+Client (`client/`) — no unit-test runner:
 ```bash
 npm run build      # tsc -b && vite build
 npm run lint        # oxlint
-npm run test:e2e    # playwright, see playwright.config.ts
+```
+
+End-to-end tests (root, `e2e/`) — real full-stack Playwright tests, not the client alone: they
+build/boot a real server + client and drive them together against an isolated
+`nirvana-cms-e2e` MongoDB database (same local Mongo instance as dev, separate database name —
+see `e2e/env.ts`), on ports distinct from `npm run dev` (5057/4177) so both can run at once.
+`e2e/global-setup.ts` seeds that database (via `server/scripts/e2eSeed.js`, run as a child
+process — see its comment for why it isn't imported directly) and logs in for real through the
+UI once, saving the session for every test to reuse; `e2e/global-teardown.ts` drops the database
+afterward. One-time browser binary install: `npx playwright install chromium`.
+```bash
+npm run test:e2e   # playwright, see e2e/playwright.config.ts — requires a local mongod
 ```
 
 ## Server architecture
