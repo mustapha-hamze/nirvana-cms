@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 button { cursor: pointer; }
 
@@ -103,4 +104,68 @@ button { cursor: pointer; }
   --color-danger-bg-hover: rgba(220, 38, 38, 0.12);
   --color-danger-border: rgba(220, 38, 38, 0.2);
   --color-danger-solid: #dc2626;
+}
+
+/* shadcn/ui token bridge — shadcn components read these semantic variables
+   (--background, --primary, etc.) instead of --color-*. Rather than defining
+   a second, parallel light/dark palette, every token here just points at the
+   existing --color-* variable, so shadcn components inherit the current
+   theme (and ThemeModeProvider's [data-theme="light"] toggle) for free. */
+:root {
+  --radius: 0.625rem;
+
+  --background: var(--color-bg);
+  --foreground: var(--color-text-primary);
+  --card: var(--color-surface);
+  --card-foreground: var(--color-text-primary);
+  --popover: var(--color-surface);
+  --popover-foreground: var(--color-text-primary);
+  --primary: var(--color-accent);
+  --primary-foreground: #ffffff;
+  --secondary: var(--color-surface-hover);
+  --secondary-foreground: var(--color-text-primary);
+  --muted: var(--color-subtle-bg);
+  --muted-foreground: var(--color-text-secondary);
+  --accent: var(--color-accent-bg);
+  --accent-foreground: var(--color-accent);
+  --destructive: var(--color-danger);
+  --destructive-foreground: #ffffff;
+  --border: var(--color-border);
+  --input: var(--color-input-border);
+  --ring: var(--color-accent);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
