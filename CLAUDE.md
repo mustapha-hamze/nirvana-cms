@@ -51,7 +51,8 @@ process — see its comment for why it isn't imported directly) and logs in for 
 UI once, saving the session for every test to reuse; `e2e/global-teardown.ts` drops the database
 afterward. One-time browser binary install: `npx playwright install chromium`.
 ```bash
-npm run test:e2e   # playwright, see e2e/playwright.config.ts — requires a local mongod
+npm run test:e2e      # playwright, see e2e/playwright.config.ts — requires a local mongod
+npm run test:e2e:ui   # same, but Playwright's interactive UI mode for debugging
 ```
 
 Use the `e2e-test-writer` subagent (`~/.claude/agents/e2e-test-writer.md`) for writing or updating

@@ -50,6 +50,15 @@ if (CREATOR_EMAIL && CREATOR_PASSWORD) {
   })
 }
 
+// dropDatabase() above also drops any indexes the already-running server built
+// when it first registered its models (autoIndex runs once, at model init — it
+// does NOT rebuild after a later drop). Indexes are database-level, not
+// per-connection, so rebuilding the unique-email index here — on the seed's own
+// connection, after the drop — leaves it in place for the server's connection
+// to enforce too. Without this the e2e DB silently allows duplicate emails,
+// unlike production.
+await User.syncIndexes()
+
 await mongoose.disconnect()
 
 // global-setup.ts reads the last stdout line as JSON — keep this the only
