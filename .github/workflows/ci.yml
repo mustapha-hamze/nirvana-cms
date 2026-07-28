@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel a run that's superseded by a newer push to the same branch/PR,
+# rather than letting stale runs keep going alongside the new one.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Everything that only needs the app's own tooling (no Docker) — kept as
+  # one job since these steps form a single logical "does the app pass its
+  # own checks" unit, unlike the Docker build below, which validates a
+  # meaningfully different thing (containerization, not app correctness).
+  checks:
+    name: Typecheck, test, lint, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # server's test script (jest via --experimental-vm-modules) and the
+      # scripts/ one-offs need a real Node.js binary, separate from Bun —
+      # Bun is the package manager/build tool here, not the app's runtime
+      # (see DOCKER.md's "Why the server runs on Node, not Bun"). Version
+      # matches server/package.json's engines.node.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      # Speeds up re-downloads/re-extracts only — it doesn't change what
+      # gets installed (--frozen-lockfile below still resolves strictly
+      # against each committed lockfile), so a cache miss just falls back to
+      # a normal full install. Never a correctness risk either way.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock', 'client/bun.lock', 'server/bun.lock') }}
+          restore-keys: |
+            bun-${{ runner.os }}-
+
+      # --frozen-lockfile on all three: fail loudly if a package.json ever
+      # drifts from its committed bun.lock, instead of CI silently
+      # resolving a different dependency tree than what's actually committed.
+      - name: Install root dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install client dependencies
+        run: bun install --cwd client --frozen-lockfile
+
+      - name: Install server dependencies
+        run: bun install --cwd server --frozen-lockfile
+
+      - name: Server typecheck
+        run: bun --cwd=server run typecheck
+
+      - name: Server tests
+        run: bun --cwd=server run test
+
+      - name: Client lint
+        run: bun --cwd=client run lint
+
+      - name: Client build
+        run: bun --cwd=client run build
+
+  # Separate job: validates the images actually build, not the app's source
+  # correctness (that's `checks` above) — a genuinely different failure mode
+  # worth its own pass/fail signal, and it needs neither Bun nor Node on the
+  # runner itself (each Dockerfile installs/builds with Bun *inside* its own
+  # build stages).
+  docker-build:
+    name: Docker build validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # No .env needed and none is created here — `docker compose build`
+      # only builds images (each service's own tsc/vite build steps), it
+      # never reads env_file or requires real secrets; only `up`/`run` do.
+      # Verified locally: this succeeds with no .env file present at all.
+      # Not pushing/deploying anything — build-only, as requested.
+      - name: Build client + server images
+        run: docker compose build
