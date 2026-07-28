@@ -58,10 +58,11 @@ Test files are excluded from `npm run typecheck`'s `include` — ts-jest runs th
 type is inferable as a `Promise`, which a bare `jest.fn()` mock object generally isn't. `npm test`
 still fully exercises them at runtime; only static type-checking is skipped.
 
-Client (`client/`) — no unit-test runner:
+Client (`client/`) — no unit-test runner, runtime is Bun (package manager + script execution;
+still Vite under the hood for dev/build):
 ```bash
-npm run build      # tsc -b && vite build
-npm run lint        # oxlint
+bun run build      # tsc -b && vite build
+bun run lint        # oxlint
 ```
 
 End-to-end tests (root, `e2e/`) — real full-stack Playwright tests, not the client alone: they
