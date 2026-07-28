@@ -89,3 +89,92 @@ jobs:
       # Not pushing/deploying anything — build-only, as requested.
       - name: Build client + server images
         run: docker compose build
+
+  # Separate job: real full-stack Playwright tests (build + boot server and
+  # client, seed a Mongo database, drive a real browser), a much heavier and
+  # slower kind of check than `checks` above — kept independent so a slow or
+  # flaky e2e run doesn't block seeing the fast unit/build signals, and vice
+  # versa. Runs in parallel with the other jobs (no `needs:`).
+  e2e:
+    name: Playwright E2E tests
+    runs-on: ubuntu-latest
+    services:
+      # GitHub's job-level `services:` maps this container's port to the
+      # runner's own 127.0.0.1, which is exactly what e2e/env.ts's hardcoded
+      # MONGO_URI (mongodb://127.0.0.1:27017/nirvana-cms-e2e) expects — no
+      # env var wiring needed here, that value is a TS constant, not read
+      # from process.env. GitHub waits for the health check below to pass
+      # before running any job steps, so no manual "wait for mongo" step
+      # is needed either.
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd="mongosh --quiet --eval \"db.adminCommand('ping')\""
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock', 'client/bun.lock', 'server/bun.lock') }}
+          restore-keys: |
+            bun-${{ runner.os }}-
+
+      # Root install matters here specifically (unlike in `checks`, where
+      # it's not consumed by anything) — @playwright/test and the
+      # `test:e2e` script it runs both live in the root package.json.
+      - name: Install root dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install client dependencies
+        run: bun install --cwd client --frozen-lockfile
+
+      - name: Install server dependencies
+        run: bun install --cwd server --frozen-lockfile
+
+      # Browser binary cache only — the OS-level --with-deps apt packages
+      # below aren't part of this cache directory and still install fresh
+      # on every run regardless (each job gets an ephemeral runner VM), so
+      # a cache miss here just means a slower but still-correct download.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+
+      # playwright.config.ts's project and e2e/global-setup.ts's manual
+      # browser launch both use channel: 'chrome' (real Google Chrome, not
+      # the default open-source Chromium build) — `chrome`, not `chromium`,
+      # is the channel that needs installing here to match.
+      - name: Install Chrome + OS dependencies
+        run: npx playwright install --with-deps chrome
+
+      - name: Run Playwright e2e tests
+        run: bun run test:e2e
+
+      # global-setup.ts's storageState + Playwright's own trace/screenshot
+      # output land under e2e/test-results (playwright.config.ts's
+      # outputDir) and e2e/playwright-report — only useful, and only
+      # present, when something actually failed.
+      - name: Upload Playwright traces/test-results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-e2e-results
+          path: |
+            e2e/test-results
+            e2e/playwright-report
+          if-no-files-found: warn
+          retention-days: 7
