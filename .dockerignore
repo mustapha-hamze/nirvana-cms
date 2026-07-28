@@ -1,0 +1,34 @@
+# Both server/Dockerfile and client/Dockerfile build with the repo root as
+# their context (so COPY paths can reference server/... and client/...), so
+# this single root .dockerignore governs both image builds.
+
+# Dependencies — each build stage runs its own `bun install` fresh.
+node_modules
+**/node_modules
+
+# Build outputs — regenerated inside the image by `bun run build`. A stale
+# local dist/ copied into the build context would otherwise waste build time
+# and, for the server, could linger with output from since-deleted sources
+# (tsc doesn't clean outDir before emitting).
+server/dist
+client/dist
+
+# Local/dev environment files — never bake real secrets into an image layer.
+# docker-compose passes env vars in at container-run time instead (env_file/
+# environment), not at build time.
+.env
+**/.env
+!**/.env.example
+
+# Uploaded content lives on a mounted volume at runtime (see server/Dockerfile
+# and docker-compose.yml), not in the image — and the app recreates its
+# subfolders on demand (fs.mkdir recursive) so nothing here needs preserving.
+server/storage
+
+# VCS / tooling / editor state irrelevant to either image.
+.git
+.gitignore
+.claude
+e2e
+*.log
+.DS_Store

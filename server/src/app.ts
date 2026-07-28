@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import helmet from 'helmet'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import type { Request, Response, NextFunction } from 'express'
@@ -26,6 +27,20 @@ const corsOrigin = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim())
   : true
 
+// .env.example ships JWT_SECRET as a well-known placeholder — if that value
+// (or anything unset/short) ever reaches production, anyone can forge valid
+// staff/SuperAdmin JWTs. Fail closed the same way the CORS_ORIGIN check
+// above does, rather than silently accepting a weak or default secret.
+const JWT_SECRET_PLACEHOLDER = 'change-me-to-a-long-random-string'
+if (process.env.NODE_ENV === 'production') {
+  const jwtSecret = process.env.JWT_SECRET
+  if (!jwtSecret || jwtSecret === JWT_SECRET_PLACEHOLDER || jwtSecret.length < 32) {
+    throw new Error(
+      'JWT_SECRET must be set to a strong, unique value (at least 32 characters, not the .env.example placeholder) in production',
+    )
+  }
+}
+
 // Uploaded images/videos/documents live under UUID filenames that never get
 // reused for different content, so a fetched file can be cached "forever"
 // without ever going stale.
@@ -34,6 +49,20 @@ const STORAGE_CACHE_CONTROL = 'public, max-age=31536000, immutable'
 export function createApp() {
   const app = express()
 
+  // Trust exactly one hop: the nginx reverse proxy in front of this
+  // container (see client/nginx.conf), which sets X-Forwarded-For. Without
+  // this, req.ip always resolves to nginx's own address, and
+  // express-rate-limit's default per-IP key generator throws
+  // ERR_ERL_UNEXPECTED_X_FORWARDED_FOR on every request through
+  // authRateLimiter as soon as it sees that header with trust proxy unset.
+  app.set('trust proxy', 1)
+
+  // `crossOriginResourcePolicy` overrides helmet's default `same-origin`:
+  // both /api/frontend and /storage are deliberately meant to be loaded by
+  // a separate, unauthenticated public-facing website (see frontendRoutes.ts
+  // and CLAUDE.md) — the default would block that site's <img> tags and
+  // fetches from loading this origin's responses at all.
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }))
   app.use(cors({ origin: corsOrigin }))
   app.use(express.json({ limit: '2mb' }))
 

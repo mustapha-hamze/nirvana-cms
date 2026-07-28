@@ -1,0 +1,74 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE}
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - nirvana-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    # No `ports:` — Mongo is reachable only from other containers on
+    # nirvana-net, never from the host or the public internet.
+
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Forced regardless of what's in .env — this is the one setting that
+      # must never drift between environments (server/src/app.ts requires
+      # CORS_ORIGIN to be set whenever this is "production").
+      NODE_ENV: production
+    volumes:
+      - server-storage:/app/storage
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - nirvana-net
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:5001/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    # No `ports:` — not reachable from the host directly; the client
+    # container's nginx reverse-proxies /api and /storage to it instead.
+
+  client:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+    networks:
+      - nirvana-net
+
+networks:
+  nirvana-net:
+    driver: bridge
+
+volumes:
+  mongo-data:
+  server-storage:
