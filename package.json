@@ -13,6 +13,6 @@
   "devDependencies": {
     "@playwright/test": "^1.61.1",
     "concurrently": "^9.1.2",
-    "mongoose": "^9.7.3"
+    "mongoose": "9.7.3"
   }
 }
