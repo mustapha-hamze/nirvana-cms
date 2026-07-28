@@ -1,6 +1,8 @@
 # nirvana-cms
 
-MERN stack project: MongoDB, Express, React (Vite + TypeScript + Tailwind CSS), Node.js.
+MERN stack project: MongoDB, Express, React (Vite + TypeScript + Tailwind CSS). Package manager
+is Bun everywhere; the client also runs on Bun's runtime, while the server still runs on Node
+(Bun can't yet run it — see `CLAUDE.md`).
 
 ## Structure
 
@@ -11,12 +13,13 @@ MERN stack project: MongoDB, Express, React (Vite + TypeScript + Tailwind CSS), 
 
 1. Make sure MongoDB is running locally (or set `MONGO_URI` to a remote instance).
 2. Copy `server/.env.example` to `server/.env` and adjust as needed.
-3. Install dependencies:
+3. Install [Bun](https://bun.sh) if you don't already have it, then install dependencies
+   (three separate installs — no workspaces):
 
    ```bash
-   npm install
-   npm install --prefix client
-   npm install --prefix server
+   bun install
+   bun install --cwd client
+   bun install --cwd server
    ```
 
 ## Development

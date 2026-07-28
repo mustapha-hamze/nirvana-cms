@@ -23,9 +23,10 @@ skill / MCP tools) instead of relying on training data — it fetches current, v
 
 ## Commands
 
-Install (three separate installs — no workspaces):
+Install (three separate installs — no workspaces; package manager is Bun everywhere, `bun.lock` per
+directory):
 ```bash
-npm install && npm install --prefix client && npm install --prefix server
+bun install && bun install --cwd client && bun install --cwd server
 ```
 
 Run both client + server together (root):
@@ -58,10 +59,11 @@ Test files are excluded from `npm run typecheck`'s `include` — ts-jest runs th
 type is inferable as a `Promise`, which a bare `jest.fn()` mock object generally isn't. `npm test`
 still fully exercises them at runtime; only static type-checking is skipped.
 
-Client (`client/`) — no unit-test runner:
+Client (`client/`) — no unit-test runner, runtime is Bun (package manager + script execution;
+still Vite under the hood for dev/build):
 ```bash
-npm run build      # tsc -b && vite build
-npm run lint        # oxlint
+bun run build      # tsc -b && vite build
+bun run lint        # oxlint
 ```
 
 End-to-end tests (root, `e2e/`) — real full-stack Playwright tests, not the client alone: they

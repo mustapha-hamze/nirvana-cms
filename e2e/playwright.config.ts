@@ -45,7 +45,7 @@ export default defineConfig({
       },
     },
     {
-      command: `npm run build --prefix client && npm run preview --prefix client -- --host 127.0.0.1 --port ${CLIENT_PORT}`,
+      command: `bun --cwd=client run build && bun --cwd=client run preview -- --host 127.0.0.1 --port ${CLIENT_PORT}`,
       cwd: REPO_ROOT,
       url: CLIENT_URL,
       reuseExistingServer: !process.env.CI,

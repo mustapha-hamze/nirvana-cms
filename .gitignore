@@ -5,6 +5,7 @@ build/
 *.local
 .DS_Store
 npm-debug.log*
+bun-debug.log*
 
 # Uploaded files — keep directory structure via .gitkeep, ignore all
 # generated content under server/storage (images/videos/documents, each
