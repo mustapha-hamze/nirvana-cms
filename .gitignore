@@ -16,6 +16,12 @@ server/storage/**
 
 admin.crt.txt
 
+# MongoDB dump/backup output (see MIGRATION.md) — contains real user/CMS
+# data, never something to commit.
+/mongo-dump/
+/mongo-backup-*/
+/storage-backup-*/
+
 # Playwright e2e (see /e2e) — generated auth state and run artifacts.
 /e2e/.auth/
 /e2e/test-results/

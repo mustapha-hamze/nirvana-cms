@@ -17,6 +17,24 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY server/ ./
 RUN bun run build
 
+# ---- script-runner: one-off admin scripts (server/scripts/*.ts) ----
+# Genuine Node, not Bun, for two separate reasons that both bit when this was
+# first tried on the `build` stage above: (1) oven/bun's own "node" binary is
+# actually Bun in disguise (no real Node.js exists in that image — see
+# /usr/local/bun-node-fallback-bin/node), which breaks tsx's Node-loader-
+# dependent bootstrap outright; (2) running these scripts under Bun's own
+# runtime instead (bypassing tsx) hits the exact same bson/
+# v8.startupSnapshot crash documented on the `runner` stage below, since
+# these scripts import Mongoose too. Real Node hits neither problem. Reuses
+# `deps`'s already-installed node_modules rather than a second install —
+# safe because node:22-slim shares the same Debian/glibc base as oven/bun:1,
+# so no native-binary mismatch (this stage doesn't need sharp anyway, but
+# staying consistent with the `runner` stage's reasoning below).
+FROM node:22-slim AS script-runner
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY server/ ./
+
 # ---- prod-deps: production-only dependencies for the runtime image ----
 FROM oven/bun:1 AS prod-deps
 WORKDIR /app

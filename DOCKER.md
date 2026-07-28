@@ -60,6 +60,35 @@ reverse-proxies them to `server:5001` inside the network.
 Both survive `docker compose down` and container rebuilds; they're only removed if you run
 `docker compose down -v` or `docker volume rm` explicitly.
 
+## Creating the first SuperAdmin
+
+There's no signup flow — the app is unusable until at least one SuperAdmin exists. Set
+`INIT_SUPER_ADMIN_EMAIL`/`INIT_SUPER_ADMIN_PASSWORD` in `.env` (see `.env.example`), make sure
+`mongo` is up, then run:
+
+```bash
+docker compose run --rm server-init npx tsx scripts/ensureSuperAdmin.ts
+```
+
+This only ever *creates* — if a user with that email already exists, it prints a message and
+exits without touching anything. Safe to re-run after every deploy or migration.
+
+`server-init` is a separate, `profiles: [tools]`-gated service (see `docker-compose.yml`) so
+it never starts with a plain `docker compose up` — it exists only to run one-off scripts like
+this one. It's *not* built from `server`'s own image (that final image is intentionally
+Node-only with production dependencies and no `scripts/` source, so it can't run a `.ts` file
+at all) and it's deliberately *not* the Bun-based `build` stage either — both `tsx` and Bun's
+own runtime fail inside a Bun-only container here (see `server/Dockerfile`'s `script-runner`
+stage comment for the two separate reasons why). `server-init` targets `script-runner`
+instead: genuine Node + `tsx` + the full source, built once from the same Dockerfile.
+
+To run any other one-off script under `scripts/` (e.g. an existing migration script) the same
+way, swap the file name:
+
+```bash
+docker compose run --rm server-init npx tsx scripts/<name>.ts
+```
+
 ## Why the server runs on Node, not Bun
 
 Bun is used to **install dependencies and build** the server (`bun install`, `bun run build`
@@ -76,6 +105,11 @@ docker compose config      # validate + see the fully-resolved compose file
 docker compose build       # build client + server images
 docker compose up -d       # start mongo, server, client
 curl http://localhost/api/health
+docker compose run --rm server-init npx tsx scripts/ensureSuperAdmin.ts
 docker compose logs        # check all three services came up cleanly
 docker compose down
 ```
+
+See `MIGRATION.md` if you're bringing existing data in from a native (non-Docker) MongoDB
+first — do that *before* running the SuperAdmin script above, so it checks against your real,
+restored data instead of an empty database.

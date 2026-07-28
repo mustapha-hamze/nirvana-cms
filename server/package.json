@@ -13,7 +13,8 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "init:super-admin": "tsx scripts/ensureSuperAdmin.ts"
   },
   "keywords": [],
   "author": "",

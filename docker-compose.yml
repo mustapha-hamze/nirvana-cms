@@ -65,6 +65,30 @@ services:
     networks:
       - nirvana-net
 
+  # One-off admin commands (e.g. the SuperAdmin init script) — not part of
+  # the running stack. `server`'s final image is intentionally slim
+  # (server/Dockerfile's `runner` stage: plain Node, production-only
+  # node_modules, no scripts/ source, no devDependencies) so it can't run
+  # these directly. Targets the Dockerfile's `script-runner` stage (real
+  # Node + tsx + full source) rather than `build` (Bun) — see that stage's
+  # comment for why Bun can't run these scripts at all here (both tsx-under-
+  # Bun and Bun's own runtime break on this image, for different reasons).
+  # `profiles: [tools]` keeps it out of `docker compose up`; invoke it with:
+  #   docker compose run --rm server-init npx tsx scripts/ensureSuperAdmin.ts
+  server-init:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+      target: script-runner
+    profiles: ["tools"]
+    env_file:
+      - .env
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - nirvana-net
+
 networks:
   nirvana-net:
     driver: bridge
