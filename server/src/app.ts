@@ -63,11 +63,26 @@ export function createApp() {
   // and CLAUDE.md) — the default would block that site's <img> tags and
   // fetches from loading this origin's responses at all.
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }))
+  // Admin-panel-only CORS policy, locked to CORS_ORIGIN — overridden below
+  // for /api/frontend and /storage, which need a different, more permissive
+  // policy (see publicCors).
   app.use(cors({ origin: corsOrigin }))
   app.use(express.json({ limit: '2mb' }))
 
+  // /api/frontend and /storage are deliberately meant to be called
+  // cross-origin by separate, arbitrary public-facing websites — one per
+  // tenant application, each on its own domain (see CLAUDE.md,
+  // resolveFrontendApp.ts) — not just this admin panel's own origin. Both
+  // are app-key-scoped rather than session/cookie-based, so origin: true
+  // (reflect whatever Origin the request sent) carries none of the
+  // credentialed-request risk it would for an authenticated route. Mounted
+  // as its own middleware per path so it runs *after* (and so overrides,
+  // for these two paths only) the CORS_ORIGIN-restricted cors() above.
+  const publicCors = cors({ origin: true })
+
   app.use(
     '/storage',
+    publicCors,
     express.static(path.resolve(__dirname, '../storage'), {
       setHeaders: (res) => {
         res.setHeader('Cache-Control', STORAGE_CACHE_CONTROL)
@@ -90,7 +105,7 @@ export function createApp() {
   app.use('/api/pages', pageRoutes)
   app.use('/api/categories', categoryRoutes)
   app.use('/api/tags', tagRoutes)
-  app.use('/api/frontend', frontendRoutes)
+  app.use('/api/frontend', publicCors, frontendRoutes)
 
   app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     const status = err.status || 500

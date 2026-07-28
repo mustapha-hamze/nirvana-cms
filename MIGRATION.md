@@ -4,6 +4,11 @@ If you were previously running the server natively against a local `mongod` (not
 this to bring that data into the Docker `mongo` service's volume. Every command below was
 run and verified against a real Docker mongo container while writing this doc.
 
+This covers the full-database approach (`mongodump`/`mongorestore`, below). To migrate just
+**one application** and everything scoped to it instead — its settings, pages, page details,
+contents, content details, categories, tags, and staff users — see "Migrating a single
+application" further down, which uses `server/scripts/migrateApplicationData.ts` instead.
+
 ## What gets migrated
 
 The app uses one MongoDB database (`nirvana-cms` by default — matches `MONGO_URI`'s path in
@@ -123,6 +128,39 @@ docker compose exec mongo sh -c '
 
 Compare the counts against what your native database had before the dump. Then log into the
 admin panel at `http://localhost` and confirm your real applications/pages actually render.
+
+## Migrating a single application
+
+To bring over just one application (and its settings, pages, page details, contents, content
+details, categories, tags, and staff users) instead of the whole database, use
+`server/scripts/migrateApplicationData.ts` — a source-to-destination document copy (raw driver,
+not a dump file), idempotent by `_id` the same way as `ensureSuperAdmin.ts`: re-running it after
+adding more pages to the same source application only inserts what's new.
+
+```bash
+docker compose run --rm \
+  -e MIGRATE_SOURCE_MONGO_URI=mongodb://host.docker.internal:27017/nirvana-cms \
+  -e MIGRATE_APPLICATION_NAME="Your App Name" \
+  server-init npx tsx scripts/migrateApplicationData.ts
+```
+
+`MIGRATE_SOURCE_MONGO_URI` must use `host.docker.internal`, not `localhost` — this command runs
+*inside* the `server-init` container, where `localhost` means the container itself, not the Mac
+running native `mongod` (confirmed working here — `host.docker.internal` is Docker Desktop's
+automatic hostname for reaching the host machine, no extra Compose config needed). If you run the
+script natively instead (`bun run migrate:application` on the Mac, outside Docker), use
+`localhost` there as usual.
+
+`MIGRATE_APPLICATION_NAME` must match the application's `name` field exactly. SuperAdmin
+accounts aren't application-scoped and are never included — use `ensureSuperAdmin.ts` (or this
+same command with the full-database approach above) for those.
+
+Verify the same way as step 8, or more directly — hit the app's own public frontend API with its
+`appKey`:
+
+```bash
+curl "http://localhost/api/frontend/pages?appKey=<the app's appKey>"
+```
 
 ## Uploaded files are separate from MongoDB
 

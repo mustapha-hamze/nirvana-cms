@@ -14,7 +14,8 @@
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "init:super-admin": "tsx scripts/ensureSuperAdmin.ts"
+    "init:super-admin": "tsx scripts/ensureSuperAdmin.ts",
+    "migrate:application": "tsx scripts/migrateApplicationData.ts"
   },
   "keywords": [],
   "author": "",
