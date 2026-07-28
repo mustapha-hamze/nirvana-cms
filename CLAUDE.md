@@ -23,9 +23,10 @@ skill / MCP tools) instead of relying on training data — it fetches current, v
 
 ## Commands
 
-Install (three separate installs — no workspaces):
+Install (three separate installs — no workspaces; package manager is Bun everywhere, `bun.lock` per
+directory):
 ```bash
-npm install && npm install --prefix client && npm install --prefix server
+bun install && bun install --cwd client && bun install --cwd server
 ```
 
 Run both client + server together (root):
