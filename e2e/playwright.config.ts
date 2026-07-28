@@ -32,7 +32,7 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: 'npm run start --prefix server',
+      command: 'npm run build --prefix server && npm run start --prefix server',
       cwd: REPO_ROOT,
       url: `${SERVER_URL}/api/health`,
       reuseExistingServer: !process.env.CI,

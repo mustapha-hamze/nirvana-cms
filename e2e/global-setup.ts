@@ -16,9 +16,14 @@ import {
 // Seeds the e2e database directly (bypassing the API — there's no
 // bootstrap-the-first-admin endpoint, same as a real deployment) by shelling
 // out to a script inside server/ rather than importing its models here. See
-// server/scripts/e2eSeed.js for why that boundary matters.
+// server/scripts/e2eSeed.ts for why that boundary matters.
+//
+// The script is TypeScript, so it's run through server/'s local tsx binary
+// (server/'s ESM + NodeNext resolution needs tsx's loader, not plain node).
+const TSX_BIN = path.join(SERVER_DIR, 'node_modules', '.bin', 'tsx')
+
 function seedDatabase(): string {
-  const output = execFileSync('node', [path.join(SERVER_DIR, 'scripts', 'e2eSeed.js')], {
+  const output = execFileSync(TSX_BIN, [path.join('scripts', 'e2eSeed.ts')], {
     cwd: SERVER_DIR,
     env: {
       ...process.env,
@@ -32,7 +37,7 @@ function seedDatabase(): string {
   })
   const lastLine = output.trim().split('\n').filter(Boolean).pop()
   const { applicationId } = JSON.parse(lastLine ?? '{}')
-  if (!applicationId) throw new Error(`e2eSeed.js did not report an applicationId. Output:\n${output}`)
+  if (!applicationId) throw new Error(`e2eSeed.ts did not report an applicationId. Output:\n${output}`)
   return applicationId
 }
 
