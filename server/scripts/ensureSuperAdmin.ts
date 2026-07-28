@@ -27,11 +27,20 @@ if (!EMAIL || !PASSWORD) {
 async function main() {
   await connectDB()
 
-  const existing = await User.findOne({ email: EMAIL }).select('_id role')
+  // isDeleted: {$in:[true,false]} matches regardless of soft-delete status
+  // (see softDeletePlugin — it only auto-scopes to non-deleted when the
+  // caller's filter doesn't already mention isDeleted). Without this, a
+  // soft-deleted user with this email would be invisible to a plain
+  // findOne, and User.create below would then fail on email's unique index
+  // instead of being detected here.
+  const existing = await User.findOne({ email: EMAIL, isDeleted: { $in: [true, false] } }).select(
+    '_id role isDeleted',
+  )
   if (existing) {
     // Never touch an existing user's password/role here — this script only
     // ever creates the first SuperAdmin, it doesn't reconcile/reset one.
-    console.log(`User ${EMAIL} already exists (role: ${existing.role}) — nothing to do.`)
+    const note = existing.isDeleted ? ', soft-deleted — won\'t be able to log in as-is' : ''
+    console.log(`User ${EMAIL} already exists (role: ${existing.role}${note}) — nothing to do.`)
     return
   }
 
