@@ -2,6 +2,7 @@
 // types/content.ts so that module holds only type declarations.
 import { SECTION_LAYOUTS } from "../constants/contentSections";
 import type { ContentElement, ContentSection, ElementType, SectionType } from "../types/content";
+import { randomUUID } from "../utils/randomUUID";
 
 export function createEmptyElementOfType(elementType: ElementType): ContentElement {
   switch (elementType) {
@@ -58,14 +59,14 @@ export function createEmptySection(type: SectionType): ContentSection {
   for (const slot of SECTION_LAYOUTS[type].slots) {
     for (let i = 0; i < slot.count; i++) elements.push(createEmptyElementOfType(slot.elementTypes[0]));
   }
-  return { cid: crypto.randomUUID(), type, elements };
+  return { cid: randomUUID(), type, elements };
 }
 
 // Assigns a stable client key to sections loaded from the server (which only
 // carry a real `_id`), so freshly-loaded and freshly-created sections can
 // share one dnd-kit/React key scheme.
 export function withClientKeys(sections: ContentSection[]): ContentSection[] {
-  return sections.map((s) => ({ ...s, cid: s.cid ?? s._id ?? crypto.randomUUID() }));
+  return sections.map((s) => ({ ...s, cid: s.cid ?? s._id ?? randomUUID() }));
 }
 
 // Strips the client-only `cid` before sending sections to the API.

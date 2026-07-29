@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { DragHandleIcon, TrashIcon, PlusIcon } from '../icons'
 import ImageUploadField from './ImageUploadField'
 import type { ImageGalleryElement, GalleryImage } from '../../types/content'
+import { randomUUID } from '@/utils/randomUUID'
 
 const MIN_IMAGES = 2
 
@@ -73,8 +74,8 @@ export default function ImageGalleryElementEditor({
   // Stable per-row ids for dnd-kit, decoupled from array index. Mutated (not
   // via setState) alongside `element.images` since the parent already owns
   // re-rendering through `onChange` — this ref just keeps ids in sync with it.
-  const idsRef = useRef<string[]>(element.images.map(() => crypto.randomUUID()))
-  while (idsRef.current.length < element.images.length) idsRef.current.push(crypto.randomUUID())
+  const idsRef = useRef<string[]>(element.images.map(() => randomUUID()))
+  while (idsRef.current.length < element.images.length) idsRef.current.push(randomUUID())
   if (idsRef.current.length > element.images.length) idsRef.current.length = element.images.length
   const ids = idsRef.current
 
@@ -93,7 +94,7 @@ export default function ImageGalleryElementEditor({
   }
 
   function addImage() {
-    idsRef.current = [...idsRef.current, crypto.randomUUID()]
+    idsRef.current = [...idsRef.current, randomUUID()]
     onChange({ ...element, images: [...element.images, { url: '', alt: '', caption: '' }] })
   }
 

@@ -2,6 +2,7 @@
 // so that module holds only type declarations.
 import { DEFAULT_SECTION_SETTINGS, PAGE_COMPONENT_LAYOUTS } from "../constants/pageSections";
 import type { PageComponent, PageComponentType, PageElement, PageElementType, PageSection } from "../types/page";
+import { randomUUID } from "../utils/randomUUID";
 
 export function createEmptyElementOfType(elementType: PageElementType): PageElement {
   switch (elementType) {
@@ -36,14 +37,14 @@ export function createEmptyElementOfType(elementType: PageElementType): PageElem
 export function createEmptyComponentOfType(type: PageComponentType): PageComponent {
   const layout = PAGE_COMPONENT_LAYOUTS[type];
   const elements = Array.from({ length: layout.min }, () => createEmptyElementOfType(layout.elementType));
-  return { cid: crypto.randomUUID(), type, elements };
+  return { cid: randomUUID(), type, elements };
 }
 
 // A fresh section is a blank container — no components until the editor adds
 // some via the component picker inside it.
 export function createEmptySection(): PageSection {
   return {
-    cid: crypto.randomUUID(),
+    cid: randomUUID(),
     title: "",
     isVisible: true,
     settings: { ...DEFAULT_SECTION_SETTINGS },
@@ -72,9 +73,9 @@ export function withClientKeys(sections: PageSection[]): PageSection[] {
       : section;
     return {
       ...normalized,
-      cid: normalized.cid ?? normalized._id ?? crypto.randomUUID(),
+      cid: normalized.cid ?? normalized._id ?? randomUUID(),
       title: normalized.title ?? "",
-      components: (normalized.components ?? []).map((c) => ({ ...c, cid: c.cid ?? c._id ?? crypto.randomUUID() })),
+      components: (normalized.components ?? []).map((c) => ({ ...c, cid: c.cid ?? c._id ?? randomUUID() })),
     };
   });
 }

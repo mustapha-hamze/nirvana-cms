@@ -10,6 +10,7 @@ import { useStableSortableIds } from '../../hooks/useStableSortableIds'
 import { PAGE_COMPONENT_LAYOUTS, PAGE_ELEMENT_TYPE_LABELS } from '../../constants/pageSections'
 import { createEmptyElementOfType } from '../../factories/pageElements'
 import type { PageComponent, PageElement, PageComponentType } from '../../types/page'
+import { randomUUID } from '@/utils/randomUUID'
 
 // Component types whose items are short, uniform tiles (cards, slides,
 // gallery items) — stacked one-per-row they turn into a very long scroll
@@ -60,7 +61,7 @@ export default function PageComponentCard({
 
   function addElement() {
     if (component.elements.length >= layout.max) return
-    idsRef.current = [...idsRef.current, crypto.randomUUID()]
+    idsRef.current = [...idsRef.current, randomUUID()]
     onChange({ ...component, elements: [...component.elements, createEmptyElementOfType(layout.elementType)] })
   }
 
