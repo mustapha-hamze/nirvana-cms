@@ -75,10 +75,13 @@ jobs:
   # correctness (that's `checks` above) — a genuinely different failure mode
   # worth its own pass/fail signal, and it needs neither Bun nor Node on the
   # runner itself (each Dockerfile installs/builds with Bun *inside* its own
-  # build stages).
+  # build stages). PR-only: on a push to main, docker-publish below builds
+  # (and pushes) these same images, so running this too would just build
+  # everything twice.
   docker-build:
     name: Docker build validation
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
 
@@ -179,18 +182,17 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
-  # Gated behind all three checks above (needs:) so nothing ever gets
-  # published from a commit that failed typecheck/test/lint/build, a Docker
-  # build, or the real e2e suite. Runs on every push/PR — build-only on
-  # pull_request (build-push-action's push: input below is a false
-  # expression there), actually pushing to GHCR only on a push to main —
-  # so PRs still get a real build signal from this exact
-  # tag/context/Dockerfile config, not just docker-build's plain
-  # `docker compose build`.
+  # Push-to-main only: gated behind checks + e2e (needs:) so nothing ever
+  # gets published from a commit that failed typecheck/test/lint/build or the
+  # real e2e suite. Doesn't depend on docker-build — this job builds the same
+  # images itself, so on a push docker-build's plain `docker compose build`
+  # would be redundant work; PRs get that build-validation signal from
+  # docker-build instead, since this job doesn't run there.
   docker-publish:
     name: Publish Docker images to GHCR
     runs-on: ubuntu-latest
-    needs: [checks, docker-build, e2e]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [checks, e2e]
     permissions:
       contents: read
       packages: write
@@ -199,9 +201,10 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
 
-      # Only needed when we're actually about to push (main-branch pushes) —
-      # PR builds never touch the registry at all (push: false below), so
-      # there's nothing to authenticate for.
+      # This job only runs on push-to-main (see the job-level `if:` above),
+      # so this condition and the `push:` inputs below are always true in
+      # practice — kept explicit rather than assumed, in case the job-level
+      # gate is ever loosened.
       - name: Log in to GHCR
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
