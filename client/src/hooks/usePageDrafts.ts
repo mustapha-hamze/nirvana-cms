@@ -1,5 +1,6 @@
 import { useTranslationDrafts } from './useTranslationDrafts'
 import { createEmptySection, withClientKeys } from '../factories/pageElements'
+import type { GeneratedPageTranslation } from '../api/client'
 import type { LangKey } from '../types/content'
 import type { PageStatus, PageItem, PageMetadata, PageSection } from '../types/page'
 
@@ -51,7 +52,19 @@ export function usePageDrafts({
     allowedLanguages,
     persistedLangs,
   })
-  const { draft, updateActiveDraft } = translationDrafts
+  const { draft, updateActiveDraft, setGeneratedDraft } = translationDrafts
+
+  // Converts an AI-generated draft (api/client.ts's response shape) into this
+  // form's PageDraft — same withClientKeys treatment as sections loaded from
+  // the server — and inserts it as the active language's draft.
+  function handleGenerateTranslation(lang: LangKey, generated: GeneratedPageTranslation) {
+    setGeneratedDraft(lang, {
+      title: generated.title,
+      status: generated.status,
+      metadata: generated.metadata,
+      sections: withClientKeys(generated.sections ?? []),
+    })
+  }
 
   function handleAddSection() {
     updateActiveDraft({ sections: [...draft.sections, createEmptySection()] })
@@ -71,5 +84,5 @@ export function usePageDrafts({
     updateActiveDraft({ sections: next })
   }
 
-  return { ...translationDrafts, handleAddSection, updateSectionAt, removeSectionAt, reorderSections }
+  return { ...translationDrafts, handleAddSection, updateSectionAt, removeSectionAt, reorderSections, handleGenerateTranslation }
 }

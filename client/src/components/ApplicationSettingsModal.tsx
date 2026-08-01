@@ -11,9 +11,17 @@ import { Separator } from '@/components/ui/separator'
 import type { Application } from '../types/application'
 import { LANGUAGE_VALUES, LANGUAGE_LABELS, type LangKey } from '../types/content'
 
+// Mirrors server/src/constants/ai.ts's DEFAULT_AI_MODEL — no shared package
+// between client/server, so this is hand-mirrored like every other enum/const
+// (see CLAUDE.md). Only used to show a sensible value when an application's
+// settings don't have one saved yet (new application, or settings saved
+// before this field existed).
+const DEFAULT_AI_MODEL = 'gpt-4o-mini'
+
 type AppSettings = {
   domain: string
   aiApiKey: string
+  aiModel: string
   googleAnalyticsScript: string
   languages: LangKey[]
 }
@@ -29,7 +37,7 @@ export default function ApplicationSettingsModal({ app, onClose, onSaved }: Prop
   const [logoPreview, setLogoPreview] = useState<string | null>(app.logo)
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [appForm, setAppForm] = useState({ name: app.name, description: app.description })
-  const [settings, setSettings] = useState<AppSettings>({ domain: '', aiApiKey: '', googleAnalyticsScript: '', languages: LANGUAGE_VALUES })
+  const [settings, setSettings] = useState<AppSettings>({ domain: '', aiApiKey: '', aiModel: DEFAULT_AI_MODEL, googleAnalyticsScript: '', languages: LANGUAGE_VALUES })
   const [showApiKey, setShowApiKey] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -40,6 +48,7 @@ export default function ApplicationSettingsModal({ app, onClose, onSaved }: Prop
       .then((s) => setSettings({
         domain: s.domain ?? '',
         aiApiKey: s.aiApiKey ?? '',
+        aiModel: s.aiModel || DEFAULT_AI_MODEL,
         googleAnalyticsScript: s.googleAnalyticsScript ?? '',
         languages: s.languages?.length ? s.languages : LANGUAGE_VALUES,
       }))
@@ -208,6 +217,16 @@ export default function ApplicationSettingsModal({ app, onClose, onSaved }: Prop
                       {showApiKey ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
                     </Button>
                   </div>
+                </Field>
+
+                <Field label="AI Model">
+                  <Input
+                    type="text" value={settings.aiModel} placeholder={DEFAULT_AI_MODEL}
+                    onChange={(e) => setSettings((p) => ({ ...p, aiModel: e.target.value }))}
+                  />
+                  <p className="text-xs mt-1.5 text-(--color-text-tertiary)">
+                    Model used for AI-assisted translation.
+                  </p>
                 </Field>
 
                 <Field label="Google Analytics Script">

@@ -1,4 +1,5 @@
 import { useNavigate, useOutletContext } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import { api } from "../api/client";
 import type { AdminOutletContext } from "../components/AdminLayout";
 import { EditIcon, TrashIcon } from "../components/icons";
@@ -19,6 +20,7 @@ import { useAppSelector } from "../store/hooks";
 import { selectUser } from "../store/authSlice";
 import { isAppAdmin } from "../utils/permissions";
 import { getPreviewTitle } from "../utils/translations";
+import { getTextDirection, getRtlAwareClassName } from "../utils/rtl";
 import { usePaginatedApiList } from "../hooks/usePaginatedApiList";
 import { useState } from "react";
 import {
@@ -93,7 +95,10 @@ export default function Contents() {
               return (
                 <AdminTableRow key={content._id}>
                   <td className="px-5 py-3">
-                    <span className="font-medium text-foreground">
+                    <span
+                      dir={getTextDirection(preview?.title)}
+                      className={cn("font-medium text-foreground", getRtlAwareClassName(preview?.title))}
+                    >
                       {preview?.title ?? "—"}
                     </span>
                   </td>

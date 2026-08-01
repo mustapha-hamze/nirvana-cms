@@ -14,6 +14,7 @@ import { findAvailableDetailSlug } from "../services/detailSlugService.js";
 import { applyMetadata } from "../services/metadataService.js";
 import { attachDetailsToParents } from "../services/detailAttachmentService.js";
 import { validatePageSections } from "../validators/sectionValidators.js";
+import { generatePageTranslation as aiGeneratePageTranslation } from "../services/aiTranslationService.js";
 
 const STATUS_VALUES = PageDetails.schema.path("status").enumValues as string[];
 
@@ -356,6 +357,54 @@ export async function deletePageDetails(req: Request, res: Response) {
   if (!detail) return res.status(404).json({ message: "Translation not found" });
 
   res.status(204).send();
+}
+
+// Generates a draft translation via AI from an existing translation on this
+// same Page, for review/editing in the client before Save — never persisted
+// here (see upsertPageDetails for the actual save path). userCanAccessApplication
+// (not userIsAppAdmin) gates this — same rationale as
+// contentController.generateContentTranslation.
+export async function generatePageTranslation(req: Request, res: Response) {
+  const { id } = req.params as { id: string };
+  const { sourceLangKey, targetLangKey } = req.body;
+
+  const page = await Page.findById(id);
+  if (!page) return res.status(404).json({ message: "Page not found" });
+  if (!userCanAccessApplication(req.user!, page.application)) {
+    return res.status(403).json({ message: "Insufficient permissions" });
+  }
+
+  if (!sourceLangKey || !targetLangKey) {
+    return res.status(400).json({ message: "sourceLangKey and targetLangKey are required" });
+  }
+  if (sourceLangKey === targetLangKey) {
+    return res.status(400).json({ message: "sourceLangKey and targetLangKey must be different" });
+  }
+  const allowedLanguages = await getAllowedLanguages(page.application);
+  if (!allowedLanguages.includes(sourceLangKey) || !allowedLanguages.includes(targetLangKey)) {
+    return res
+      .status(400)
+      .json({ message: `sourceLangKey and targetLangKey must be one of: ${allowedLanguages.join(", ")}` });
+  }
+
+  const sourceDetail = await PageDetails.findOne({ page: id, langKey: sourceLangKey });
+  if (!sourceDetail) {
+    return res.status(404).json({ message: "Source translation not found" });
+  }
+
+  const draft = await aiGeneratePageTranslation({
+    applicationId: page.application,
+    sourceDetail: sourceDetail.toObject(),
+    sourceLangKey,
+    targetLangKey,
+  });
+
+  const sectionsCheck = validatePageSections(draft.sections);
+  if (!sectionsCheck.valid) {
+    return res.status(502).json({ message: `AI produced an invalid draft: ${sectionsCheck.message}` });
+  }
+
+  res.status(200).json(draft);
 }
 
 // Used for image elements across page sections (banner, cards, slides, ...).

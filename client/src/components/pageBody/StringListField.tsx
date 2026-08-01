@@ -1,7 +1,9 @@
+import { cn } from '@/lib/utils'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { PlusIcon, TrashIcon } from '../icons'
+import { getTextDirection } from '../../utils/rtl'
 
 // Plain add/remove list of short strings — used where order doesn't carry
 // enough weight to justify drag-and-drop (a pricing plan's feature bullets, a
@@ -42,7 +44,8 @@ export default function StringListField({
               value={value}
               onChange={(e) => updateAt(i, e.target.value)}
               placeholder={placeholder}
-              className="flex-1"
+              dir={getTextDirection(value)}
+              className={cn('flex-1', getTextDirection(value) === 'rtl' && 'rtl-text')}
             />
             <Button
               type="button"

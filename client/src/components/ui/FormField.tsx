@@ -1,4 +1,5 @@
 import { useId, useState } from 'react'
+import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -11,6 +12,7 @@ import {
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { EyeIcon, EyeOffIcon } from '../icons'
+import { getTextDirection } from '../../utils/rtl'
 
 function FieldLabel({ htmlFor, label, required }: { htmlFor: string; label: string; required?: boolean }) {
   return (
@@ -40,13 +42,19 @@ export function TextField({
   dir?: 'ltr' | 'rtl'
 }) {
   const id = useId()
+  // `dir` (if the caller passes one) is only the fallback for an empty
+  // field — once there's real text, direction is decided by the value
+  // itself, so a Persian-tab field with an English value still renders LTR
+  // and vice versa.
+  const resolvedDir = getTextDirection(value, dir)
   return (
     <div>
       <FieldLabel htmlFor={id} label={label} required={required} />
       <Input
         id={id}
         type={type} value={value} onChange={(e) => onChange(e.target.value)}
-        required={required} placeholder={placeholder} autoComplete={autoComplete} dir={dir}
+        required={required} placeholder={placeholder} autoComplete={autoComplete} dir={resolvedDir}
+        className={cn(resolvedDir === 'rtl' && 'rtl-text')}
       />
     </div>
   )
@@ -70,14 +78,15 @@ export function TextAreaField({
   dir?: 'ltr' | 'rtl'
 }) {
   const id = useId()
+  const resolvedDir = getTextDirection(value, dir)
   return (
     <div>
       <FieldLabel htmlFor={id} label={label} required={required} />
       <Textarea
         id={id}
         value={value} onChange={(e) => onChange(e.target.value)}
-        rows={rows} placeholder={placeholder} dir={dir}
-        className="resize-none"
+        rows={rows} placeholder={placeholder} dir={resolvedDir}
+        className={cn('resize-none', resolvedDir === 'rtl' && 'rtl-text')}
       />
     </div>
   )

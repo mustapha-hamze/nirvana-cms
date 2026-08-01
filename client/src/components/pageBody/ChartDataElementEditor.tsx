@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils'
 import { SelectField, TextField } from '../ui/FormField'
 import StringListField from './StringListField'
 import { Label } from '@/components/ui/label'
@@ -6,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { PlusIcon, TrashIcon } from '../icons'
 import type { ChartDataElement, ChartSeries } from '../../types/page'
 import { CHART_TYPE_VALUES, CHART_TYPE_LABELS } from '../../constants/pageSections'
+import { getTextDirection } from '../../utils/rtl'
 
 const MAX_SERIES = 8
 const CHART_TYPE_OPTIONS = CHART_TYPE_VALUES.map((t) => ({ value: t, label: CHART_TYPE_LABELS[t] }))
@@ -78,7 +80,8 @@ export default function ChartDataElementEditor({
                   value={series.label}
                   onChange={(e) => updateSeries(si, { label: e.target.value })}
                   placeholder="Series name, e.g. 2026"
-                  className="flex-1"
+                  dir={getTextDirection(series.label)}
+                  className={cn('flex-1', getTextDirection(series.label) === 'rtl' && 'rtl-text')}
                 />
                 <input
                   type="color"

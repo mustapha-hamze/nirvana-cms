@@ -10,6 +10,7 @@ import {
   deleteContent,
   upsertContentDetails,
   deleteContentDetails,
+  generateContentTranslation,
   uploadContentImage,
   uploadContentVideo,
   uploadContentDocument,
@@ -30,5 +31,6 @@ router.put('/:id', updateContent)
 router.delete('/:id', deleteContent)
 router.put('/:id/details/:langKey', upsertContentDetails)
 router.delete('/:id/details/:langKey', deleteContentDetails)
+router.post('/:id/translations/generate', generateContentTranslation)
 
 export default router
