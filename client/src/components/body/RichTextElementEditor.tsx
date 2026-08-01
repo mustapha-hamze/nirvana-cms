@@ -1,10 +1,12 @@
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
+import { cn } from '@/lib/utils'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import type { RichTextElement } from '../../types/content'
+import { getTextDirection } from '../../utils/rtl'
 
 function ToolbarButton({ active, onClick, children }: { active?: boolean; onClick: () => void; children: ReactNode }) {
   return (
@@ -30,11 +32,20 @@ export default function RichTextElementEditor({
   element: RichTextElement
   onChange: (next: RichTextElement) => void
 }) {
+  // Detection runs directly against the raw HTML on mount (tags/attributes
+  // are pure ASCII, so they can never falsely match RTL script) and against
+  // the editor's plain text on every update thereafter — never mutates the
+  // saved HTML, only the wrapper's own `dir`/font for display.
+  const [direction, setDirection] = useState<'ltr' | 'rtl'>(() => getTextDirection(element.html))
+
   const editor = useEditor(
     {
       extensions: [StarterKit.configure({ heading: { levels: [2, 3] } }), Link.configure({ openOnClick: false })],
       content: element.html,
-      onUpdate: ({ editor }) => onChange({ ...element, html: editor.getHTML() }),
+      onUpdate: ({ editor }) => {
+        onChange({ ...element, html: editor.getHTML() })
+        setDirection(getTextDirection(editor.getText()))
+      },
     },
     [],
   )
@@ -89,7 +100,11 @@ export default function RichTextElementEditor({
             Link
           </ToolbarButton>
         </div>
-        <EditorContent editor={editor} className="min-h-[120px] px-4 py-2.5 text-sm text-foreground" />
+        <EditorContent
+          editor={editor}
+          dir={direction}
+          className={cn('min-h-[120px] px-4 py-2.5 text-sm text-foreground', direction === 'rtl' && 'rtl-text')}
+        />
       </div>
     </div>
   )

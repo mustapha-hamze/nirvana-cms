@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams, useOutletContext } from "react-router-dom";
-import { api } from "../api/client";
+import { api, generatePageTranslation } from "../api/client";
 import type { AdminOutletContext } from "../components/AdminLayout";
 import { BackIcon } from "../components/icons";
 import { ErrorBanner, CancelButton, PrimaryButton } from "../components/ui/Modal";
@@ -103,7 +103,7 @@ function PageEditor({
   const {
     drafts, activeLang, setActiveLang, existingLangs, availableLangs, draft, isPersisted,
     updateActiveDraft, handleAddLanguage, handleDiscardDraft,
-    handleAddSection, updateSectionAt, removeSectionAt, reorderSections,
+    handleAddSection, updateSectionAt, removeSectionAt, reorderSections, handleGenerateTranslation,
   } = usePageDrafts({
     page,
     allowedLanguages,
@@ -174,7 +174,19 @@ function PageEditor({
 
         <div className="px-6 py-5 space-y-4">
           {activeLang === null ? (
-            <TranslationPicker availableLangs={availableLangs} onPick={handleAddLanguage} />
+            <TranslationPicker
+              availableLangs={availableLangs}
+              onPick={handleAddLanguage}
+              aiGenerate={
+                savedPage
+                  ? {
+                      sourceLangKeys: savedPage.details.map((d) => d.langKey),
+                      onGenerate: (target, source) => generatePageTranslation(savedPage._id, source, target),
+                    }
+                  : undefined
+              }
+              onGenerated={handleGenerateTranslation}
+            />
           ) : (
             <>
               <TextField

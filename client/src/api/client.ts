@@ -1,4 +1,25 @@
+import type { LangKey, ContentMetadata, ContentSection } from '../types/content'
+import type { PageMetadata, PageSection } from '../types/page'
+
 export type ApiError = { message: string }
+
+export type GeneratedContentTranslation = {
+  langKey: LangKey
+  title: string
+  headline: string
+  abstract: string
+  status: 'draft'
+  metadata: ContentMetadata
+  sections: ContentSection[]
+}
+
+export type GeneratedPageTranslation = {
+  langKey: LangKey
+  title: string
+  status: 'draft'
+  metadata: PageMetadata
+  sections: PageSection[]
+}
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const token = localStorage.getItem('token')
@@ -94,4 +115,32 @@ export function uploadPageVideo(applicationId: string, file: File): Promise<{ fi
 // stored under storage/documents/page.
 export function uploadPageDocument(applicationId: string, file: File): Promise<{ filename: string }> {
   return uploadFile('/pages/documents', 'document', applicationId, file)
+}
+
+// Generates a draft translation from an existing language on this content
+// item, via the application's AI API key — returns the draft only, it is
+// never persisted server-side. The caller inserts it into local draft state
+// and saves it through the normal PUT .../details/:langKey flow, same as a
+// manually-typed translation.
+export function generateContentTranslation(
+  contentId: string,
+  sourceLangKey: LangKey,
+  targetLangKey: LangKey,
+): Promise<GeneratedContentTranslation> {
+  return api.post<GeneratedContentTranslation>(`/content/${contentId}/translations/generate`, {
+    sourceLangKey,
+    targetLangKey,
+  })
+}
+
+// Same as generateContentTranslation, for pages.
+export function generatePageTranslation(
+  pageId: string,
+  sourceLangKey: LangKey,
+  targetLangKey: LangKey,
+): Promise<GeneratedPageTranslation> {
+  return api.post<GeneratedPageTranslation>(`/pages/${pageId}/translations/generate`, {
+    sourceLangKey,
+    targetLangKey,
+  })
 }

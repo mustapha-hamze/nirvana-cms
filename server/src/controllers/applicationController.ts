@@ -138,7 +138,7 @@ export async function getApplicationSettings(req: Request, res: Response) {
 }
 
 export async function upsertApplicationSettings(req: Request, res: Response) {
-  const { domain, aiApiKey, googleAnalyticsScript, languages } = req.body;
+  const { domain, aiApiKey, aiModel, googleAnalyticsScript, languages } = req.body;
   const appId = req.params.id;
 
   const appExists = await Application.exists({ _id: appId });
@@ -148,6 +148,16 @@ export async function upsertApplicationSettings(req: Request, res: Response) {
   const update: Record<string, unknown> = {};
   if (domain !== undefined) update.domain = domain;
   if (aiApiKey !== undefined) update.aiApiKey = aiApiKey;
+  if (aiModel !== undefined) {
+    // Not required — an application can go without AI translation entirely,
+    // and when it is configured, the schema default (DEFAULT_AI_MODEL) covers
+    // it. Only reject an explicitly-sent-but-blank value, rather than forcing
+    // every settings save to include it.
+    if (typeof aiModel !== "string" || !aiModel.trim()) {
+      return res.status(400).json({ message: "aiModel must be a non-empty string" });
+    }
+    update.aiModel = aiModel.trim();
+  }
   if (googleAnalyticsScript !== undefined)
     update.googleAnalyticsScript = googleAnalyticsScript;
   if (languages !== undefined) {

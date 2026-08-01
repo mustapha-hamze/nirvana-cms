@@ -1,8 +1,10 @@
 import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ChevronIcon, DragHandleIcon, TrashIcon } from '../icons'
 import { PAGE_COMPONENT_TYPE_LABELS } from '../../constants/pageSections'
 import { getPageComponentPreview } from '../../utils/pageComponentPreview'
+import { getTextDirection, getRtlAwareClassName } from '../../utils/rtl'
 import type { PageComponent } from '../../types/page'
 
 // Header for one component within a section — the component's type is its
@@ -57,7 +59,10 @@ export default function PageComponentCardHeader({
           {elementCount} / {maxElements}
         </span>
         {preview && (
-          <span className="text-xs truncate text-(--color-text-tertiary)">
+          <span
+            dir={getTextDirection(preview)}
+            className={cn('text-xs truncate text-(--color-text-tertiary)', getRtlAwareClassName(preview))}
+          >
             — {preview}
           </span>
         )}

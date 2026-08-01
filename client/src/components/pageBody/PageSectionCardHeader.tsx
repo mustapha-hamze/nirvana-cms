@@ -1,7 +1,9 @@
 import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ChevronIcon, DragHandleIcon, TrashIcon, EyeIcon, EyeOffIcon, GearIcon } from '../icons'
+import { getTextDirection, getRtlAwareClassName } from '../../utils/rtl'
 import type { PageSection } from '../../types/page'
 
 // Header bar for a PageSectionCard — drag handle, collapse toggle, the
@@ -50,7 +52,10 @@ export default function PageSectionCardHeader({
         >
           <ChevronIcon open={open} size={16} />
         </Button>
-        <span className="text-sm font-semibold text-foreground">
+        <span
+          dir={getTextDirection(section.title)}
+          className={cn('text-sm font-semibold text-foreground', getRtlAwareClassName(section.title))}
+        >
           {section.title || 'Untitled section'}
         </span>
         {!section.isVisible && (

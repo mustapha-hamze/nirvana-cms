@@ -10,6 +10,7 @@ import {
   deletePage,
   upsertPageDetails,
   deletePageDetails,
+  generatePageTranslation,
   uploadPageImage,
   uploadPageVideo,
   uploadPageDocument,
@@ -33,5 +34,6 @@ router.put("/:id", updatePage);
 router.delete("/:id", deletePage);
 router.put("/:id/details/:langKey", upsertPageDetails);
 router.delete("/:id/details/:langKey", deletePageDetails);
+router.post("/:id/translations/generate", generatePageTranslation);
 
 export default router;

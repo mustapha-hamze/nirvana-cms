@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import { api } from "../api/client";
 import type { AdminOutletContext } from "../components/AdminLayout";
 import { EditIcon, TrashIcon } from "../components/icons";
@@ -21,6 +22,7 @@ import { useAppSelector } from "../store/hooks";
 import { selectUser } from "../store/authSlice";
 import { isAppAdmin } from "../utils/permissions";
 import { usePaginatedApiList } from "../hooks/usePaginatedApiList";
+import { getTextDirection, getRtlAwareClassName } from "../utils/rtl";
 import { LANGUAGE_VALUES } from "../types/content";
 import type { PageItem, PageDetail } from "../types/page";
 
@@ -90,7 +92,10 @@ export default function Pages() {
                 <AdminTableRow key={page._id}>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-foreground">
+                      <span
+                        dir={getTextDirection(preview?.title)}
+                        className={cn("font-medium text-foreground", getRtlAwareClassName(preview?.title))}
+                      >
                         {preview?.title ?? "—"}
                       </span>
                       {page.isHomepage && (

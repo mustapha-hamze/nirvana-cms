@@ -17,6 +17,14 @@ button { cursor: pointer; }
 .icon-btn-muted { color: var(--color-text-muted); }
 .icon-btn-muted:hover { color: var(--color-text-primary); background: var(--color-hover-bg-subtle); }
 
+/* Applied only to fields/preview text detected as containing Persian/Arabic/
+   Urdu script (see src/utils/rtl.ts) — never applied ambiently to the page. */
+.rtl-text {
+  direction: rtl;
+  text-align: right;
+  font-family: var(--font-vazirmatn);
+}
+
 /* Admin panel design tokens (see src/theme.ts) — dark is the default/original
    look; [data-theme="light"] (set on <html> by ThemeModeProvider) overrides
    them. Login has its own fixed light surface and doesn't use these. */
@@ -136,6 +144,8 @@ button { cursor: pointer; }
 }
 
 @theme inline {
+  --font-vazirmatn: "Vazirmatn", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

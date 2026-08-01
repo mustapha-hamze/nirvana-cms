@@ -17,6 +17,7 @@ import { applyMetadata } from "../services/metadataService.js";
 import { attachDetailsToParents } from "../services/detailAttachmentService.js";
 import { validateIdsInApplication } from "../validators/taxonomyValidator.js";
 import { validateContentSections } from "../validators/sectionValidators.js";
+import { generateContentTranslation as aiGenerateContentTranslation } from "../services/aiTranslationService.js";
 
 const STATUS_VALUES = ContentDetails.schema.path("status").enumValues as string[];
 
@@ -454,6 +455,64 @@ export async function uploadContentVideo(req: Request, res: Response) {
 
   const filename = await saveVideo(req.file.buffer, req.file.mimetype, "content");
   res.status(201).json({ filename });
+}
+
+// Generates a draft translation via AI from an existing translation on this
+// same Content item, for review/editing in the client before Save — never
+// persisted here (see upsertContentDetails for the actual save path).
+// userCanAccessApplication (not userIsAppAdmin) gates this: generating draft
+// text is a content-authoring action a ContentCreator can do, same as typing
+// it by hand; publishing/status changes remain admin-only elsewhere.
+export async function generateContentTranslation(req: Request, res: Response) {
+  const { id } = req.params as { id: string };
+  const { sourceLangKey, targetLangKey } = req.body;
+
+  const content = await Content.findById(id)
+    .populate("categories", "translations")
+    .populate("tags", "translations");
+  if (!content) return res.status(404).json({ message: "Content not found" });
+  if (!userCanAccessApplication(req.user!, content.application)) {
+    return res.status(403).json({ message: "Insufficient permissions" });
+  }
+
+  if (!sourceLangKey || !targetLangKey) {
+    return res.status(400).json({ message: "sourceLangKey and targetLangKey are required" });
+  }
+  if (sourceLangKey === targetLangKey) {
+    return res.status(400).json({ message: "sourceLangKey and targetLangKey must be different" });
+  }
+  const allowedLanguages = await getAllowedLanguages(content.application);
+  if (!allowedLanguages.includes(sourceLangKey) || !allowedLanguages.includes(targetLangKey)) {
+    return res
+      .status(400)
+      .json({ message: `sourceLangKey and targetLangKey must be one of: ${allowedLanguages.join(", ")}` });
+  }
+
+  const sourceDetail = await ContentDetails.findOne({ content: id, langKey: sourceLangKey });
+  if (!sourceDetail) {
+    return res.status(404).json({ message: "Source translation not found" });
+  }
+
+  // Best-effort context for the prompt — category/tag titles in the source
+  // language, if any are assigned and populated.
+  const topics = ([...(content.categories ?? []), ...(content.tags ?? [])] as any[])
+    .map((t) => t?.translations?.find((tr: any) => tr.langKey === sourceLangKey)?.title)
+    .filter((title): title is string => Boolean(title));
+
+  const draft = await aiGenerateContentTranslation({
+    applicationId: content.application,
+    sourceDetail: sourceDetail.toObject(),
+    sourceLangKey,
+    targetLangKey,
+    topics,
+  });
+
+  const sectionsCheck = validateContentSections(draft.sections);
+  if (!sectionsCheck.valid) {
+    return res.status(502).json({ message: `AI produced an invalid draft: ${sectionsCheck.message}` });
+  }
+
+  res.status(200).json(draft);
 }
 
 // No content element type consumes this yet (content has no document-bearing

@@ -41,6 +41,16 @@ export function useTranslationDrafts<TDraft extends { status: 'draft' | 'publish
     setActiveLang(lang)
   }
 
+  // Same effect as handleAddLanguage, but seeded with an AI-generated draft
+  // instead of an empty one — used when the user picks "Generate with AI" on
+  // TranslationPicker. The generated draft is only ever set into local state
+  // here; it's still edited and saved through the exact same flow as a
+  // manually-started translation.
+  function setGeneratedDraft(lang: LangKey, draft: TDraft) {
+    setDrafts((prev) => ({ ...prev, [lang]: draft }))
+    setActiveLang(lang)
+  }
+
   // Drops a language's draft and returns to the "pick a language" view — used
   // both for discarding an unsaved draft directly, and as the local-state half
   // of removing an already-persisted translation (after its API call succeeds).
@@ -64,6 +74,7 @@ export function useTranslationDrafts<TDraft extends { status: 'draft' | 'publish
     isPersisted,
     updateActiveDraft,
     handleAddLanguage,
+    setGeneratedDraft,
     handleDiscardDraft,
   }
 }

@@ -1,5 +1,6 @@
 import { useTranslationDrafts } from './useTranslationDrafts'
 import { createEmptySection, withClientKeys } from '../factories/contentElements'
+import type { GeneratedContentTranslation } from '../api/client'
 import type { LangKey, ContentStatus, ContentItem, ContentMetadata, ContentSection, SectionType } from '../types/content'
 
 export type ContentDraft = {
@@ -63,7 +64,21 @@ export function useContentDrafts({
     allowedLanguages,
     persistedLangs,
   })
-  const { draft, updateActiveDraft } = translationDrafts
+  const { draft, updateActiveDraft, setGeneratedDraft } = translationDrafts
+
+  // Converts an AI-generated draft (api/client.ts's response shape) into this
+  // form's ContentDraft — same withClientKeys treatment as sections loaded
+  // from the server — and inserts it as the active language's draft.
+  function handleGenerateTranslation(lang: LangKey, generated: GeneratedContentTranslation) {
+    setGeneratedDraft(lang, {
+      title: generated.title,
+      headline: generated.headline,
+      abstract: generated.abstract,
+      status: generated.status,
+      metadata: generated.metadata,
+      sections: withClientKeys(generated.sections ?? []),
+    })
+  }
 
   function handleAddSection(type: SectionType) {
     updateActiveDraft({ sections: [...draft.sections, createEmptySection(type)] })
@@ -83,5 +98,5 @@ export function useContentDrafts({
     updateActiveDraft({ sections: next })
   }
 
-  return { ...translationDrafts, handleAddSection, updateSectionAt, removeSectionAt, reorderSections }
+  return { ...translationDrafts, handleAddSection, updateSectionAt, removeSectionAt, reorderSections, handleGenerateTranslation }
 }
