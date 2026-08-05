@@ -23,7 +23,7 @@ export default function Login() {
     setError('')
     setLoading(true)
     try {
-      const data = await api.post<{ token: string; user: AuthUser }>('/auth/login', { email, password })
+      const data = await api.post<{ token: string; refreshToken: string; user: AuthUser }>('/auth/login', { email, password })
       const { user } = data
 
       if (user.role !== 'SuperAdmin' && user.applications.length === 0) {
@@ -39,7 +39,7 @@ export default function Login() {
         return
       }
 
-      dispatch(loginSuccess({ token: data.token, user }))
+      dispatch(loginSuccess({ token: data.token, refreshToken: data.refreshToken, user }))
       navigate(
         user.role === 'SuperAdmin' ? '/applications' : `/applications/${user.applications[0]._id}/dashboard`,
         { replace: true },

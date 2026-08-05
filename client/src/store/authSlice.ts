@@ -23,6 +23,7 @@ function loadFromStorage(): AuthState {
     // Reject stale user objects that predate the role field
     if (user && !user.role) {
       localStorage.removeItem('token')
+      localStorage.removeItem('refreshToken')
       localStorage.removeItem('user')
       return { token: null, user: null }
     }
@@ -30,6 +31,7 @@ function loadFromStorage(): AuthState {
     return { token, user }
   } catch {
     localStorage.removeItem('token')
+    localStorage.removeItem('refreshToken')
     localStorage.removeItem('user')
     return { token: null, user: null }
   }
@@ -39,22 +41,31 @@ const authSlice = createSlice({
   name: 'auth',
   initialState: loadFromStorage(),
   reducers: {
-    loginSuccess(state, action: PayloadAction<{ user: AuthUser; token: string }>) {
+    loginSuccess(state, action: PayloadAction<{ user: AuthUser; token: string; refreshToken: string }>) {
       state.user = action.payload.user
       state.token = action.payload.token
       localStorage.setItem('token', action.payload.token)
+      localStorage.setItem('refreshToken', action.payload.refreshToken)
       localStorage.setItem('user', JSON.stringify(action.payload.user))
+    },
+    // Updates just the access token — used after a silent /auth/refresh, where
+    // the user object hasn't changed and the refresh token is persisted
+    // separately (see api/client.ts, which owns the refresh-token rotation).
+    setAccessToken(state, action: PayloadAction<string>) {
+      state.token = action.payload
+      localStorage.setItem('token', action.payload)
     },
     logout(state) {
       state.user = null
       state.token = null
       localStorage.removeItem('token')
+      localStorage.removeItem('refreshToken')
       localStorage.removeItem('user')
     },
   },
 })
 
-export const { loginSuccess, logout } = authSlice.actions
+export const { loginSuccess, setAccessToken, logout } = authSlice.actions
 
 // Selectors — return stable primitives so useSelector never causes spurious re-renders
 export const selectUser = (state: RootState) => state.auth.user

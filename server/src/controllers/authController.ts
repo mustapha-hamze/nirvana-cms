@@ -1,14 +1,46 @@
 import jwt from 'jsonwebtoken'
+import crypto from 'crypto'
+import mongoose from 'mongoose'
 import type { Request, Response } from 'express'
 import User from '../models/User.js'
+import RefreshToken from '../models/RefreshToken.js'
 import { ROLES } from '../constants/roles.js'
 
-function signToken(userId: unknown, role: string) {
+// Same message for every refresh-rejection reason (bad signature, expired,
+// revoked, unknown user, inactive user) — a distinct message per case would
+// let a caller probe which of those applies to a given token.
+const INVALID_REFRESH_MESSAGE = 'Invalid or expired refresh token'
+
+function signAccessToken(userId: unknown, role: string) {
   return jwt.sign(
     { sub: userId, role },
     process.env.JWT_SECRET as string,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions,
+    { expiresIn: process.env.JWT_EXPIRES_IN || '15m' } as jwt.SignOptions,
   )
+}
+
+function hashRefreshToken(token: string) {
+  return crypto.createHash('sha256').update(token).digest('hex')
+}
+
+// Signs a new refresh JWT for userId and persists a hashed, revocable record
+// of it (see models/RefreshToken.ts) — the JWT's own signature/expiry isn't
+// enough on its own to end a session early (logout, password change,
+// deactivation), so every /refresh call is also checked against this record.
+async function issueRefreshToken(userId: unknown): Promise<string> {
+  const jti = crypto.randomUUID()
+  const token = jwt.sign(
+    { sub: userId, jti },
+    process.env.JWT_REFRESH_SECRET as string,
+    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' } as jwt.SignOptions,
+  )
+  const decoded = jwt.decode(token) as jwt.JwtPayload
+  await RefreshToken.create({
+    user: userId as mongoose.Types.ObjectId,
+    tokenHash: hashRefreshToken(token),
+    expiresAt: new Date((decoded.exp as number) * 1000),
+  })
+  return token
 }
 
 function formatUser(user: any) {
@@ -41,9 +73,59 @@ export async function login(req: Request, res: Response) {
   const valid = await user.comparePassword(password)
   if (!valid) return res.status(401).json({ message: 'Invalid credentials' })
 
-  const token = signToken(user._id, user.role)
+  const token = signAccessToken(user._id, user.role)
+  const refreshToken = await issueRefreshToken(user._id)
 
-  res.json({ token, user: formatUser(user) })
+  res.json({ token, refreshToken, user: formatUser(user) })
+}
+
+export async function refresh(req: Request, res: Response) {
+  const { refreshToken } = req.body
+
+  if (!refreshToken || typeof refreshToken !== 'string') {
+    return res.status(401).json({ message: INVALID_REFRESH_MESSAGE })
+  }
+
+  let payload: jwt.JwtPayload
+  try {
+    payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string) as jwt.JwtPayload
+  } catch {
+    return res.status(401).json({ message: INVALID_REFRESH_MESSAGE })
+  }
+
+  const stored = await RefreshToken.findOne({ tokenHash: hashRefreshToken(refreshToken) })
+  if (!stored || stored.revokedAt || stored.expiresAt.getTime() < Date.now()) {
+    return res.status(401).json({ message: INVALID_REFRESH_MESSAGE })
+  }
+
+  const user = await User.findById(payload.sub).populate('applications', 'name')
+  if (!user || user.status === 'inactive') {
+    return res.status(401).json({ message: INVALID_REFRESH_MESSAGE })
+  }
+
+  // Rotate: this refresh token is single-use. Revoking it here means a
+  // leaked-and-replayed refresh token stops working the moment the
+  // legitimate client refreshes again.
+  stored.revokedAt = new Date()
+  await stored.save()
+
+  const newAccessToken = signAccessToken(user._id, user.role)
+  const newRefreshToken = await issueRefreshToken(user._id)
+
+  res.json({ token: newAccessToken, refreshToken: newRefreshToken })
+}
+
+export async function logout(req: Request, res: Response) {
+  const { refreshToken } = req.body
+
+  if (refreshToken && typeof refreshToken === 'string') {
+    await RefreshToken.updateOne(
+      { tokenHash: hashRefreshToken(refreshToken) },
+      { $set: { revokedAt: new Date() } },
+    )
+  }
+
+  res.status(204).send()
 }
 
 export async function me(req: Request, res: Response) {
@@ -70,7 +152,16 @@ export async function changePassword(req: Request, res: Response) {
   user.password = newPassword
   await user.save()
 
-  const token = signToken(user._id, user.role)
+  // A changed password should invalidate every existing session's refresh
+  // token, not just issue a new access token for this one request — otherwise
+  // a device that leaked the old password could keep silently refreshing.
+  await RefreshToken.updateMany(
+    { user: user._id, revokedAt: null },
+    { $set: { revokedAt: new Date() } },
+  )
 
-  res.json({ message: 'Password updated', token })
+  const token = signAccessToken(user._id, user.role)
+  const refreshToken = await issueRefreshToken(user._id)
+
+  res.json({ message: 'Password updated', token, refreshToken })
 }
