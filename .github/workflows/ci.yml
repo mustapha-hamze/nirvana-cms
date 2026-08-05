@@ -261,5 +261,15 @@ jobs:
             docker compose pull
             docker compose up -d
             docker compose ps
-            curl -fsS http://localhost/api/health
+
+            for i in $(seq 1 30); do
+              if curl -fsS http://localhost/api/health; then
+                exit 0
+              fi
+              sleep 2
+            done
+
+            docker compose logs --tail=100 server
+            docker compose logs --tail=100 client
+            exit 1
           '
