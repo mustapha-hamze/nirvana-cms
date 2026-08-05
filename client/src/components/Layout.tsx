@@ -1,7 +1,8 @@
 import { type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAppDispatch, useAppSelector } from '../store/hooks'
-import { logout, selectUser } from '../store/authSlice'
+import { useAppSelector } from '../store/hooks'
+import { selectUser } from '../store/authSlice'
+import { logoutRequest } from '../api/client'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -9,12 +10,11 @@ import { LogoutIcon } from './icons'
 import ThemeToggle from './ui/ThemeToggle'
 
 export default function Layout({ children }: { children: ReactNode }) {
-  const dispatch = useAppDispatch()
   const user = useAppSelector(selectUser)
   const navigate = useNavigate()
 
-  function handleLogout() {
-    dispatch(logout())
+  async function handleLogout() {
+    await logoutRequest()
     navigate('/login', { replace: true })
   }
 

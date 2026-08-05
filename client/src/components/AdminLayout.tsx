@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useLocation, Outlet } from 'react-router-dom'
-import { useAppDispatch, useAppSelector } from '../store/hooks'
-import { logout, selectUser } from '../store/authSlice'
-import { api } from '../api/client'
+import { useAppSelector } from '../store/hooks'
+import { selectUser } from '../store/authSlice'
+import { api, logoutRequest } from '../api/client'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -17,7 +17,6 @@ export default function AdminLayout() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const location = useLocation()
-  const dispatch = useAppDispatch()
   const user = useAppSelector(selectUser)
   const [app, setApp] = useState<Application | null>(null)
   const [loading, setLoading] = useState(true)
@@ -33,8 +32,8 @@ export default function AdminLayout() {
       .finally(() => setLoading(false))
   }, [id])
 
-  function handleLogout() {
-    dispatch(logout())
+  async function handleLogout() {
+    await logoutRequest()
     navigate('/login', { replace: true })
   }
 

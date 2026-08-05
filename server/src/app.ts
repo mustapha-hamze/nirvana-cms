@@ -39,6 +39,22 @@ if (process.env.NODE_ENV === 'production') {
       'JWT_SECRET must be set to a strong, unique value (at least 32 characters, not the .env.example placeholder) in production',
     )
   }
+
+  // Refresh tokens are signed with their own secret (see authController.ts)
+  // specifically so that leaking one secret doesn't compromise the other
+  // token type — a refresh secret that's unset, weak, or identical to
+  // JWT_SECRET defeats that separation.
+  const jwtRefreshSecret = process.env.JWT_REFRESH_SECRET
+  if (
+    !jwtRefreshSecret ||
+    jwtRefreshSecret === JWT_SECRET_PLACEHOLDER ||
+    jwtRefreshSecret.length < 32 ||
+    jwtRefreshSecret === jwtSecret
+  ) {
+    throw new Error(
+      'JWT_REFRESH_SECRET must be set to a strong, unique value (at least 32 characters, different from JWT_SECRET, not the .env.example placeholder) in production',
+    )
+  }
 }
 
 // Uploaded images/videos/documents live under UUID filenames that never get
