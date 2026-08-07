@@ -22,6 +22,7 @@ import { isAppAdmin } from '../utils/permissions'
 import { getPreviewTitle } from '../utils/translations'
 import { LANGUAGE_VALUES } from '../types/content'
 import type { Category } from '../types/category'
+import { useLocale } from '../i18n/useLocale'
 
 type SortBy = 'title' | 'createdAt'
 
@@ -61,6 +62,7 @@ function buildTree(categories: Category[], sortBy: SortBy, sortOrder: SortDirect
 
 export default function Categories() {
   const { app } = useOutletContext<AdminOutletContext>()
+  const { t } = useLocale()
   const user = useAppSelector(selectUser)
   const canManage = !!app && isAppAdmin(user, app._id)
   const [categories, setCategories] = useState<Category[]>([])
@@ -98,9 +100,9 @@ export default function Categories() {
   return (
     <div className="mx-10 my-10">
       <AdminPageHeader
-        title="Categories"
-        subtitle={loading || !app ? '…' : `${categories.length} categor${categories.length !== 1 ? 'ies' : 'y'} in ${app.name}`}
-        actionLabel={canManage ? 'Create Category' : undefined}
+        title={t('categories.title')}
+        subtitle={loading || !app ? '…' : t(categories.length === 1 ? 'categories.subtitleOne' : 'categories.subtitleOther', { count: categories.length, app: app.name })}
+        actionLabel={canManage ? t('categories.createCategory') : undefined}
         onAction={canManage ? () => setShowCreate(true) : undefined}
         actionDisabled={!app}
       />
@@ -110,30 +112,30 @@ export default function Categories() {
       ) : categories.length === 0 ? (
         <EmptyState
           icon={<GridIcon size={28} />}
-          title="No categories yet"
-          description="Organize content by creating categories for this application."
-          actionLabel={canManage ? 'Create Category' : undefined}
+          title={t('categories.noCategoriesTitle')}
+          description={t('categories.noCategoriesDescription')}
+          actionLabel={canManage ? t('categories.createCategory') : undefined}
           onAction={canManage ? () => setShowCreate(true) : undefined}
         />
       ) : (
         <AdminTable>
           <TableHeader>
             <tr>
-              <SortableHeader label="Title" active={sortBy === 'title'} direction={sortOrder} onClick={() => toggleSort('title')} />
-              <AdminTableHeadCell>Public ID</AdminTableHeadCell>
-              <AdminTableHeadCell>Languages</AdminTableHeadCell>
-              <AdminTableHeadCell>Status</AdminTableHeadCell>
-              <SortableHeader label="Created" active={sortBy === 'createdAt'} direction={sortOrder} onClick={() => toggleSort('createdAt')} />
-              {canManage && <AdminTableHeadCell align="right">Actions</AdminTableHeadCell>}
+              <SortableHeader label={t('table.title')} active={sortBy === 'title'} direction={sortOrder} onClick={() => toggleSort('title')} />
+              <AdminTableHeadCell>{t('table.publicId')}</AdminTableHeadCell>
+              <AdminTableHeadCell>{t('table.languages')}</AdminTableHeadCell>
+              <AdminTableHeadCell>{t('common.status')}</AdminTableHeadCell>
+              <SortableHeader label={t('table.created')} active={sortBy === 'createdAt'} direction={sortOrder} onClick={() => toggleSort('createdAt')} />
+              {canManage && <AdminTableHeadCell align="end">{t('common.actions')}</AdminTableHeadCell>}
             </tr>
           </TableHeader>
           <TableBody>
             {tree.map(({ category, depth }) => (
               <AdminTableRow key={category._id}>
                 <td className="px-5 py-3">
-                  <div className="flex items-center" style={{ paddingLeft: depth * 24 }}>
+                  <div className="flex items-center" style={{ paddingInlineStart: depth * 24 }}>
                     {depth > 0 && (
-                      <span className="mr-2 text-sm text-(--color-text-tertiary)">└</span>
+                      <span className="me-2 text-sm text-(--color-text-tertiary)">└</span>
                     )}
                     <span className="font-medium text-foreground">
                       {getPreviewTitle(category.translations)}
@@ -153,10 +155,10 @@ export default function Categories() {
                 {canManage && (
                   <td className="px-5 py-3">
                     <div className="flex items-center justify-end gap-1">
-                      <AdminTableActionButton onClick={() => setEditCategory(category)} title="Edit" variant="accent">
+                      <AdminTableActionButton onClick={() => setEditCategory(category)} title={t('common.edit')} variant="accent">
                         <EditIcon />
                       </AdminTableActionButton>
-                      <AdminTableActionButton onClick={() => setDeleteCategoryState(category)} title="Delete" variant="danger">
+                      <AdminTableActionButton onClick={() => setDeleteCategoryState(category)} title={t('common.delete')} variant="danger">
                         <TrashIcon />
                       </AdminTableActionButton>
                     </div>
@@ -180,10 +182,10 @@ export default function Categories() {
       )}
       {deleteCategory && (
         <ConfirmModal
-          title={`Delete "${getPreviewTitle(deleteCategory.translations)}"?`}
-          message="This will remove the category. This action cannot be undone."
-          confirmLabel="Delete Category"
-          loadingLabel="Deleting…"
+          title={t('categories.deleteConfirmTitle', { name: getPreviewTitle(deleteCategory.translations) })}
+          message={t('categories.deleteConfirmMessage')}
+          confirmLabel={t('categories.deleteConfirmLabel')}
+          loadingLabel={t('common.deleting')}
           onConfirm={() => api.delete(`/categories/${deleteCategory._id}`).then(fetchCategories)}
           onClose={() => setDeleteCategoryState(null)}
         />

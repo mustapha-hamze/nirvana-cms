@@ -5,13 +5,15 @@ import { selectUser, selectUserRole } from '../store/authSlice'
 import { isAppAdmin } from '../utils/permissions'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useLocale } from '../i18n/useLocale'
+import type { TranslationKey } from '../i18n/types'
 import { DashboardIcon, ContentIcon, ChevronIcon, UsersIcon, GridIcon, CloseIcon } from './icons'
 
-const ALL_CONTENT_MANAGEMENT_ITEMS = [
-  { label: 'Contents', segment: 'contents' },
-  { label: 'Pages', segment: 'pages' },
-  { label: 'Categories', segment: 'categories', adminOnly: true },
-  { label: 'Tags', segment: 'tags', adminOnly: true },
+const ALL_CONTENT_MANAGEMENT_ITEMS: { labelKey: TranslationKey; segment: string; adminOnly?: boolean }[] = [
+  { labelKey: 'nav.contents', segment: 'contents' },
+  { labelKey: 'nav.pages', segment: 'pages' },
+  { labelKey: 'nav.categories', segment: 'categories', adminOnly: true },
+  { labelKey: 'nav.tags', segment: 'tags', adminOnly: true },
 ]
 
 const navItemClass = (active: boolean) =>
@@ -30,6 +32,7 @@ function SidebarNav({ appId, onNavigate }: { appId: string; onNavigate?: () => v
   const user = useAppSelector(selectUser)
   const isAppAdminUser = isAppAdmin(user, appId)
   const location = useLocation()
+  const { t } = useLocale()
 
   const CONTENT_MANAGEMENT_ITEMS = ALL_CONTENT_MANAGEMENT_ITEMS.filter(
     (item) => !item.adminOnly || isAppAdminUser,
@@ -47,7 +50,7 @@ function SidebarNav({ appId, onNavigate }: { appId: string; onNavigate?: () => v
     <>
       <nav className="space-y-1">
         <SidebarLink to={`/applications/${appId}/dashboard`} icon={<DashboardIcon />} onNavigate={onNavigate}>
-          Dashboard
+          {t('nav.dashboard')}
         </SidebarLink>
 
         <div>
@@ -59,16 +62,16 @@ function SidebarNav({ appId, onNavigate }: { appId: string; onNavigate?: () => v
           >
             <span className="flex items-center gap-3">
               <ContentIcon />
-              Content Management
+              {t('nav.contentManagement')}
             </span>
             <ChevronIcon open={contentOpen} />
           </Button>
 
           {contentOpen && (
-            <div className="mt-1 ml-4.5 pl-3 space-y-1 border-l">
+            <div className="mt-1 ms-4.5 ps-3 space-y-1 border-s">
               {CONTENT_MANAGEMENT_ITEMS.map((item) => (
                 <SidebarLink key={item.segment} to={`/applications/${appId}/${item.segment}`} onNavigate={onNavigate}>
-                  {item.label}
+                  {t(item.labelKey)}
                 </SidebarLink>
               ))}
             </div>
@@ -79,14 +82,14 @@ function SidebarNav({ appId, onNavigate }: { appId: string; onNavigate?: () => v
       {role === 'SuperAdmin' && (
         <div className="mt-6">
           <p className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-(--color-text-tertiary)">
-            Admin
+            {t('nav.admin')}
           </p>
           <nav className="space-y-1">
             <SidebarLink to={`/applications/${appId}/users`} icon={<UsersIcon />} onNavigate={onNavigate}>
-              Users
+              {t('nav.users')}
             </SidebarLink>
             <SidebarLink to="/applications" icon={<GridIcon />} onNavigate={onNavigate}>
-              Applications
+              {t('nav.applications')}
             </SidebarLink>
           </nav>
         </div>
@@ -97,7 +100,7 @@ function SidebarNav({ appId, onNavigate }: { appId: string; onNavigate?: () => v
 
 export default function Sidebar({ appId }: { appId: string }) {
   return (
-    <aside className="w-68 shrink-0 border-r bg-(--color-sidebar-bg) px-3 py-6 hidden md:block">
+    <aside className="w-68 shrink-0 border-e bg-(--color-sidebar-bg) px-3 py-6 hidden md:block">
       <SidebarNav appId={appId} />
     </aside>
   )
@@ -108,19 +111,20 @@ export default function Sidebar({ appId }: { appId: string }) {
 // unreachable on phones and small tablets (only whatever route you're
 // already on works, via direct URL).
 export function MobileSidebarDrawer({ appId, open, onClose }: { appId: string; open: boolean; onClose: () => void }) {
+  const { t } = useLocale()
   if (!open) return null
 
   return (
     <div className="fixed inset-0 z-50 md:hidden">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <aside className="absolute inset-y-0 left-0 w-72 max-w-[85vw] overflow-y-auto border-r bg-(--color-sidebar-bg) px-3 py-6">
+      <aside className="absolute inset-y-0 start-0 w-72 max-w-[85vw] overflow-y-auto border-e bg-(--color-sidebar-bg) px-3 py-6">
         <div className="flex items-center justify-end px-1 mb-4">
           <Button
             type="button"
             variant="ghost"
             size="icon-sm"
             onClick={onClose}
-            title="Close menu"
+            title={t('nav.closeMenu')}
             className="text-muted-foreground hover:text-foreground"
           >
             <CloseIcon size={20} />

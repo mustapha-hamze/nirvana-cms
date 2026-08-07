@@ -150,14 +150,14 @@ export function PasswordField({
           id={id}
           type={show ? 'text' : 'password'} value={value} onChange={(e) => onChange(e.target.value)}
           required={required} autoComplete={autoComplete} placeholder={placeholder}
-          className="pr-11"
+          className="pe-11"
         />
         <Button
           type="button"
           variant="ghost"
           size="icon-xs"
           onClick={() => setShow((v) => !v)}
-          className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          className="absolute end-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
         >
           {show ? <EyeOffIcon /> : <EyeIcon />}
         </Button>

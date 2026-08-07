@@ -1,5 +1,6 @@
 import { SelectField, TextField } from '../ui/FormField'
 import { HEADING_LEVELS } from '../../constants/pageSections'
+import { useLocale } from '../../i18n/useLocale'
 import type { HeadingElement, HeadingLevel } from '../../types/page'
 
 const LEVEL_OPTIONS = HEADING_LEVELS.map((level) => ({ value: String(level), label: `H${level}` }))
@@ -11,17 +12,18 @@ export default function HeadingElementEditor({
   element: HeadingElement
   onChange: (next: HeadingElement) => void
 }) {
+  const { t } = useLocale()
   return (
     <div className="grid grid-cols-[auto_1fr] gap-3 items-start">
       <div className="w-20">
         <SelectField
-          label="Level"
+          label={t('contentBuilder.level')}
           value={String(element.level)}
           onChange={(v) => onChange({ ...element, level: Number(v) as HeadingLevel })}
           options={LEVEL_OPTIONS}
         />
       </div>
-      <TextField label="Heading Text" required value={element.text} onChange={(text) => onChange({ ...element, text })} />
+      <TextField label={t('contentBuilder.headingText')} required value={element.text} onChange={(text) => onChange({ ...element, text })} />
     </div>
   )
 }

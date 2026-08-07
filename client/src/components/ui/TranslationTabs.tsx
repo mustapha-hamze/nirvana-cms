@@ -1,5 +1,6 @@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PlusIcon } from '../icons'
+import { useLocale } from '../../i18n/useLocale'
 import { LANGUAGE_LABELS, type LangKey } from '../../types/content'
 
 const NEW_LANGUAGE = '__new__'
@@ -20,6 +21,7 @@ export default function TranslationTabs({
   drafts: Partial<Record<LangKey, { status: 'draft' | 'published' }>>
   onSelect: (lang: LangKey | null) => void
 }) {
+  const { t } = useLocale()
   return (
     <div className="border-b px-6 pt-4">
       <Tabs
@@ -43,7 +45,7 @@ export default function TranslationTabs({
           {availableLangs.length > 0 && (
             <TabsTrigger value={NEW_LANGUAGE} className="gap-1.5 px-3 py-2 after:bg-primary">
               <PlusIcon size={14} />
-              New Language
+              {t('builder.newLanguage')}
             </TabsTrigger>
           )}
         </TabsList>

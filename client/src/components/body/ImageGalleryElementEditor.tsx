@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { DragHandleIcon, TrashIcon, PlusIcon } from '../icons'
 import ImageUploadField from './ImageUploadField'
+import { useLocale } from '../../i18n/useLocale'
 import type { ImageGalleryElement, GalleryImage } from '../../types/content'
 import { randomUUID } from '@/utils/randomUUID'
 
@@ -27,6 +28,7 @@ function GalleryRow({
   onRemove: () => void
   canRemove: boolean
 }) {
+  const { t } = useLocale()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
 
   return (
@@ -45,7 +47,7 @@ function GalleryRow({
       </button>
       <div className="flex-1 space-y-2 min-w-0">
         <ImageUploadField applicationId={applicationId} url={image.url} onUploaded={(url) => onChange({ ...image, url })} />
-        <TextField label="Alt text" required value={image.alt} onChange={(alt) => onChange({ ...image, alt })} />
+        <TextField label={t('contentBuilder.altText')} required value={image.alt} onChange={(alt) => onChange({ ...image, alt })} />
       </div>
       <Button
         type="button"
@@ -53,7 +55,7 @@ function GalleryRow({
         size="icon-sm"
         onClick={onRemove}
         disabled={!canRemove}
-        title={canRemove ? 'Remove image' : `A gallery needs at least ${MIN_IMAGES} images`}
+        title={canRemove ? t('contentBuilder.removeImage') : t('contentBuilder.galleryMinImages', { min: MIN_IMAGES })}
         className="icon-btn-danger mt-2.5 shrink-0 hover:bg-transparent"
       >
         <TrashIcon size={14} />
@@ -71,6 +73,7 @@ export default function ImageGalleryElementEditor({
   element: ImageGalleryElement
   onChange: (next: ImageGalleryElement) => void
 }) {
+  const { t } = useLocale()
   // Stable per-row ids for dnd-kit, decoupled from array index. Mutated (not
   // via setState) alongside `element.images` since the parent already owns
   // re-rendering through `onChange` — this ref just keeps ids in sync with it.
@@ -110,7 +113,7 @@ export default function ImageGalleryElementEditor({
   return (
     <div className="space-y-2">
       <Label className="mb-1 text-sm font-medium text-muted-foreground">
-        Gallery Images ({element.images.length})
+        {t('contentBuilder.galleryImagesCount', { count: element.images.length })}
       </Label>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={ids} strategy={verticalListSortingStrategy}>
@@ -130,7 +133,7 @@ export default function ImageGalleryElementEditor({
         </SortableContext>
       </DndContext>
       <Button type="button" variant="link" onClick={addImage} className="h-auto gap-1.5 p-0 text-sm font-medium hover:no-underline">
-        <PlusIcon size={14} /> Add Image
+        <PlusIcon size={14} /> {t('contentBuilder.addImage')}
       </Button>
     </div>
   )

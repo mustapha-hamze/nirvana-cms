@@ -3,6 +3,7 @@ import ImageUploadField from '../body/ImageUploadField'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { ReviewIcon } from '../icons'
+import { useLocale } from '../../i18n/useLocale'
 import type { TestimonialItemElement } from '../../types/page'
 
 // Shared by Quotation, Testimonial, and Review components — see
@@ -17,18 +18,19 @@ export default function TestimonialItemElementEditor({
   element: TestimonialItemElement
   onChange: (next: TestimonialItemElement) => void
 }) {
+  const { t } = useLocale()
   return (
     <div className="space-y-3">
-      <TextAreaField label="Quote" required value={element.quote} onChange={(quote) => onChange({ ...element, quote })} rows={3} />
+      <TextAreaField label={t('pageBuilder.quote')} required value={element.quote} onChange={(quote) => onChange({ ...element, quote })} rows={3} />
       <div className="grid grid-cols-2 gap-3">
-        <TextField label="Author name" value={element.authorName} onChange={(authorName) => onChange({ ...element, authorName })} />
-        <TextField label="Author role" value={element.authorRole} onChange={(authorRole) => onChange({ ...element, authorRole })} placeholder="e.g. CEO, Acme Corp" />
+        <TextField label={t('pageBuilder.authorName')} value={element.authorName} onChange={(authorName) => onChange({ ...element, authorName })} />
+        <TextField label={t('pageBuilder.authorRole')} value={element.authorRole} onChange={(authorRole) => onChange({ ...element, authorRole })} placeholder={t('pageBuilder.authorRolePlaceholder')} />
       </div>
       <ImageUploadField domain="page" applicationId={applicationId} url={element.avatar} onUploaded={(avatar) => onChange({ ...element, avatar })} />
 
       <div>
         <Label className="mb-1.5 text-sm font-medium text-muted-foreground">
-          Rating (optional)
+          {t('pageBuilder.rating')}
         </Label>
         <div className="flex items-center gap-1">
           {[1, 2, 3, 4, 5].map((star) => (
@@ -38,7 +40,7 @@ export default function TestimonialItemElementEditor({
               variant="ghost"
               size="icon-sm"
               onClick={() => onChange({ ...element, rating: element.rating === star ? null : star })}
-              title={`${star} star${star > 1 ? 's' : ''}`}
+              title={t(star > 1 ? 'pageBuilder.starOther' : 'pageBuilder.starOne', { count: star })}
               className={`hover:bg-transparent ${element.rating !== null && star <= element.rating ? 'text-yellow-400' : 'text-(--color-text-tertiary)'}`}
             >
               <ReviewIcon size={22} />
@@ -49,9 +51,9 @@ export default function TestimonialItemElementEditor({
               type="button"
               variant="link"
               onClick={() => onChange({ ...element, rating: null })}
-              className="ml-2 h-auto p-0 text-xs font-medium text-muted-foreground hover:no-underline"
+              className="ms-2 h-auto p-0 text-xs font-medium text-muted-foreground hover:no-underline"
             >
-              Clear
+              {t('pageBuilder.clear')}
             </Button>
           )}
         </div>

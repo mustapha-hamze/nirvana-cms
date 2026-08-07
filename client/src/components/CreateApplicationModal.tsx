@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react'
 import { api } from '../api/client'
 import { Backdrop, ModalPanel, ModalHeader, ModalFooter, ErrorBanner, CancelButton, PrimaryButton } from './ui/Modal'
 import { TextField, TextAreaField } from './ui/FormField'
+import { useLocale } from '../i18n/useLocale'
 
 type Props = {
   onClose: () => void
@@ -10,6 +11,7 @@ type Props = {
 }
 
 export default function CreateApplicationModal({ onClose, onCreated }: Props) {
+  const { t } = useLocale()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
@@ -21,11 +23,11 @@ export default function CreateApplicationModal({ onClose, onCreated }: Props) {
     setLoading(true)
     try {
       await api.post('/applications', { name, description })
-      toast.success('Application has been created')
+      toast.success(t('applications.toastCreated'))
       onCreated()
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create application')
+      setError(err instanceof Error ? err.message : t('applications.createFailed'))
     } finally {
       setLoading(false)
     }
@@ -34,23 +36,23 @@ export default function CreateApplicationModal({ onClose, onCreated }: Props) {
   return (
     <Backdrop onClose={onClose}>
       <ModalPanel>
-        <ModalHeader title="Create Application" subtitle="Add a new website to your CMS" />
+        <ModalHeader title={t('applications.modalCreateTitle')} subtitle={t('applications.modalCreateSubtitle')} />
         <form onSubmit={handleSubmit}>
           <div className="px-6 py-5 space-y-4">
             {error && <ErrorBanner message={error} />}
             <TextField
-              label="Application name" required value={name} onChange={setName}
-              placeholder="e.g. Acme Corp Website"
+              label={t('applications.nameLabel')} required value={name} onChange={setName}
+              placeholder={t('applications.namePlaceholder')}
             />
             <TextAreaField
-              label="Description" value={description} onChange={setDescription}
-              placeholder="Brief description of this website…"
+              label={t('common.description')} value={description} onChange={setDescription}
+              placeholder={t('applications.descriptionPlaceholder')}
             />
           </div>
           <ModalFooter>
             <CancelButton onClick={onClose} disabled={loading} />
             <PrimaryButton type="submit" disabled={loading}>
-              {loading ? 'Creating…' : 'Create Application'}
+              {loading ? t('common.creating') : t('applications.createApplication')}
             </PrimaryButton>
           </ModalFooter>
         </form>

@@ -6,10 +6,13 @@ import { loginSuccess, type AuthUser } from '../store/authSlice'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import LocaleToggle from '../components/ui/LocaleToggle'
+import { useLocale } from '../i18n/useLocale'
 
 export default function Login() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const { t, locale } = useLocale()
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -27,7 +30,7 @@ export default function Login() {
       const { user } = data
 
       if (user.role !== 'SuperAdmin' && user.applications.length === 0) {
-        setError('Your account is not assigned to any application yet.')
+        setError(t('auth.errorNotAssigned'))
         return
       }
       // WebsiteUser has no screens in this admin panel today — every /applications/:id
@@ -35,7 +38,7 @@ export default function Login() {
       // would authenticate successfully and then get silently bounced back to /login,
       // which reads as a broken login rather than a permissions gap.
       if (user.role === 'WebsiteUser') {
-        setError("Your account doesn't have access to the admin panel.")
+        setError(t('auth.errorNoAccess'))
         return
       }
 
@@ -45,14 +48,14 @@ export default function Login() {
         { replace: true },
       )
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed')
+      setError(err instanceof Error ? err.message : t('auth.errorLoginFailed'))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="flex min-h-screen font-sans">
+    <div className={`flex min-h-screen ${locale === 'fa' ? 'font-[family-name:var(--font-vazirmatn)]' : 'font-sans'}`}>
 
       {/* ── Left: brand panel ─────────────────────────────────────────── */}
       <div
@@ -78,33 +81,40 @@ export default function Login() {
             style={{ background: 'rgba(124, 58, 237, 0.4)', backdropFilter: 'blur(8px)' }}>
             <NLogo />
           </div>
-          <span className="text-white/80 font-semibold text-lg tracking-wide">Nirvana CMS</span>
+          <span className="text-white/80 font-semibold text-lg tracking-wide">{t('nav.brandName')}</span>
         </div>
 
         <div className="relative z-10 space-y-1">
           <p className="text-white/40 text-xs font-semibold tracking-[0.25em] uppercase mb-8">
-            The platform for forward-thinking businesses
+            {t('auth.brandTagline')}
           </p>
           <h1 className="text-[3.25rem] font-bold leading-[1.15] tracking-tight text-white">
-            Content<br />without chaos.
+            {t('auth.heroHeadlineLine1')}
           </h1>
           <h2 className="text-[3.25rem] font-bold leading-[1.15] tracking-tight"
             style={{ background: 'linear-gradient(90deg, #c4b5fd, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            Business<br />without boundaries.
+            {t('auth.heroHeadlineLine2')}
           </h2>
           <p className="text-2xl font-light pt-5" style={{ color: 'rgba(196, 181, 253, 0.6)' }}>
-            Welcome to{' '}
-            <span className="font-semibold" style={{ color: 'rgba(196, 181, 253, 0.9)' }}>Nirvana.</span>
+            {t('auth.welcomeToNirvanaBefore')}
+            <span className="font-semibold" style={{ color: 'rgba(196, 181, 253, 0.9)' }}>{t('auth.welcomeToNirvanaBrand')}</span>
+            {t('auth.welcomeToNirvanaAfter')}
           </p>
         </div>
 
         <p className="relative z-10 text-white/20 text-xs">
-          © {new Date().getFullYear()} Nirvana CMS. All rights reserved.
+          {t('auth.copyright', { year: new Date().getFullYear() })}
         </p>
       </div>
 
       {/* ── Right: login form ──────────────────────────────────────────── */}
-      <div className="flex-1 flex items-center justify-center px-8 py-16 bg-slate-50">
+      <div className="relative flex-1 flex items-center justify-center px-8 py-16 bg-slate-50">
+        <div className="absolute top-6 end-6">
+          <LocaleToggle
+            className="text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            contentClassName="border-slate-200 bg-white text-slate-900"
+          />
+        </div>
         <div className="w-full max-w-100">
 
           <div className="lg:hidden flex items-center gap-3 mb-10">
@@ -112,12 +122,12 @@ export default function Login() {
               style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}>
               <NLogo />
             </div>
-            <span className="text-slate-800 font-semibold text-lg">Nirvana CMS</span>
+            <span className="text-slate-800 font-semibold text-lg">{t('nav.brandName')}</span>
           </div>
 
           <div className="mb-9">
-            <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Welcome back</h2>
-            <p className="text-slate-500 mt-2 text-[15px]">Sign in to manage your applications</p>
+            <h2 className="text-3xl font-bold text-slate-900 tracking-tight">{t('auth.welcomeBack')}</h2>
+            <p className="text-slate-500 mt-2 text-[15px]">{t('auth.signInSubtitle')}</p>
           </div>
 
           {error && (
@@ -128,20 +138,20 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor={emailId} className="block text-sm font-medium text-slate-700 mb-1.5">Email address</label>
+              <label htmlFor={emailId} className="block text-sm font-medium text-slate-700 mb-1.5">{t('auth.emailAddress')}</label>
               <Input
                 id={emailId}
                 type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                required autoComplete="email" placeholder="you@example.com"
+                required autoComplete="email" placeholder="you@example.com" dir="ltr"
                 className="h-auto w-full rounded-xl border-slate-200 bg-white px-4 py-3 text-[15px] text-slate-900 placeholder:text-slate-400 focus-visible:border-violet-500 focus-visible:ring-violet-500/60"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label htmlFor={passwordId} className="block text-sm font-medium text-slate-700">Password</label>
+                <label htmlFor={passwordId} className="block text-sm font-medium text-slate-700">{t('auth.password')}</label>
                 <button type="button" className="text-xs font-medium text-violet-600 hover:text-violet-800 transition">
-                  Forgot password?
+                  {t('auth.forgotPassword')}
                 </button>
               </div>
               <div className="relative">
@@ -150,10 +160,10 @@ export default function Login() {
                   type={showPassword ? 'text' : 'password'} value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required autoComplete="current-password" placeholder="••••••••"
-                  className="h-auto w-full rounded-xl border-slate-200 bg-white px-4 py-3 pr-12 text-[15px] text-slate-900 placeholder:text-slate-400 focus-visible:border-violet-500 focus-visible:ring-violet-500/60"
+                  className="h-auto w-full rounded-xl border-slate-200 bg-white px-4 py-3 pe-12 text-[15px] text-slate-900 placeholder:text-slate-400 focus-visible:border-violet-500 focus-visible:ring-violet-500/60"
                 />
                 <button type="button" onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition">
+                  className="absolute end-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition">
                   {showPassword ? <EyeOff /> : <Eye />}
                 </button>
               </div>
@@ -163,8 +173,8 @@ export default function Login() {
               className="mt-2 h-auto w-full rounded-xl py-3 text-[15px] font-semibold text-white transition-all active:scale-[0.98]"
               style={{ background: 'linear-gradient(90deg, #7c3aed, #4f46e5)', boxShadow: '0 4px 24px rgba(124, 58, 237, 0.35)' }}>
               {loading
-                ? <span className="flex items-center justify-center gap-2"><Spinner /> Signing in…</span>
-                : 'Sign in'}
+                ? <span className="flex items-center justify-center gap-2"><Spinner /> {t('auth.signingIn')}</span>
+                : t('auth.signIn')}
             </Button>
           </form>
         </div>

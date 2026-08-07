@@ -1,11 +1,12 @@
 import { Switch } from '@/components/ui/switch'
+import { useLocale } from '../../i18n/useLocale'
 
 export default function StatusToggle({
   checked,
   onToggle,
   disabled,
-  onLabel = 'Enable',
-  offLabel = 'Disable',
+  onLabel,
+  offLabel,
 }: {
   checked: boolean
   onToggle: () => void
@@ -13,13 +14,16 @@ export default function StatusToggle({
   onLabel?: string
   offLabel?: string
 }) {
+  const { t } = useLocale()
+  const resolvedOnLabel = onLabel ?? t('common.enable')
+  const resolvedOffLabel = offLabel ?? t('common.disable')
   return (
     <Switch
       checked={checked}
       onCheckedChange={onToggle}
       disabled={disabled}
-      title={checked ? offLabel : onLabel}
-      aria-label={checked ? offLabel : onLabel}
+      title={checked ? resolvedOffLabel : resolvedOnLabel}
+      aria-label={checked ? resolvedOffLabel : resolvedOnLabel}
       className="data-[state=checked]:bg-(--color-success)"
     />
   )

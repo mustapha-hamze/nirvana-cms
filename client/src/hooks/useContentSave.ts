@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { api } from '../api/client'
 import { toPersistableSections } from '../factories/contentElements'
+import { useLocale } from '../i18n/useLocale'
 import type { LangKey, ContentItem, ContentDetail } from '../types/content'
 import type { ContentDraft } from './useContentDrafts'
 
@@ -22,6 +23,7 @@ export function useContentSave({
   selectedTagIds: string[]
   onCreated: (created: ContentItem) => void
 }) {
+  const { t } = useLocale()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const isEdit = savedContent !== null
@@ -30,8 +32,8 @@ export function useContentSave({
     setError('')
     const entries = (Object.entries(drafts) as [LangKey, ContentDraft][]).filter(([, d]) => d.title.trim())
     if (entries.length === 0) {
-      setError('At least one language needs a title')
-      toast.error('At least one language needs a title')
+      setError(t('validation.atLeastOneLanguageTitle'))
+      toast.error(t('validation.atLeastOneLanguageTitle'))
       return
     }
     setLoading(true)
@@ -67,7 +69,7 @@ export function useContentSave({
             details: [...byLang.values()],
           }
         })
-        toast.success('Content has been updated')
+        toast.success(t('contents.toastUpdated'))
       } else {
         const created = await api.post<ContentItem>('/content', {
           application: applicationId,
@@ -79,12 +81,12 @@ export function useContentSave({
             sections: toPersistableSections(d.sections),
           })),
         })
-        toast.success('Content has been created')
+        toast.success(t('contents.toastCreated'))
         onCreated(created)
         return
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : `Failed to ${isEdit ? 'save' : 'create'} content`
+      const message = err instanceof Error ? err.message : (isEdit ? t('contents.saveFailed') : t('contents.createFailed'))
       setError(message)
       toast.error(message)
     } finally {

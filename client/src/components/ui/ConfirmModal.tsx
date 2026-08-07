@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { ErrorBanner } from './Modal'
+import { useLocale } from '../../i18n/useLocale'
 
 type Props = {
   title: string
@@ -21,6 +22,7 @@ type Props = {
 }
 
 export default function ConfirmModal({ title, message, confirmLabel, loadingLabel, onConfirm, onClose }: Props) {
+  const { t } = useLocale()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -31,7 +33,7 @@ export default function ConfirmModal({ title, message, confirmLabel, loadingLabe
       await onConfirm()
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      setError(err instanceof Error ? err.message : t('common.unknownError'))
       setLoading(false)
     }
   }
@@ -45,7 +47,7 @@ export default function ConfirmModal({ title, message, confirmLabel, loadingLabe
         </AlertDialogHeader>
         {error && <ErrorBanner message={error} />}
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={loading}>{t('common.cancel')}</AlertDialogCancel>
           <Button variant="destructive" disabled={loading} onClick={handleConfirm}>
             {loading ? loadingLabel : confirmLabel}
           </Button>

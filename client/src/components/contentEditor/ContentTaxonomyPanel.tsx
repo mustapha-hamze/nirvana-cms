@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import CollapsibleSectionHeader from '../ui/CollapsibleSectionHeader'
 import { SearchIcon } from '../icons'
 import { getTitleForLang } from '../../utils/translations'
+import { useLocale } from '../../i18n/useLocale'
 import type { Category } from '../../types/category'
 import type { Tag } from '../../types/tag'
 import type { LangKey } from '../../types/content'
@@ -54,6 +55,7 @@ export default function ContentTaxonomyPanel({
   selectedTagIds: string[]
   onToggleTag: (id: string) => void
 }) {
+  const { t } = useLocale()
   return (
     <>
       <Separator />
@@ -62,35 +64,35 @@ export default function ContentTaxonomyPanel({
         <CollapsibleSectionHeader
           open={categoriesOpen}
           onToggle={onToggleCategories}
-          label="Categories"
+          label={t('nav.categories')}
           count={selectedCategoryIds.length}
         />
         {categoriesOpen && (
           <div className="mt-4">
             {categories.length === 0 ? (
               <p className="text-sm text-(--color-text-tertiary)">
-                No categories yet.{' '}
+                {t('builder.noCategoriesYet')}{' '}
                 <Link to={`/applications/${applicationId}/categories`} className="text-primary underline">
-                  Create one
+                  {t('builder.createOne')}
                 </Link>
                 .
               </p>
             ) : (
               <div className="space-y-3">
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-(--color-text-tertiary)">
+                  <span className="absolute start-3 top-1/2 -translate-y-1/2 text-(--color-text-tertiary)">
                     <SearchIcon size={14} />
                   </span>
                   <Input
                     value={categorySearch}
                     onChange={(e) => onCategorySearchChange(e.target.value)}
-                    placeholder="Search categories…"
-                    className="pl-9"
+                    placeholder={t('builder.searchCategories')}
+                    className="ps-9"
                   />
                 </div>
                 {filteredCategories.length === 0 ? (
                   <p className="text-sm text-(--color-text-tertiary)">
-                    No categories match "{categorySearch}".
+                    {t('builder.noCategoriesMatch', { search: categorySearch })}
                   </p>
                 ) : (
                   <div className="flex flex-wrap gap-2">
@@ -120,33 +122,33 @@ export default function ContentTaxonomyPanel({
       <Separator />
 
       <div>
-        <CollapsibleSectionHeader open={tagsOpen} onToggle={onToggleTags} label="Tags" count={selectedTagIds.length} />
+        <CollapsibleSectionHeader open={tagsOpen} onToggle={onToggleTags} label={t('nav.tags')} count={selectedTagIds.length} />
         {tagsOpen && (
           <div className="mt-4">
             {tags.length === 0 ? (
               <p className="text-sm text-(--color-text-tertiary)">
-                No tags yet.{' '}
+                {t('builder.noTagsYet')}{' '}
                 <Link to={`/applications/${applicationId}/tags`} className="text-primary underline">
-                  Create one
+                  {t('builder.createOne')}
                 </Link>
                 .
               </p>
             ) : (
               <div className="space-y-3">
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-(--color-text-tertiary)">
+                  <span className="absolute start-3 top-1/2 -translate-y-1/2 text-(--color-text-tertiary)">
                     <SearchIcon size={14} />
                   </span>
                   <Input
                     value={tagSearch}
                     onChange={(e) => onTagSearchChange(e.target.value)}
-                    placeholder="Search tags…"
-                    className="pl-9"
+                    placeholder={t('builder.searchTags')}
+                    className="ps-9"
                   />
                 </div>
                 {filteredTags.length === 0 ? (
                   <p className="text-sm text-(--color-text-tertiary)">
-                    No tags match "{tagSearch}".
+                    {t('tags.noTagsMatch', { search: tagSearch })}
                   </p>
                 ) : (
                   <div className="flex flex-wrap gap-2">

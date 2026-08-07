@@ -2,6 +2,7 @@ import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import { TrashIcon } from '../icons'
 import { PrimaryButton } from './Modal'
+import { useLocale } from '../../i18n/useLocale'
 import { LANGUAGE_LABELS, type LangKey } from '../../types/content'
 
 // Bottom action bar shared by ContentForm and PageForm — Save on the left,
@@ -26,6 +27,7 @@ export default function TranslationActions({
   onRemove: () => void
   onDiscard: () => void
 }) {
+  const { t } = useLocale()
   return (
     <>
       <Separator />
@@ -46,7 +48,7 @@ export default function TranslationActions({
               className="h-auto gap-1.5 p-0 text-sm font-medium text-destructive hover:text-destructive/80"
             >
               <TrashIcon size={14} />
-              Remove {LANGUAGE_LABELS[activeLang]} translation
+              {t('builder.removeTranslation', { lang: LANGUAGE_LABELS[activeLang] })}
             </Button>
           )
         ) : (
@@ -57,7 +59,7 @@ export default function TranslationActions({
             className="h-auto gap-1.5 p-0 text-sm font-medium text-muted-foreground hover:text-foreground"
           >
             <TrashIcon size={14} />
-            Discard {LANGUAGE_LABELS[activeLang]} draft
+            {t('builder.discardDraft', { lang: LANGUAGE_LABELS[activeLang] })}
           </Button>
         )}
       </div>

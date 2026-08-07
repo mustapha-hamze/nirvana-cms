@@ -3,6 +3,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { Button } from '@/components/ui/button'
 import { DragHandleIcon, TrashIcon } from '../icons'
 import { PageElementEditor } from './pageElementEditorRegistry'
+import { useLocale } from '../../i18n/useLocale'
 import type { PageElement } from '../../types/page'
 
 // One draggable row within a PageSectionCard's element list — the drag
@@ -27,6 +28,7 @@ export default function PageElementRow({
   onRemove: () => void
   canRemove: boolean
 }) {
+  const { t } = useLocale()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
 
   return (
@@ -52,7 +54,7 @@ export default function PageElementRow({
           size="icon-sm"
           onClick={onRemove}
           disabled={!canRemove}
-          title={canRemove ? `Remove this ${itemLabel.toLowerCase()}` : 'This section is already at its minimum'}
+          title={canRemove ? t('pageBuilder.removeItemTitle', { item: itemLabel.toLowerCase() }) : t('pageBuilder.minimumReached')}
           className="icon-btn-danger shrink-0 hover:bg-transparent"
         >
           <TrashIcon size={14} />

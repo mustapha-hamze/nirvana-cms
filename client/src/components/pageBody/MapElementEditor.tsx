@@ -1,4 +1,5 @@
 import { TextField } from '../ui/FormField'
+import { useLocale } from '../../i18n/useLocale'
 import type { MapElement } from '../../types/page'
 
 export default function MapElementEditor({
@@ -8,34 +9,35 @@ export default function MapElementEditor({
   element: MapElement
   onChange: (next: MapElement) => void
 }) {
+  const { t } = useLocale()
   return (
     <div className="space-y-3">
-      <TextField label="Address" value={element.address} onChange={(address) => onChange({ ...element, address })} placeholder="e.g. 123 Main St, Springfield" />
+      <TextField label={t('pageBuilder.address')} value={element.address} onChange={(address) => onChange({ ...element, address })} placeholder={t('pageBuilder.addressPlaceholder')} />
       <TextField
-        label="Embed URL"
+        label={t('pageBuilder.embedUrl')}
         value={element.embedUrl}
         onChange={(embedUrl) => onChange({ ...element, embedUrl })}
-        placeholder="Paste a Google Maps embed link"
+        placeholder={t('pageBuilder.embedUrlPlaceholder')}
       />
       <p className="text-xs -mt-2 text-(--color-text-tertiary)">
-        Preferred when set. Otherwise the coordinates below are used.
+        {t('pageBuilder.embedUrlHint')}
       </p>
 
       <div className="grid grid-cols-3 gap-3">
         <TextField
-          label="Latitude" type="number"
+          label={t('pageBuilder.latitude')} type="number"
           value={element.latitude === null ? '' : String(element.latitude)}
           onChange={(v) => onChange({ ...element, latitude: v === '' ? null : Number(v) })}
-          placeholder="e.g. 35.6892"
+          placeholder={t('pageBuilder.latitudePlaceholder')}
         />
         <TextField
-          label="Longitude" type="number"
+          label={t('pageBuilder.longitude')} type="number"
           value={element.longitude === null ? '' : String(element.longitude)}
           onChange={(v) => onChange({ ...element, longitude: v === '' ? null : Number(v) })}
-          placeholder="e.g. 51.3890"
+          placeholder={t('pageBuilder.longitudePlaceholder')}
         />
         <TextField
-          label="Zoom" type="number"
+          label={t('pageBuilder.zoom')} type="number"
           value={String(element.zoom)}
           onChange={(v) => onChange({ ...element, zoom: v === '' ? 14 : Number(v) })}
         />

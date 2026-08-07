@@ -28,6 +28,7 @@ import {
   type ContentItem,
   type ContentDetail,
 } from "../types/content";
+import { useLocale } from "../i18n/useLocale";
 
 function getPreviewDetail(content: ContentItem): ContentDetail | undefined {
   for (const lang of LANGUAGE_VALUES) {
@@ -40,6 +41,7 @@ function getPreviewDetail(content: ContentItem): ContentDetail | undefined {
 export default function Contents() {
   const { app } = useOutletContext<AdminOutletContext>();
   const navigate = useNavigate();
+  const { t } = useLocale();
   const user = useAppSelector(selectUser);
   const canManage = !!app && isAppAdmin(user, app._id);
   const [deleteContent, setDeleteContent] = useState<ContentItem | null>(null);
@@ -54,9 +56,9 @@ export default function Contents() {
   return (
     <div className="mx-10 my-10">
       <AdminPageHeader
-        title="Contents"
-        subtitle={loading || !app ? "…" : `${total} item${total !== 1 ? "s" : ""} in ${app.name}`}
-        actionLabel="Create Content"
+        title={t('contents.title')}
+        subtitle={loading || !app ? "…" : t(total === 1 ? 'contents.subtitleOne' : 'contents.subtitleOther', { count: total, app: app.name })}
+        actionLabel={t('contents.createContent')}
         onAction={() => navigate(`/applications/${app?._id}/contents/create`)}
         actionDisabled={!app}
       />
@@ -68,25 +70,25 @@ export default function Contents() {
       ) : !hasAnyContent ? (
         <EmptyState
           icon={<BigContentIcon />}
-          title="No content yet"
-          description="Create your first piece of content for this application."
-          actionLabel="Create Content"
+          title={t('contents.noContentTitle')}
+          description={t('contents.noContentDescription')}
+          actionLabel={t('contents.createContent')}
           onAction={() => navigate(`/applications/${app?._id}/contents/create`)}
         />
       ) : contents.length === 0 ? (
-        <EmptyResultsRow message={`No content matches "${search}".`} />
+        <EmptyResultsRow message={t('contents.noContentMatch', { search })} />
       ) : (
         <AdminTable
           footer={<Pagination page={page} totalPages={totalPages} total={total} limit={limit} onPageChange={setPage} />}
         >
           <TableHeader>
             <tr>
-              <SortableHeader label="Title" active={sortBy === "title"} direction={sortOrder} onClick={() => toggleSort("title")} />
-              <AdminTableHeadCell>Languages</AdminTableHeadCell>
-              {canManage && <AdminTableHeadCell>Categories</AdminTableHeadCell>}
-              {canManage && <AdminTableHeadCell>Tags</AdminTableHeadCell>}
-              <SortableHeader label="Created" active={sortBy === "createdAt"} direction={sortOrder} onClick={() => toggleSort("createdAt")} />
-              <AdminTableHeadCell align="right">Actions</AdminTableHeadCell>
+              <SortableHeader label={t('table.title')} active={sortBy === "title"} direction={sortOrder} onClick={() => toggleSort("title")} />
+              <AdminTableHeadCell>{t('table.languages')}</AdminTableHeadCell>
+              {canManage && <AdminTableHeadCell>{t('nav.categories')}</AdminTableHeadCell>}
+              {canManage && <AdminTableHeadCell>{t('nav.tags')}</AdminTableHeadCell>}
+              <SortableHeader label={t('table.created')} active={sortBy === "createdAt"} direction={sortOrder} onClick={() => toggleSort("createdAt")} />
+              <AdminTableHeadCell align="end">{t('common.actions')}</AdminTableHeadCell>
             </tr>
           </TableHeader>
           <TableBody>
@@ -140,13 +142,13 @@ export default function Contents() {
                     <div className="flex items-center justify-end gap-1">
                       <AdminTableActionButton
                         onClick={() => navigate(`/applications/${app?._id}/contents/${content._id}/edit`)}
-                        title="Edit"
+                        title={t('common.edit')}
                         variant="accent"
                       >
                         <EditIcon />
                       </AdminTableActionButton>
                       {canManage && (
-                        <AdminTableActionButton onClick={() => setDeleteContent(content)} title="Delete" variant="danger">
+                        <AdminTableActionButton onClick={() => setDeleteContent(content)} title={t('common.delete')} variant="danger">
                           <TrashIcon />
                         </AdminTableActionButton>
                       )}
@@ -161,10 +163,10 @@ export default function Contents() {
 
       {deleteContent && (
         <ConfirmModal
-          title="Delete this content?"
-          message="This will remove the content and all its translations. This action cannot be undone."
-          confirmLabel="Delete Content"
-          loadingLabel="Deleting…"
+          title={t('contents.deleteConfirmTitle')}
+          message={t('contents.deleteConfirmMessage')}
+          confirmLabel={t('contents.deleteConfirmLabel')}
+          loadingLabel={t('common.deleting')}
           onConfirm={() =>
             api.delete(`/content/${deleteContent._id}`).then(fetchContents)
           }

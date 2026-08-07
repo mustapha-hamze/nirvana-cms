@@ -3,6 +3,7 @@ import CollapsibleSectionHeader from '../ui/CollapsibleSectionHeader'
 import SectionCard from '../body/SectionCard'
 import SectionTypePicker from '../body/SectionTypePicker'
 import SortableSectionList from '../ui/SortableSectionList'
+import { useLocale } from '../../i18n/useLocale'
 import type { ContentSection } from '../../types/content'
 
 // Content's collapsible "Body" panel — a dynamic list of sections, only
@@ -27,12 +28,13 @@ export default function ContentBodySection({
   onRemoveSection: (index: number) => void
   onReorder: (next: ContentSection[]) => void
 }) {
+  const { t } = useLocale()
   return (
     <>
       <Separator />
 
       <div>
-        <CollapsibleSectionHeader open={open} onToggle={onToggle} label="Body" count={sections.length} />
+        <CollapsibleSectionHeader open={open} onToggle={onToggle} label={t('builder.body')} count={sections.length} />
         {open && (
           <div className="mt-4 space-y-3">
             <div className="flex justify-end">
@@ -40,7 +42,7 @@ export default function ContentBodySection({
             </div>
             {sections.length === 0 ? (
               <p className="text-sm text-(--color-text-tertiary)">
-                No sections yet. Use "Add Section" to build this page's body.
+                {t('builder.noSectionsYetContent')}
               </p>
             ) : (
               <SortableSectionList

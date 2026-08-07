@@ -2,9 +2,10 @@ import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ChevronIcon, DragHandleIcon, TrashIcon } from '../icons'
-import { PAGE_COMPONENT_TYPE_LABELS } from '../../constants/pageSections'
+import { PAGE_COMPONENT_TYPE_KEYS } from '../../constants/pageSections'
 import { getPageComponentPreview } from '../../utils/pageComponentPreview'
 import { getTextDirection, getRtlAwareClassName } from '../../utils/rtl'
+import { useLocale } from '../../i18n/useLocale'
 import type { PageComponent } from '../../types/page'
 
 // Header for one component within a section — the component's type is its
@@ -28,6 +29,7 @@ export default function PageComponentCardHeader({
   onToggleOpen: () => void
   onRemove: () => void
 }) {
+  const { t } = useLocale()
   // Only shown collapsed — once open, the actual editors below make this redundant.
   const preview = open ? '' : getPageComponentPreview(component)
 
@@ -47,13 +49,13 @@ export default function PageComponentCardHeader({
           variant="ghost"
           size="icon-xs"
           onClick={onToggleOpen}
-          title={open ? 'Collapse this component' : 'Expand this component'}
+          title={open ? t('pageBuilder.collapseComponent') : t('pageBuilder.expandComponent')}
           className="shrink-0 text-muted-foreground hover:text-foreground"
         >
           <ChevronIcon open={open} size={14} />
         </Button>
         <span className="text-sm font-semibold shrink-0 text-foreground">
-          {PAGE_COMPONENT_TYPE_LABELS[component.type]}
+          {t(PAGE_COMPONENT_TYPE_KEYS[component.type])}
         </span>
         <span className="text-xs shrink-0 text-(--color-text-tertiary)">
           {elementCount} / {maxElements}
@@ -72,7 +74,7 @@ export default function PageComponentCardHeader({
         variant="ghost"
         size="icon-sm"
         onClick={onRemove}
-        title="Remove this component"
+        title={t('pageBuilder.removeComponent')}
         className="icon-btn-danger shrink-0 hover:bg-transparent"
       >
         <TrashIcon size={14} />

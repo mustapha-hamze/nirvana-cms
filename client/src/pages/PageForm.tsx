@@ -18,6 +18,7 @@ import PageSectionsPanel from "../components/pageEditor/PageSectionsPanel";
 import HomepagePanel from "../components/pageEditor/HomepagePanel";
 import { usePageDrafts } from "../hooks/usePageDrafts";
 import { usePageSave } from "../hooks/usePageSave";
+import { useLocale } from "../i18n/useLocale";
 import { useAppSelector } from "../store/hooks";
 import { selectUser } from "../store/authSlice";
 import { isAppAdmin } from "../utils/permissions";
@@ -26,6 +27,7 @@ import { LANGUAGE_VALUES, type LangKey } from "../types/content";
 import type { PageItem } from "../types/page";
 
 export default function PageForm() {
+  const { t } = useLocale();
   const { app } = useOutletContext<AdminOutletContext>();
   const { pageId } = useParams<{ pageId: string }>();
   const navigate = useNavigate();
@@ -57,9 +59,9 @@ export default function PageForm() {
     return (
       <div className="mx-10 my-10">
         <p className="text-muted-foreground">
-          That page couldn't be found.{" "}
+          {t("pageForm.notFound")}{" "}
           <Link to={`/applications/${app._id}/pages`} className="text-primary underline">
-            Back to Pages
+            {t("pageForm.backToPages")}
           </Link>
           .
         </p>
@@ -90,6 +92,7 @@ function PageEditor({
   onBack: () => void;
   onCreated: (created: PageItem) => void;
 }) {
+  const { t } = useLocale();
   const applicationId = app._id;
   const allowedLanguages = app.languages ?? LANGUAGE_VALUES;
   // Tracks the created/persisted page across saves — starts as the `page` prop
@@ -134,25 +137,25 @@ function PageEditor({
             variant="ghost"
             size="icon"
             onClick={onBack}
-            title="Back to Pages"
-            aria-label="Back to Pages"
+            title={t("pageForm.backToPages")}
+            aria-label={t("pageForm.backToPages")}
             className="shrink-0 text-muted-foreground hover:text-foreground"
           >
             <BackIcon />
           </Button>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              {isEdit ? "Edit Page" : "Create Page"}
+              {isEdit ? t("pageForm.editTitle") : t("pageForm.createTitle")}
             </h1>
             <p className="mt-1 text-[15px] text-muted-foreground">
-              {isEdit ? "Manage translations for this page" : "Add one or more languages, then create"}
+              {isEdit ? t("pageForm.editSubtitle") : t("pageForm.createSubtitle")}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <CancelButton onClick={onBack} disabled={loading} />
           <PrimaryButton onClick={() => handleSave(drafts)} disabled={loading}>
-            {loading ? (isEdit ? "Saving…" : "Creating…") : isEdit ? "Save Changes" : "Create Page"}
+            {loading ? (isEdit ? t("common.saving") : t("common.creating")) : isEdit ? t("common.saveChanges") : t("pageForm.createTitle")}
           </PrimaryButton>
         </div>
       </div>
@@ -229,7 +232,7 @@ function PageEditor({
                 <div className="flex items-center gap-5">
                   <div>
                     <label className="block text-sm font-medium mb-1.5 text-muted-foreground">
-                      Page Status
+                      {t("pageForm.status")}
                     </label>
                     <div className="flex items-center gap-2">
                       {canManage && (
@@ -238,12 +241,12 @@ function PageEditor({
                           onToggle={() =>
                             updateActiveDraft({ status: draft.status === "published" ? "draft" : "published" })
                           }
-                          onLabel="Publish"
-                          offLabel="Unpublish"
+                          onLabel={t("common.publish")}
+                          offLabel={t("common.unpublish")}
                         />
                       )}
                       <span className={`text-sm font-medium ${draft.status === "published" ? "text-(--color-success)" : "text-muted-foreground"}`}>
-                        {draft.status === "published" ? "Published" : "Draft"}
+                        {draft.status === "published" ? t("table.published") : t("table.draft")}
                       </span>
                     </div>
                   </div>
@@ -252,7 +255,7 @@ function PageEditor({
 
               <TranslationActions
                 loading={loading}
-                saveLabel={loading ? (isEdit ? "Saving…" : "Creating…") : isEdit ? "Save Changes" : "Create Page"}
+                saveLabel={loading ? (isEdit ? t("common.saving") : t("common.creating")) : isEdit ? t("common.saveChanges") : t("pageForm.createTitle")}
                 onSave={() => handleSave(drafts)}
                 activeLang={activeLang}
                 isPersisted={isPersisted(activeLang)}
@@ -268,7 +271,7 @@ function PageEditor({
       {removeLang && savedPage && (
         <TranslationRemoveConfirm
           lang={removeLang}
-          itemLabel="page"
+          itemLabel={t("pageForm.itemLabel")}
           onConfirm={async () => {
             await api.delete(`/pages/${savedPage._id}/details/${removeLang}`);
             handleDiscardDraft(removeLang);

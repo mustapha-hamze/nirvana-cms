@@ -9,6 +9,8 @@ import { Separator } from '@/components/ui/separator'
 import { BackIcon, LogoutIcon, MenuIcon } from './icons'
 import Sidebar, { MobileSidebarDrawer } from './Sidebar'
 import ThemeToggle from './ui/ThemeToggle'
+import LocaleToggle from './ui/LocaleToggle'
+import { useLocale } from '../i18n/useLocale'
 import type { Application } from '../types/application'
 
 export type AdminOutletContext = { app: Application | null }
@@ -18,6 +20,7 @@ export default function AdminLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const user = useAppSelector(selectUser)
+  const { t } = useLocale()
   const [app, setApp] = useState<Application | null>(null)
   const [loading, setLoading] = useState(true)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
@@ -55,8 +58,8 @@ export default function AdminLayout() {
               variant="ghost"
               size="icon-sm"
               onClick={() => setMobileNavOpen(true)}
-              title="Open menu"
-              className="-ml-2 shrink-0 text-muted-foreground hover:text-foreground md:hidden"
+              title={t('nav.openMenu')}
+              className="-ms-2 shrink-0 text-muted-foreground hover:text-foreground md:hidden"
             >
               <MenuIcon />
             </Button>
@@ -68,7 +71,7 @@ export default function AdminLayout() {
                   variant="ghost"
                   size="icon-sm"
                   onClick={() => navigate('/applications')}
-                  title="Back to Applications"
+                  title={t('nav.backToApplications')}
                   className="shrink-0 text-muted-foreground hover:text-foreground"
                 >
                   <BackIcon />
@@ -89,7 +92,7 @@ export default function AdminLayout() {
                 }
               </div>
               <span className="font-semibold text-[15px] truncate text-foreground">
-                {loading ? 'Loading…' : app?.name ?? 'Application'}
+                {loading ? t('common.loading') : app?.name ?? t('common.application')}
               </span>
             </div>
           </div>
@@ -111,6 +114,10 @@ export default function AdminLayout() {
 
             <Separator orientation="vertical" className="h-5" />
 
+            <LocaleToggle />
+
+            <Separator orientation="vertical" className="h-5" />
+
             <ThemeToggle />
 
             <Separator orientation="vertical" className="h-5" />
@@ -122,7 +129,7 @@ export default function AdminLayout() {
               className="h-auto gap-1.5 p-0 text-sm text-(--color-text-muted) hover:bg-transparent hover:text-destructive"
             >
               <LogoutIcon />
-              <span className="hidden sm:inline">Logout</span>
+              <span className="hidden sm:inline">{t('nav.logout')}</span>
             </Button>
           </div>
         </div>

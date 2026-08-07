@@ -10,6 +10,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { ErrorBanner } from './Modal'
+import { useLocale } from '../../i18n/useLocale'
 import { LANGUAGE_LABELS, type LangKey } from '../../types/content'
 
 // "Generate with AI" dialog opened from TranslationPicker — lets the user
@@ -32,6 +33,7 @@ export default function AiGenerateTranslationDialog<TDraft>({
   onGenerated: (draft: TDraft) => void
   onClose: () => void
 }) {
+  const { t } = useLocale()
   const [sourceLangKey, setSourceLangKey] = useState<LangKey>(sourceLangKeys[0])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -44,7 +46,7 @@ export default function AiGenerateTranslationDialog<TDraft>({
       onGenerated(draft)
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate translation')
+      setError(err instanceof Error ? err.message : t('builder.generateFailed'))
       setLoading(false)
     }
   }
@@ -53,15 +55,14 @@ export default function AiGenerateTranslationDialog<TDraft>({
     <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Generate {LANGUAGE_LABELS[targetLangKey]} translation with AI</DialogTitle>
+          <DialogTitle>{t('builder.generateWithAi', { lang: LANGUAGE_LABELS[targetLangKey] })}</DialogTitle>
           <DialogDescription>
-            Choose which existing translation to translate from. You'll be able to review and edit
-            the result before saving — nothing is published automatically.
+            {t('builder.generateDialogDescription')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-muted-foreground">Translate from</label>
+          <label className="block text-sm font-medium text-muted-foreground">{t('builder.translateFrom')}</label>
           <Select value={sourceLangKey} onValueChange={(v) => setSourceLangKey(v as LangKey)}>
             <SelectTrigger className="w-full">
               <SelectValue />
@@ -80,10 +81,10 @@ export default function AiGenerateTranslationDialog<TDraft>({
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="button" onClick={handleGenerate} disabled={loading}>
-            {loading ? 'Generating…' : 'Generate'}
+            {loading ? t('builder.generating') : t('builder.generate')}
           </Button>
         </DialogFooter>
       </DialogContent>

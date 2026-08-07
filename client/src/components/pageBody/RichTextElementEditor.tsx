@@ -1,4 +1,5 @@
 import RichTextArea from './RichTextArea'
+import { useLocale } from '../../i18n/useLocale'
 import type { RichTextElement } from '../../types/page'
 
 export default function RichTextElementEditor({
@@ -8,5 +9,6 @@ export default function RichTextElementEditor({
   element: RichTextElement
   onChange: (next: RichTextElement) => void
 }) {
-  return <RichTextArea label="Text Block" html={element.html} onChange={(html) => onChange({ ...element, html })} />
+  const { t } = useLocale()
+  return <RichTextArea label={t('pageBuilder.elementTextBlock')} html={element.html} onChange={(html) => onChange({ ...element, html })} />
 }

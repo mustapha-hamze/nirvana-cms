@@ -1,5 +1,6 @@
 import { TextField } from '../ui/FormField'
 import RichTextArea from './RichTextArea'
+import { useLocale } from '../../i18n/useLocale'
 import type { AccordionItemElement } from '../../types/page'
 
 // Shared by the Accordion and FAQ components — see PAGE_COMPONENT_LAYOUTS in
@@ -11,10 +12,11 @@ export default function AccordionItemElementEditor({
   element: AccordionItemElement
   onChange: (next: AccordionItemElement) => void
 }) {
+  const { t } = useLocale()
   return (
     <div className="space-y-3">
-      <TextField label="Heading" required value={element.heading} onChange={(heading) => onChange({ ...element, heading })} placeholder="e.g. What is your return policy?" />
-      <RichTextArea label="Content" html={element.content} onChange={(content) => onChange({ ...element, content })} />
+      <TextField label={t('contentBuilder.elementHeading')} required value={element.heading} onChange={(heading) => onChange({ ...element, heading })} placeholder={t('pageBuilder.accordionHeadingPlaceholder')} />
+      <RichTextArea label={t('pageBuilder.content')} html={element.content} onChange={(content) => onChange({ ...element, content })} />
     </div>
   )
 }

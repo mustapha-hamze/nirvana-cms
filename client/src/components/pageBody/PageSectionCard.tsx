@@ -9,6 +9,7 @@ import PageComponentTypePicker from './PageComponentTypePicker'
 import SortableSectionList from '../ui/SortableSectionList'
 import { MAX_COMPONENTS_PER_SECTION } from '../../constants/pageSections'
 import { createEmptyComponentOfType } from '../../factories/pageElements'
+import { useLocale } from '../../i18n/useLocale'
 import type { PageSection, PageComponent, PageComponentType } from '../../types/page'
 
 export default function PageSectionCard({
@@ -24,6 +25,7 @@ export default function PageSectionCard({
   onChange: (next: PageSection) => void
   onRemove: () => void
 }) {
+  const { t } = useLocale()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
   const [settingsOpen, setSettingsOpen] = useState(false)
   // Whether this card's editor body is expanded — UI-only, never persisted,
@@ -77,10 +79,10 @@ export default function PageSectionCard({
       {open && (
         <div className="mt-4 space-y-4">
           <TextField
-            label="Section title"
+            label={t('pageBuilder.sectionTitle')}
             value={section.title}
             onChange={(title) => onChange({ ...section, title })}
-            placeholder="About us"
+            placeholder={t('pageBuilder.sectionTitlePlaceholder')}
           />
 
           {settingsOpen && (
@@ -92,8 +94,7 @@ export default function PageSectionCard({
 
           {section.components.length === 0 ? (
             <p className="text-sm text-(--color-text-tertiary)">
-              This section is empty. Use "Add Component" to fill it in — mix and match Hero Sliders,
-              Cards, Headings, and more.
+              {t('pageBuilder.emptySection')}
             </p>
           ) : (
             <SortableSectionList

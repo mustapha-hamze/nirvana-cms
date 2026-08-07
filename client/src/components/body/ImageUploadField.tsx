@@ -3,6 +3,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { uploadContentImage, uploadPageImage } from '../../api/client'
 import { resolveMediaUrl } from '../../utils/mediaUrl'
+import { useLocale } from '../../i18n/useLocale'
 
 const MAX_BYTES = 2 * 1024 * 1024
 
@@ -10,7 +11,7 @@ export default function ImageUploadField({
   applicationId,
   url,
   onUploaded,
-  label = 'Image',
+  label,
   // Which editor domain this upload belongs to — determines storage location
   // server-side (storage/images/content vs storage/images/page). Defaults to
   // 'content' since that's this shared component's original/majority caller;
@@ -23,6 +24,7 @@ export default function ImageUploadField({
   label?: string
   domain?: 'content' | 'page'
 }) {
+  const { t } = useLocale()
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
 
@@ -31,7 +33,7 @@ export default function ImageUploadField({
     e.target.value = '' // allow re-selecting the same file to re-upload/replace
     if (!file) return
     if (file.size > MAX_BYTES) {
-      setError('Image must be smaller than 2MB')
+      setError(t('contentBuilder.imageTooLarge'))
       return
     }
     setError('')
@@ -44,7 +46,7 @@ export default function ImageUploadField({
       const { filename } = await upload(applicationId, file)
       onUploaded(filename)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed')
+      setError(err instanceof Error ? err.message : t('contentBuilder.uploadFailed'))
     } finally {
       setUploading(false)
     }
@@ -53,7 +55,7 @@ export default function ImageUploadField({
   return (
     <div>
       <Label className="mb-1.5 text-sm font-medium text-muted-foreground">
-        {label} {uploading && <span className="text-(--color-text-tertiary)">— uploading…</span>}
+        {label ?? t('contentBuilder.elementImage')} {uploading && <span className="text-(--color-text-tertiary)">{t('contentBuilder.uploadingSuffix')}</span>}
       </Label>
       <Input
         type="file"
@@ -63,7 +65,7 @@ export default function ImageUploadField({
         className="h-auto py-1.5"
       />
       <p className="text-xs mt-1 text-(--color-text-tertiary)">
-        PNG, JPEG, WEBP, or GIF — up to 2MB.
+        {t('contentBuilder.imageFormatsHint')}
       </p>
       {error && (
         <p className="text-xs mt-1 text-destructive">

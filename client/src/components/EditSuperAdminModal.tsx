@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { api } from '../api/client'
 import { Backdrop, ModalPanel, ModalHeader, ModalFooter, ErrorBanner, CancelButton, PrimaryButton } from './ui/Modal'
 import { TextField, PasswordField } from './ui/FormField'
+import { useLocale } from '../i18n/useLocale'
 
 type SuperAdminUser = {
   _id: string
@@ -17,6 +18,7 @@ export default function EditSuperAdminModal({
   onClose: () => void
   onSaved: () => void
 }) {
+  const { t } = useLocale()
   const [name, setName] = useState(admin.name)
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -33,7 +35,7 @@ export default function EditSuperAdminModal({
       onSaved()
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update super admin')
+      setError(err instanceof Error ? err.message : t('superAdmins.updateFailed'))
     } finally {
       setLoading(false)
     }
@@ -42,20 +44,20 @@ export default function EditSuperAdminModal({
   return (
     <Backdrop onClose={onClose}>
       <ModalPanel>
-        <ModalHeader title="Edit Super Admin" subtitle="Update name, or set a new password" />
+        <ModalHeader title={t('superAdmins.modalEditTitle')} subtitle={t('superAdmins.modalEditSubtitle')} />
         <form onSubmit={handleSubmit}>
           <div className="px-6 py-5 space-y-4">
             {error && <ErrorBanner message={error} />}
-            <TextField label="Full name" required value={name} onChange={setName} />
+            <TextField label={t('common.fullName')} required value={name} onChange={setName} />
             <PasswordField
-              label="New password" value={password} onChange={setPassword}
-              placeholder="Leave blank to keep current password"
+              label={t('common.newPassword')} value={password} onChange={setPassword}
+              placeholder={t('common.leaveBlankPassword')}
             />
           </div>
           <ModalFooter>
             <CancelButton onClick={onClose} disabled={loading} />
             <PrimaryButton type="submit" disabled={loading}>
-              {loading ? 'Saving…' : 'Save Changes'}
+              {loading ? t('common.saving') : t('common.saveChanges')}
             </PrimaryButton>
           </ModalFooter>
         </form>

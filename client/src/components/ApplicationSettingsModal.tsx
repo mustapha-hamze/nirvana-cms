@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import type { Application } from '../types/application'
 import { LANGUAGE_VALUES, LANGUAGE_LABELS, type LangKey } from '../types/content'
+import { useLocale } from '../i18n/useLocale'
 
 // Mirrors server/src/constants/ai.ts's DEFAULT_AI_MODEL — no shared package
 // between client/server, so this is hand-mirrored like every other enum/const
@@ -33,6 +34,7 @@ type Props = {
 }
 
 export default function ApplicationSettingsModal({ app, onClose, onSaved }: Props) {
+  const { t } = useLocale()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(app.logo)
   const [logoFile, setLogoFile] = useState<File | null>(null)
@@ -84,11 +86,11 @@ export default function ApplicationSettingsModal({ app, onClose, onSaved }: Prop
         api.put(`/applications/${app._id}/settings`, settings),
         logoFile ? uploadLogo(app._id, logoFile) : Promise.resolve(),
       ])
-      toast.success('Application settings have been saved')
+      toast.success(t('settings.toastSaved'))
       onSaved()
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save settings')
+      setError(err instanceof Error ? err.message : t('settings.saveFailed'))
     } finally {
       setSaving(false)
     }
@@ -97,7 +99,7 @@ export default function ApplicationSettingsModal({ app, onClose, onSaved }: Prop
   return (
     <Backdrop onClose={onClose}>
       <ModalPanel maxWidth="max-w-5xl">
-        <ModalHeader title="Application Settings" subtitle={app.name} />
+        <ModalHeader title={t('settings.title')} subtitle={app.name} />
 
         {/* No internal scroll container — the modal grows with its content
             and the page (Backdrop) scrolls, same as ContentModal. */}
@@ -112,7 +114,7 @@ export default function ApplicationSettingsModal({ app, onClose, onSaved }: Prop
 
               {/* ── Appearance ──────────────────────────────────── */}
               <section>
-                <SectionLabel>Appearance</SectionLabel>
+                <SectionLabel>{t('settings.appearance')}</SectionLabel>
 
                 <div className="flex items-center gap-4 mb-4">
                   <div
@@ -131,30 +133,30 @@ export default function ApplicationSettingsModal({ app, onClose, onSaved }: Prop
                       onClick={() => fileInputRef.current?.click()}
                       className="h-auto p-0 text-sm font-medium"
                     >
-                      Upload logo
+                      {t('settings.uploadLogo')}
                     </Button>
-                    <p className="text-xs mt-0.5 text-(--color-text-tertiary)">
-                      PNG · 1024×1024px · max 300 KB
+                    <p className="text-xs mt-0.5 text-(--color-text-tertiary)" dir="ltr">
+                      {t('settings.logoHint')}
                     </p>
                     <input ref={fileInputRef} type="file" accept="image/png" className="hidden" onChange={handleLogoChange} />
                   </div>
                 </div>
 
-                <Field label="App Key">
-                  <Input type="text" value={app.appKey} readOnly disabled className="font-mono" />
+                <Field label={t('settings.appKey')}>
+                  <Input type="text" value={app.appKey} readOnly disabled className="font-mono" dir="ltr" />
                   <p className="text-xs mt-1.5 text-(--color-text-tertiary)">
-                    Auto-generated and read-only.
+                    {t('settings.appKeyHint')}
                   </p>
                 </Field>
 
-                <Field label="Name" required>
+                <Field label={t('common.name')} required>
                   <Input
                     type="text" value={appForm.name} required
                     onChange={(e) => setAppForm((p) => ({ ...p, name: e.target.value }))}
                   />
                 </Field>
 
-                <Field label="Description">
+                <Field label={t('common.description')}>
                   <Textarea
                     value={appForm.description} rows={2}
                     onChange={(e) => setAppForm((p) => ({ ...p, description: e.target.value }))}
@@ -164,15 +166,15 @@ export default function ApplicationSettingsModal({ app, onClose, onSaved }: Prop
 
               {/* ── General ─────────────────────────────────────── */}
               <section>
-                <SectionLabel>General</SectionLabel>
-                <Field label="Domain">
+                <SectionLabel>{t('settings.general')}</SectionLabel>
+                <Field label={t('settings.domain')}>
                   <Input
-                    type="text" value={settings.domain} placeholder="e.g. acme.com"
+                    type="text" value={settings.domain} placeholder={t('settings.domainPlaceholder')} dir="ltr"
                     onChange={(e) => setSettings((p) => ({ ...p, domain: e.target.value }))}
                   />
                 </Field>
 
-                <Field label="Languages" required>
+                <Field label={t('settings.languages')} required>
                   <div className="flex flex-wrap gap-2">
                     {LANGUAGE_VALUES.map((lang) => {
                       const active = settings.languages.includes(lang)
@@ -190,51 +192,52 @@ export default function ApplicationSettingsModal({ app, onClose, onSaved }: Prop
                     })}
                   </div>
                   <p className="text-xs mt-1.5 text-(--color-text-tertiary)">
-                    Content for this application can only be created in these languages.
+                    {t('settings.languagesHint')}
                   </p>
                 </Field>
               </section>
 
               {/* ── Integrations ────────────────────────────────── */}
               <section>
-                <SectionLabel>Integrations</SectionLabel>
+                <SectionLabel>{t('settings.integrations')}</SectionLabel>
 
-                <Field label="AI API Key">
+                <Field label={t('settings.aiApiKey')}>
                   <div className="relative">
                     <Input
                       type={showApiKey ? 'text' : 'password'}
                       value={settings.aiApiKey} placeholder="sk-…"
                       onChange={(e) => setSettings((p) => ({ ...p, aiApiKey: e.target.value }))}
-                      className="pr-10"
+                      className="pe-10" dir="ltr"
                     />
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon-xs"
                       onClick={() => setShowApiKey((v) => !v)}
-                      className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      className="absolute end-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
                       {showApiKey ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
                     </Button>
                   </div>
                 </Field>
 
-                <Field label="AI Model">
+                <Field label={t('settings.aiModel')}>
                   <Input
                     type="text" value={settings.aiModel} placeholder={DEFAULT_AI_MODEL}
                     onChange={(e) => setSettings((p) => ({ ...p, aiModel: e.target.value }))}
+                    dir="ltr"
                   />
                   <p className="text-xs mt-1.5 text-(--color-text-tertiary)">
-                    Model used for AI-assisted translation.
+                    {t('settings.aiModelHint')}
                   </p>
                 </Field>
 
-                <Field label="Google Analytics Script">
+                <Field label={t('settings.googleAnalyticsScript')}>
                   <Textarea
                     value={settings.googleAnalyticsScript} rows={4}
                     placeholder={'<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script>…'}
                     onChange={(e) => setSettings((p) => ({ ...p, googleAnalyticsScript: e.target.value }))}
-                    className="text-xs font-mono"
+                    className="text-xs font-mono" dir="ltr"
                   />
                 </Field>
               </section>
@@ -247,7 +250,7 @@ export default function ApplicationSettingsModal({ app, onClose, onSaved }: Prop
           <CancelButton onClick={onClose} disabled={saving || loading} />
           <PrimaryButton type="submit" formId="settings-form" disabled={saving || loading}>
             {saving && <Spinner className="text-primary-foreground/70" />}
-            {saving ? 'Saving…' : 'Save Changes'}
+            {saving ? t('common.saving') : t('common.saveChanges')}
           </PrimaryButton>
         </div>
       </ModalPanel>
@@ -270,7 +273,7 @@ function Field({ label, required, children }: { label: string; required?: boolea
   return (
     <div className="mb-3">
       <Label className="block text-sm font-medium mb-1.5 text-muted-foreground">
-        {label}{required && <span className="text-destructive ml-0.5">*</span>}
+        {label}{required && <span className="text-destructive ms-0.5">*</span>}
       </Label>
       {children}
     </div>

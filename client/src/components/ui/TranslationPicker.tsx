@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { SparkleIcon } from '../icons'
 import AiGenerateTranslationDialog from './AiGenerateTranslationDialog'
+import { useLocale } from '../../i18n/useLocale'
 import { LANGUAGE_LABELS, type LangKey } from '../../types/content'
 
 // "Select a language to add a translation for" block shown when a
@@ -25,13 +26,14 @@ export default function TranslationPicker<TDraft>({
   }
   onGenerated?: (lang: LangKey, draft: TDraft) => void
 }) {
+  const { t } = useLocale()
   const [generateLang, setGenerateLang] = useState<LangKey | null>(null)
   const canGenerate = !!aiGenerate && aiGenerate.sourceLangKeys.length > 0
 
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
-        Select a language to add a translation for:
+        {t('builder.selectLanguagePrompt')}
       </p>
       <div className="flex flex-wrap gap-2">
         {availableLangs.map((lang) => (
@@ -44,8 +46,8 @@ export default function TranslationPicker<TDraft>({
                 type="button"
                 variant="ghost"
                 size="icon"
-                title={`Generate ${LANGUAGE_LABELS[lang]} translation with AI`}
-                aria-label={`Generate ${LANGUAGE_LABELS[lang]} translation with AI`}
+                title={t('builder.generateWithAi', { lang: LANGUAGE_LABELS[lang] })}
+                aria-label={t('builder.generateWithAi', { lang: LANGUAGE_LABELS[lang] })}
                 onClick={() => setGenerateLang(lang)}
               >
                 <SparkleIcon />

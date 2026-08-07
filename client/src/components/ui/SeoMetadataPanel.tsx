@@ -2,6 +2,7 @@ import { Separator } from '@/components/ui/separator'
 import CollapsibleSectionHeader from './CollapsibleSectionHeader'
 import { TextField, TextAreaField } from './FormField'
 import KeywordsField from './KeywordsField'
+import { useLocale } from '../../i18n/useLocale'
 
 type Metadata = { keywords: string[]; author: string; description: string }
 
@@ -20,26 +21,27 @@ export default function SeoMetadataPanel({
   onChange: (patch: Partial<Metadata>) => void
   isRtl: boolean
 }) {
+  const { t } = useLocale()
   return (
     <>
       <Separator />
 
       <div>
-        <CollapsibleSectionHeader open={open} onToggle={onToggle} label="SEO & Metadata" />
+        <CollapsibleSectionHeader open={open} onToggle={onToggle} label={t('builder.seoMetadata')} />
         {open && (
           <div className="mt-4 space-y-4">
             <TextField
-              label="Author"
+              label={t('builder.author')}
               value={metadata.author}
               onChange={(v) => onChange({ author: v })}
-              placeholder="e.g. Jane Doe"
+              placeholder={t('builder.authorPlaceholder')}
               dir={isRtl ? 'rtl' : 'ltr'}
             />
             <TextAreaField
-              label="Meta Description"
+              label={t('builder.metaDescription')}
               value={metadata.description}
               onChange={(v) => onChange({ description: v })}
-              placeholder="Shown in search engine results…"
+              placeholder={t('builder.metaDescriptionPlaceholder')}
               dir={isRtl ? 'rtl' : 'ltr'}
             />
             <KeywordsField

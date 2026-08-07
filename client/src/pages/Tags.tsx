@@ -24,9 +24,11 @@ import { getPreviewTitle } from '../utils/translations'
 import { usePaginatedApiList } from '../hooks/usePaginatedApiList'
 import { LANGUAGE_VALUES } from '../types/content'
 import type { Tag } from '../types/tag'
+import { useLocale } from '../i18n/useLocale'
 
 export default function Tags() {
   const { app } = useOutletContext<AdminOutletContext>()
+  const { t } = useLocale()
   const user = useAppSelector(selectUser)
   const canManage = !!app && isAppAdmin(user, app._id)
   const [showCreate, setShowCreate] = useState(false)
@@ -43,9 +45,9 @@ export default function Tags() {
   return (
     <div className="mx-10 my-10">
       <AdminPageHeader
-        title="Tags"
-        subtitle={loading || !app ? '…' : `${total} tag${total !== 1 ? 's' : ''} in ${app.name}`}
-        actionLabel={canManage ? 'Create Tag' : undefined}
+        title={t('tags.title')}
+        subtitle={loading || !app ? '…' : t(total === 1 ? 'tags.subtitleOne' : 'tags.subtitleOther', { count: total, app: app.name })}
+        actionLabel={canManage ? t('tags.createTag') : undefined}
         onAction={canManage ? () => setShowCreate(true) : undefined}
         actionDisabled={!app}
       />
@@ -57,24 +59,24 @@ export default function Tags() {
       ) : !hasAnyTag ? (
         <EmptyState
           icon={<TagIcon size={28} />}
-          title="No tags yet"
-          description="Label content by creating tags for this application."
-          actionLabel={canManage ? 'Create Tag' : undefined}
+          title={t('tags.noTagsTitle')}
+          description={t('tags.noTagsDescription')}
+          actionLabel={canManage ? t('tags.createTag') : undefined}
           onAction={canManage ? () => setShowCreate(true) : undefined}
         />
       ) : tags.length === 0 ? (
-        <EmptyResultsRow message={`No tags match "${search}".`} />
+        <EmptyResultsRow message={t('tags.noTagsMatch', { search })} />
       ) : (
         <AdminTable
           footer={<Pagination page={page} totalPages={totalPages} total={total} limit={limit} onPageChange={setPage} />}
         >
           <TableHeader>
             <tr>
-              <SortableHeader label="Title" active={sortBy === 'title'} direction={sortOrder} onClick={() => toggleSort('title')} />
-              <AdminTableHeadCell>Languages</AdminTableHeadCell>
-              <AdminTableHeadCell>Status</AdminTableHeadCell>
-              <SortableHeader label="Created" active={sortBy === 'createdAt'} direction={sortOrder} onClick={() => toggleSort('createdAt')} />
-              {canManage && <AdminTableHeadCell align="right">Actions</AdminTableHeadCell>}
+              <SortableHeader label={t('table.title')} active={sortBy === 'title'} direction={sortOrder} onClick={() => toggleSort('title')} />
+              <AdminTableHeadCell>{t('table.languages')}</AdminTableHeadCell>
+              <AdminTableHeadCell>{t('common.status')}</AdminTableHeadCell>
+              <SortableHeader label={t('table.created')} active={sortBy === 'createdAt'} direction={sortOrder} onClick={() => toggleSort('createdAt')} />
+              {canManage && <AdminTableHeadCell align="end">{t('common.actions')}</AdminTableHeadCell>}
             </tr>
           </TableHeader>
           <TableBody>
@@ -95,10 +97,10 @@ export default function Tags() {
                 {canManage && (
                   <td className="px-5 py-3">
                     <div className="flex items-center justify-end gap-1">
-                      <AdminTableActionButton onClick={() => setEditTag(tag)} title="Edit" variant="accent">
+                      <AdminTableActionButton onClick={() => setEditTag(tag)} title={t('common.edit')} variant="accent">
                         <EditIcon />
                       </AdminTableActionButton>
-                      <AdminTableActionButton onClick={() => setDeleteTagState(tag)} title="Delete" variant="danger">
+                      <AdminTableActionButton onClick={() => setDeleteTagState(tag)} title={t('common.delete')} variant="danger">
                         <TrashIcon />
                       </AdminTableActionButton>
                     </div>
@@ -121,10 +123,10 @@ export default function Tags() {
       )}
       {deleteTag && (
         <ConfirmModal
-          title={`Delete "${getPreviewTitle(deleteTag.translations)}"?`}
-          message="This will remove the tag. This action cannot be undone."
-          confirmLabel="Delete Tag"
-          loadingLabel="Deleting…"
+          title={t('tags.deleteConfirmTitle', { name: getPreviewTitle(deleteTag.translations) })}
+          message={t('tags.deleteConfirmMessage')}
+          confirmLabel={t('tags.deleteConfirmLabel')}
+          loadingLabel={t('common.deleting')}
           onConfirm={() => api.delete(`/tags/${deleteTag._id}`).then(fetchTags)}
           onClose={() => setDeleteTagState(null)}
         />

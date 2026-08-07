@@ -1,4 +1,5 @@
 import ConfirmModal from './ConfirmModal'
+import { useLocale } from '../../i18n/useLocale'
 import { LANGUAGE_LABELS, type LangKey } from '../../types/content'
 
 // Confirmation for removing an already-persisted translation — shared wording
@@ -15,12 +16,13 @@ export default function TranslationRemoveConfirm({
   onConfirm: () => Promise<void>
   onClose: () => void
 }) {
+  const { t } = useLocale()
   return (
     <ConfirmModal
-      title={`Remove ${LANGUAGE_LABELS[lang]} translation?`}
-      message={`This translation will be removed from this ${itemLabel}. This action cannot be undone.`}
-      confirmLabel="Remove Translation"
-      loadingLabel="Removing…"
+      title={t('builder.removeTranslationTitle', { lang: LANGUAGE_LABELS[lang] })}
+      message={t('builder.removeTranslationMessage', { item: itemLabel })}
+      confirmLabel={t('builder.removeTranslationConfirm')}
+      loadingLabel={t('builder.removingTranslation')}
       onConfirm={onConfirm}
       onClose={onClose}
     />

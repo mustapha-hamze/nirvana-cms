@@ -3,16 +3,17 @@
 // that module holds only type declarations; this one holds the runtime
 // catalogs consumed by the section/element editors and pickers.
 import type { ElementType, SectionType, SectionSlot } from "../types/content";
+import type { TranslationKey } from "../i18n/types";
 
-export const ELEMENT_TYPE_LABELS: Record<ElementType, string> = {
-  paragraph: "Paragraph",
-  richText: "Rich Text",
-  heading: "Heading",
-  textInput: "Text Input",
-  image: "Image",
-  imageGallery: "Image Gallery",
-  link: "Link",
-  videoEmbed: "Video",
+export const ELEMENT_TYPE_KEYS: Record<ElementType, TranslationKey> = {
+  paragraph: "contentBuilder.elementParagraph",
+  richText: "contentBuilder.elementRichText",
+  heading: "contentBuilder.elementHeading",
+  textInput: "contentBuilder.elementTextInput",
+  image: "contentBuilder.elementImage",
+  imageGallery: "contentBuilder.elementImageGallery",
+  link: "contentBuilder.elementLink",
+  videoEmbed: "contentBuilder.elementVideoEmbed",
 };
 
 export const HEADING_LEVELS = [1, 2, 3, 4, 5, 6] as const;
@@ -22,17 +23,17 @@ export const SECTION_TYPE_VALUES: SectionType[] = [
   "image-only", "image-2-up", "image-gallery", "video-only", "document",
 ];
 
-export const SECTION_TYPE_LABELS: Record<SectionType, string> = {
-  "text-1-col": "Text (1 column)",
-  "text-2-col": "Text (2 columns)",
-  "text-image": "Text + Image",
-  "text-video": "Text + Video",
-  "video-text": "Video + Text",
-  "image-only": "Image",
-  "image-2-up": "Two Images",
-  "image-gallery": "Image Gallery",
-  "video-only": "Video",
-  document: "Plain Text",
+export const SECTION_TYPE_KEYS: Record<SectionType, TranslationKey> = {
+  "text-1-col": "contentBuilder.sectionText1Col",
+  "text-2-col": "contentBuilder.sectionText2Col",
+  "text-image": "contentBuilder.sectionTextImage",
+  "text-video": "contentBuilder.sectionTextVideo",
+  "video-text": "contentBuilder.sectionVideoText",
+  "image-only": "contentBuilder.elementImage",
+  "image-2-up": "contentBuilder.sectionImage2Up",
+  "image-gallery": "contentBuilder.elementImageGallery",
+  "video-only": "contentBuilder.elementVideoEmbed",
+  document: "contentBuilder.sectionDocument",
 };
 
 // Mirrors server/src/constants/sectionTypes.js SECTION_LAYOUTS — the single

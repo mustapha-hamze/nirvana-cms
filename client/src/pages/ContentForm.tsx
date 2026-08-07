@@ -19,6 +19,7 @@ import ContentTaxonomyPanel from "../components/contentEditor/ContentTaxonomyPan
 import { useContentDrafts } from "../hooks/useContentDrafts";
 import { useContentSave } from "../hooks/useContentSave";
 import { useContentTaxonomy } from "../hooks/useContentTaxonomy";
+import { useLocale } from "../i18n/useLocale";
 import { useAppSelector } from "../store/hooks";
 import { selectUser } from "../store/authSlice";
 import { isAppAdmin } from "../utils/permissions";
@@ -26,6 +27,7 @@ import type { Application } from "../types/application";
 import { LANGUAGE_VALUES, type LangKey, type ContentItem } from "../types/content";
 
 export default function ContentForm() {
+  const { t } = useLocale();
   const { app } = useOutletContext<AdminOutletContext>();
   const { contentId } = useParams<{ contentId: string }>();
   const navigate = useNavigate();
@@ -57,12 +59,12 @@ export default function ContentForm() {
     return (
       <div className="mx-10 my-10">
         <p className="text-muted-foreground">
-          That content couldn't be found.{" "}
+          {t("contentForm.notFound")}{" "}
           <Link
             to={`/applications/${app._id}/contents`}
             className="text-primary underline"
           >
-            Back to Contents
+            {t("contentForm.backToContents")}
           </Link>
           .
         </p>
@@ -95,6 +97,7 @@ function ContentEditor({
   onBack: () => void;
   onCreated: (created: ContentItem) => void;
 }) {
+  const { t } = useLocale();
   const applicationId = app._id;
   const allowedLanguages = app.languages ?? LANGUAGE_VALUES;
   // Tracks the created/persisted content across saves — starts as the `content` prop
@@ -144,25 +147,25 @@ function ContentEditor({
             variant="ghost"
             size="icon"
             onClick={onBack}
-            title="Back to Contents"
-            aria-label="Back to Contents"
+            title={t("contentForm.backToContents")}
+            aria-label={t("contentForm.backToContents")}
             className="shrink-0 text-muted-foreground hover:text-foreground"
           >
             <BackIcon />
           </Button>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              {isEdit ? "Edit Content" : "Create Content"}
+              {isEdit ? t("contentForm.editTitle") : t("contentForm.createTitle")}
             </h1>
             <p className="mt-1 text-[15px] text-muted-foreground">
-              {isEdit ? "Manage translations for this content" : "Add one or more languages, then create"}
+              {isEdit ? t("contentForm.editSubtitle") : t("contentForm.createSubtitle")}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <CancelButton onClick={onBack} disabled={loading} />
           <PrimaryButton onClick={() => handleSave(drafts)} disabled={loading}>
-            {loading ? (isEdit ? "Saving…" : "Creating…") : isEdit ? "Save Changes" : "Create Content"}
+            {loading ? (isEdit ? t("common.saving") : t("common.creating")) : isEdit ? t("common.saveChanges") : t("contentForm.createTitle")}
           </PrimaryButton>
         </div>
       </div>
@@ -262,7 +265,7 @@ function ContentEditor({
                 <div className="flex items-center gap-5">
                   <div>
                     <label className="block text-sm font-medium mb-1.5 text-muted-foreground">
-                      Content Status
+                      {t("contentForm.status")}
                     </label>
                     <div className="flex items-center gap-2">
                       {canManage && (
@@ -271,13 +274,13 @@ function ContentEditor({
                           onToggle={() =>
                             updateActiveDraft({ status: draft.status === "published" ? "draft" : "published" })
                           }
-                          onLabel="Publish"
-                          offLabel="Unpublish"
+                          onLabel={t("common.publish")}
+                          offLabel={t("common.unpublish")}
                         />
                       )}
                       <span className={`text-sm font-medium ${draft.status === "published" ? "text-(--color-success)" : "text-muted-foreground"}`}>
-                        {draft.status === "published" ? "Published" : "Draft"}
-                        <small> (to change content publishing status)</small>
+                        {draft.status === "published" ? t("table.published") : t("table.draft")}
+                        <small> {t("contentForm.statusHint")}</small>
                       </span>
                     </div>
                   </div>
@@ -286,7 +289,7 @@ function ContentEditor({
 
               <TranslationActions
                 loading={loading}
-                saveLabel={loading ? (isEdit ? "Saving…" : "Creating…") : isEdit ? "Save Changes" : "Create Content"}
+                saveLabel={loading ? (isEdit ? t("common.saving") : t("common.creating")) : isEdit ? t("common.saveChanges") : t("contentForm.createTitle")}
                 onSave={() => handleSave(drafts)}
                 activeLang={activeLang}
                 isPersisted={isPersisted(activeLang)}
@@ -302,7 +305,7 @@ function ContentEditor({
       {removeLang && savedContent && (
         <TranslationRemoveConfirm
           lang={removeLang}
-          itemLabel="content"
+          itemLabel={t("contentForm.itemLabel")}
           onConfirm={async () => {
             await api.delete(`/content/${savedContent._id}/details/${removeLang}`);
             handleDiscardDraft(removeLang);
