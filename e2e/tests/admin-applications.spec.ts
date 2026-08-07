@@ -24,11 +24,11 @@ test.describe('admin applications', () => {
     const card = page.locator('[data-slot="card"]').filter({ hasText: name })
     await expect(card).toBeVisible()
     // New apps default to active.
-    await expect(card.getByText('active', { exact: true })).toBeVisible()
+    await expect(card.getByText('Active', { exact: true })).toBeVisible()
 
     // ── Edit: toggle active -> inactive ─────────────────────────────────
     await card.getByRole('switch').click()
-    await expect(card.getByText('inactive', { exact: true })).toBeVisible()
+    await expect(card.getByText('Inactive', { exact: true })).toBeVisible()
 
     // ── Delete ──────────────────────────────────────────────────────────
     await card.getByRole('button', { name: 'Delete' }).click()
