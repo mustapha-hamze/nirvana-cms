@@ -25,6 +25,7 @@ import { usePaginatedApiList } from "../hooks/usePaginatedApiList";
 import { getTextDirection, getRtlAwareClassName } from "../utils/rtl";
 import { LANGUAGE_VALUES } from "../types/content";
 import type { PageItem, PageDetail } from "../types/page";
+import { useLocale } from "../i18n/useLocale";
 
 function getPreviewDetail(page: PageItem): PageDetail | undefined {
   for (const lang of LANGUAGE_VALUES) {
@@ -37,6 +38,7 @@ function getPreviewDetail(page: PageItem): PageDetail | undefined {
 export default function Pages() {
   const { app } = useOutletContext<AdminOutletContext>();
   const navigate = useNavigate();
+  const { t } = useLocale();
   const user = useAppSelector(selectUser);
   const canManage = !!app && isAppAdmin(user, app._id);
   const [deletePage, setDeletePageState] = useState<PageItem | null>(null);
@@ -51,9 +53,9 @@ export default function Pages() {
   return (
     <div className="mx-10 my-10">
       <AdminPageHeader
-        title="Pages"
-        subtitle={loading || !app ? "…" : `${total} page${total !== 1 ? "s" : ""} in ${app.name}`}
-        actionLabel="Create Page"
+        title={t('pagesList.title')}
+        subtitle={loading || !app ? "…" : t(total === 1 ? 'pagesList.subtitleOne' : 'pagesList.subtitleOther', { count: total, app: app.name })}
+        actionLabel={t('pagesList.createPage')}
         onAction={() => navigate(`/applications/${app?._id}/pages/create`)}
         actionDisabled={!app}
       />
@@ -65,24 +67,24 @@ export default function Pages() {
       ) : !hasAnyPage ? (
         <EmptyState
           icon={<BigPageIcon />}
-          title="No pages yet"
-          description="Build the pages that make up this application's site — Home, About Us, Contact Us, and more."
-          actionLabel="Create Page"
+          title={t('pagesList.noPagesTitle')}
+          description={t('pagesList.noPagesDescription')}
+          actionLabel={t('pagesList.createPage')}
           onAction={() => navigate(`/applications/${app?._id}/pages/create`)}
         />
       ) : pages.length === 0 ? (
-        <EmptyResultsRow message={`No pages match "${search}".`} />
+        <EmptyResultsRow message={t('pagesList.noPagesMatch', { search })} />
       ) : (
         <AdminTable
           footer={<Pagination page={page} totalPages={totalPages} total={total} limit={limit} onPageChange={setPage} />}
         >
           <TableHeader>
             <tr>
-              <SortableHeader label="Title" active={sortBy === "title"} direction={sortOrder} onClick={() => toggleSort("title")} />
-              <AdminTableHeadCell>ID</AdminTableHeadCell>
-              <AdminTableHeadCell>Languages</AdminTableHeadCell>
-              <SortableHeader label="Created" active={sortBy === "createdAt"} direction={sortOrder} onClick={() => toggleSort("createdAt")} />
-              <AdminTableHeadCell align="right">Actions</AdminTableHeadCell>
+              <SortableHeader label={t('table.title')} active={sortBy === "title"} direction={sortOrder} onClick={() => toggleSort("title")} />
+              <AdminTableHeadCell>{t('table.id')}</AdminTableHeadCell>
+              <AdminTableHeadCell>{t('table.languages')}</AdminTableHeadCell>
+              <SortableHeader label={t('table.created')} active={sortBy === "createdAt"} direction={sortOrder} onClick={() => toggleSort("createdAt")} />
+              <AdminTableHeadCell align="end">{t('common.actions')}</AdminTableHeadCell>
             </tr>
           </TableHeader>
           <TableBody>
@@ -100,7 +102,7 @@ export default function Pages() {
                       </span>
                       {page.isHomepage && (
                         <Badge variant="accent" className="text-[11px] font-semibold">
-                          Homepage
+                          {t('table.homepage')}
                         </Badge>
                       )}
                     </div>
@@ -116,13 +118,13 @@ export default function Pages() {
                     <div className="flex items-center justify-end gap-1">
                       <AdminTableActionButton
                         onClick={() => navigate(`/applications/${app?._id}/pages/${page._id}/edit`)}
-                        title="Edit"
+                        title={t('common.edit')}
                         variant="accent"
                       >
                         <EditIcon />
                       </AdminTableActionButton>
                       {canManage && (
-                        <AdminTableActionButton onClick={() => setDeletePageState(page)} title="Delete" variant="danger">
+                        <AdminTableActionButton onClick={() => setDeletePageState(page)} title={t('common.delete')} variant="danger">
                           <TrashIcon />
                         </AdminTableActionButton>
                       )}
@@ -137,10 +139,10 @@ export default function Pages() {
 
       {deletePage && (
         <ConfirmModal
-          title={`Delete "${getPreviewDetail(deletePage)?.title ?? "this page"}"?`}
-          message="This will remove the page and all its translations. This action cannot be undone."
-          confirmLabel="Delete Page"
-          loadingLabel="Deleting…"
+          title={t('pagesList.deleteConfirmTitle', { name: getPreviewDetail(deletePage)?.title ?? t('pagesList.deleteConfirmFallbackName') })}
+          message={t('pagesList.deleteConfirmMessage')}
+          confirmLabel={t('pagesList.deleteConfirmLabel')}
+          loadingLabel={t('common.deleting')}
           onConfirm={() => api.delete(`/pages/${deletePage._id}`).then(fetchPages)}
           onClose={() => setDeletePageState(null)}
         />

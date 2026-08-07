@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import type { RichTextElement } from '../../types/content'
 import { getTextDirection } from '../../utils/rtl'
+import { useLocale } from '../../i18n/useLocale'
 
 function ToolbarButton({ active, onClick, children }: { active?: boolean; onClick: () => void; children: ReactNode }) {
   return (
@@ -32,6 +33,7 @@ export default function RichTextElementEditor({
   element: RichTextElement
   onChange: (next: RichTextElement) => void
 }) {
+  const { t } = useLocale()
   // Detection runs directly against the raw HTML on mount (tags/attributes
   // are pure ASCII, so they can never falsely match RTL script) and against
   // the editor's plain text on every update thereafter — never mutates the
@@ -55,7 +57,7 @@ export default function RichTextElementEditor({
   return (
     <div>
       <Label className="mb-1.5 text-sm font-medium text-muted-foreground">
-        Rich Text
+        {t('contentBuilder.elementRichText')}
       </Label>
       <div className="rounded-xl overflow-hidden border">
         <div className="flex items-center gap-1 border-b bg-input/30 px-2 py-1.5">
@@ -81,23 +83,23 @@ export default function RichTextElementEditor({
             active={editor.isActive('bulletList')}
             onClick={() => editor.chain().focus().toggleBulletList().run()}
           >
-            • List
+            • {t('contentBuilder.list')}
           </ToolbarButton>
           <ToolbarButton
             active={editor.isActive('orderedList')}
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
           >
-            1. List
+            1. {t('contentBuilder.list')}
           </ToolbarButton>
           <ToolbarButton
             active={editor.isActive('link')}
             onClick={() => {
-              const url = window.prompt('Link URL')
+              const url = window.prompt(t('contentBuilder.linkUrl'))
               if (url) editor.chain().focus().setLink({ href: url }).run()
               else editor.chain().focus().unsetLink().run()
             }}
           >
-            Link
+            {t('contentBuilder.elementLink')}
           </ToolbarButton>
         </div>
         <EditorContent

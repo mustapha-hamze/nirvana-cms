@@ -1,7 +1,9 @@
 import AdminPageHeader from '../components/ui/AdminPageHeader'
 import EmptyState from '../components/ui/EmptyState'
+import { useLocale } from '../i18n/useLocale'
 
 export default function ComingSoonPage({ title, description }: { title: string; description: string }) {
+  const { t } = useLocale()
   return (
     <div className="mx-10 my-10">
       <AdminPageHeader title={title} subtitle={description} />
@@ -9,8 +11,8 @@ export default function ComingSoonPage({ title, description }: { title: string; 
       <div className="rounded-2xl border bg-card">
         <EmptyState
           icon={<ClockIcon />}
-          title="Coming soon"
-          description={`${title} management isn't built yet — check back soon.`}
+          title={t('comingSoon.title')}
+          description={t('comingSoon.description', { title })}
         />
       </div>
     </div>

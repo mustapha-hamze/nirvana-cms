@@ -8,10 +8,13 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { LogoutIcon } from './icons'
 import ThemeToggle from './ui/ThemeToggle'
+import LocaleToggle from './ui/LocaleToggle'
+import { useLocale } from '../i18n/useLocale'
 
 export default function Layout({ children }: { children: ReactNode }) {
   const user = useAppSelector(selectUser)
   const navigate = useNavigate()
+  const { t } = useLocale()
 
   async function handleLogout() {
     await logoutRequest()
@@ -35,7 +38,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               <NLogo />
             </div>
             <span className="font-semibold text-[15px] tracking-wide text-(--color-text-strong)">
-              Nirvana CMS
+              {t('nav.brandName')}
             </span>
           </div>
 
@@ -56,6 +59,10 @@ export default function Layout({ children }: { children: ReactNode }) {
 
             <Separator orientation="vertical" className="h-5" />
 
+            <LocaleToggle />
+
+            <Separator orientation="vertical" className="h-5" />
+
             <ThemeToggle />
 
             <Separator orientation="vertical" className="h-5" />
@@ -67,7 +74,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               className="h-auto gap-1.5 p-0 text-sm text-(--color-text-muted) hover:bg-transparent hover:text-destructive"
             >
               <LogoutIcon />
-              <span className="hidden sm:inline">Logout</span>
+              <span className="hidden sm:inline">{t('nav.logout')}</span>
             </Button>
           </div>
         </div>

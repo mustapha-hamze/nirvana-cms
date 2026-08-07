@@ -7,6 +7,7 @@ import TranslatedTitleTabs from './ui/TranslatedTitleTabs'
 import TranslatedTitleField from './ui/TranslatedTitleField'
 import { useTranslatedTitleForm } from '../hooks/useTranslatedTitleForm'
 import { Label } from '@/components/ui/label'
+import { useLocale } from '../i18n/useLocale'
 import type { LangKey } from '../types/content'
 import type { Tag } from '../types/tag'
 
@@ -23,6 +24,7 @@ export default function TagModal({
   onClose: () => void
   onSaved: () => void
 }) {
+  const { t } = useLocale()
   const isEdit = tag !== null
   const {
     titles, activeLang, setActiveLang, active, setActive, updateTitle, buildTranslations,
@@ -38,7 +40,7 @@ export default function TagModal({
     setError('')
     const translations = buildTranslations()
     if (translations.length === 0) {
-      setError('At least one language needs a title')
+      setError(t('validation.atLeastOneLanguageTitle'))
       return
     }
     setLoading(true)
@@ -49,11 +51,11 @@ export default function TagModal({
       } else {
         await api.post('/tags', { application: applicationId, ...payload })
       }
-      toast.success(isEdit ? 'Tag has been updated' : 'Tag has been created')
+      toast.success(isEdit ? t('tags.toastUpdated') : t('tags.toastCreated'))
       onSaved()
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : `Failed to ${isEdit ? 'save' : 'create'} tag`)
+      setError(err instanceof Error ? err.message : (isEdit ? t('tags.saveFailed') : t('tags.createFailed')))
       setLoading(false)
     }
   }
@@ -62,8 +64,8 @@ export default function TagModal({
     <Backdrop onClose={onClose}>
       <ModalPanel>
         <ModalHeader
-          title={isEdit ? 'Edit Tag' : 'Create Tag'}
-          subtitle={isEdit ? 'Update this tag' : 'Add a new tag to label content'}
+          title={isEdit ? t('tags.modalEditTitle') : t('tags.modalCreateTitle')}
+          subtitle={isEdit ? t('tags.modalEditSubtitle') : t('tags.modalCreateSubtitle')}
         />
 
         <TranslatedTitleTabs allowedLanguages={allowedLanguages} activeLang={activeLang} titles={titles} onSelect={setActiveLang} />
@@ -75,21 +77,21 @@ export default function TagModal({
             activeLang={activeLang}
             value={titles[activeLang] ?? ''}
             onChange={(v) => updateTitle(activeLang, v)}
-            placeholder="e.g. Breaking"
+            placeholder={t('tags.titlePlaceholder')}
           />
           <div>
             <Label className="block text-sm font-medium mb-1.5 text-muted-foreground">
-              Status
+              {t('common.status')}
             </Label>
             <div className="flex items-center gap-2">
               <StatusToggle
                 checked={active}
                 onToggle={() => setActive((v) => !v)}
-                onLabel="Activate"
-                offLabel="Deactivate"
+                onLabel={t('common.activate')}
+                offLabel={t('common.deactivate')}
               />
               <span className={`text-sm font-medium ${active ? 'text-(--color-success)' : 'text-muted-foreground'}`}>
-                {active ? 'Active' : 'Inactive'}
+                {active ? t('common.active') : t('common.inactive')}
               </span>
             </div>
           </div>
@@ -97,7 +99,7 @@ export default function TagModal({
         <ModalFooter>
           <CancelButton onClick={onClose} disabled={loading} />
           <PrimaryButton onClick={handleSave} disabled={loading}>
-            {loading ? (isEdit ? 'Saving…' : 'Creating…') : (isEdit ? 'Save Changes' : 'Create Tag')}
+            {loading ? (isEdit ? t('common.saving') : t('common.creating')) : (isEdit ? t('common.saveChanges') : t('tags.createTag'))}
           </PrimaryButton>
         </ModalFooter>
       </ModalPanel>

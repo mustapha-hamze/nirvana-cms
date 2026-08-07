@@ -9,6 +9,7 @@ import TranslatedTitleField from './ui/TranslatedTitleField'
 import { useTranslatedTitleForm } from '../hooks/useTranslatedTitleForm'
 import { Label } from '@/components/ui/label'
 import { getPreviewTitle } from '../utils/translations'
+import { useLocale } from '../i18n/useLocale'
 import type { LangKey } from '../types/content'
 import type { Category } from '../types/category'
 
@@ -46,6 +47,7 @@ export default function CategoryModal({
   onClose: () => void
   onSaved: () => void
 }) {
+  const { t } = useLocale()
   const isEdit = category !== null
   const {
     titles, activeLang, setActiveLang, active, setActive, updateTitle, buildTranslations,
@@ -60,7 +62,7 @@ export default function CategoryModal({
 
   const excluded = excludedIds(category, categories)
   const parentOptions = [
-    { value: '', label: 'None (top-level)' },
+    { value: '', label: t('categories.noneTopLevel') },
     ...categories
       .filter((c) => !excluded.has(c._id))
       .map((c) => ({ value: c._id, label: getPreviewTitle(c.translations) })),
@@ -70,7 +72,7 @@ export default function CategoryModal({
     setError('')
     const translations = buildTranslations()
     if (translations.length === 0) {
-      setError('At least one language needs a title')
+      setError(t('validation.atLeastOneLanguageTitle'))
       return
     }
     setLoading(true)
@@ -81,11 +83,11 @@ export default function CategoryModal({
       } else {
         await api.post('/categories', { application: applicationId, ...payload })
       }
-      toast.success(isEdit ? 'Category has been updated' : 'Category has been created')
+      toast.success(isEdit ? t('categories.toastUpdated') : t('categories.toastCreated'))
       onSaved()
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : `Failed to ${isEdit ? 'save' : 'create'} category`)
+      setError(err instanceof Error ? err.message : (isEdit ? t('categories.saveFailed') : t('categories.createFailed')))
       setLoading(false)
     }
   }
@@ -94,8 +96,8 @@ export default function CategoryModal({
     <Backdrop onClose={onClose}>
       <ModalPanel>
         <ModalHeader
-          title={isEdit ? 'Edit Category' : 'Create Category'}
-          subtitle={isEdit ? 'Update this category' : 'Add a new category to organize content'}
+          title={isEdit ? t('categories.modalEditTitle') : t('categories.modalCreateTitle')}
+          subtitle={isEdit ? t('categories.modalEditSubtitle') : t('categories.modalCreateSubtitle')}
         />
 
         <TranslatedTitleTabs allowedLanguages={allowedLanguages} activeLang={activeLang} titles={titles} onSelect={setActiveLang} />
@@ -107,26 +109,26 @@ export default function CategoryModal({
             activeLang={activeLang}
             value={titles[activeLang] ?? ''}
             onChange={(v) => updateTitle(activeLang, v)}
-            placeholder="e.g. News"
+            placeholder={t('categories.titlePlaceholder')}
           />
           <SelectField
-            label="Parent Category" value={parentId}
+            label={t('categories.parentCategory')} value={parentId}
             onChange={setParentId}
             options={parentOptions}
           />
           <div>
             <Label className="block text-sm font-medium mb-1.5 text-muted-foreground">
-              Status
+              {t('common.status')}
             </Label>
             <div className="flex items-center gap-2">
               <StatusToggle
                 checked={active}
                 onToggle={() => setActive((v) => !v)}
-                onLabel="Activate"
-                offLabel="Deactivate"
+                onLabel={t('common.activate')}
+                offLabel={t('common.deactivate')}
               />
               <span className={`text-sm font-medium ${active ? 'text-(--color-success)' : 'text-muted-foreground'}`}>
-                {active ? 'Active' : 'Inactive'}
+                {active ? t('common.active') : t('common.inactive')}
               </span>
             </div>
           </div>
@@ -134,7 +136,7 @@ export default function CategoryModal({
         <ModalFooter>
           <CancelButton onClick={onClose} disabled={loading} />
           <PrimaryButton onClick={handleSave} disabled={loading}>
-            {loading ? (isEdit ? 'Saving…' : 'Creating…') : (isEdit ? 'Save Changes' : 'Create Category')}
+            {loading ? (isEdit ? t('common.saving') : t('common.creating')) : (isEdit ? t('common.saveChanges') : t('categories.createCategory'))}
           </PrimaryButton>
         </ModalFooter>
       </ModalPanel>

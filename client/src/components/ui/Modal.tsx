@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
+import { useLocale } from '../../i18n/useLocale'
 
 export function Backdrop({ children, onClose }: { children: ReactNode; onClose: () => void }) {
   return (
@@ -49,9 +50,10 @@ export function ErrorBanner({ message }: { message: string }) {
 }
 
 export function CancelButton({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
+  const { t } = useLocale()
   return (
     <Button type="button" variant="outline" onClick={onClick} disabled={disabled}>
-      Cancel
+      {t('common.cancel')}
     </Button>
   )
 }

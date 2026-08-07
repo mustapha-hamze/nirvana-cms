@@ -5,10 +5,10 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { PlusIcon, TrashIcon } from '../icons'
 import type { TeamMemberElement, SocialPlatform } from '../../types/page'
-import { SOCIAL_PLATFORM_VALUES, SOCIAL_PLATFORM_LABELS } from '../../constants/pageSections'
+import { SOCIAL_PLATFORM_VALUES, SOCIAL_PLATFORM_KEYS } from '../../constants/pageSections'
+import { useLocale } from '../../i18n/useLocale'
 
 const MAX_SOCIAL_LINKS = 6
-const PLATFORM_OPTIONS = SOCIAL_PLATFORM_VALUES.map((p) => ({ value: p, label: SOCIAL_PLATFORM_LABELS[p] }))
 
 export default function TeamMemberElementEditor({
   applicationId,
@@ -19,6 +19,8 @@ export default function TeamMemberElementEditor({
   element: TeamMemberElement
   onChange: (next: TeamMemberElement) => void
 }) {
+  const { t } = useLocale()
+  const PLATFORM_OPTIONS = SOCIAL_PLATFORM_VALUES.map((p) => ({ value: p, label: t(SOCIAL_PLATFORM_KEYS[p]) }))
   function updateLink(index: number, patch: Partial<{ platform: SocialPlatform; url: string }>) {
     const socialLinks = element.socialLinks.slice()
     socialLinks[index] = { ...socialLinks[index], ...patch }
@@ -37,21 +39,21 @@ export default function TeamMemberElementEditor({
     <div className="space-y-3">
       <ImageUploadField domain="page" applicationId={applicationId} url={element.photo} onUploaded={(photo) => onChange({ ...element, photo })} />
       <div className="grid grid-cols-2 gap-3">
-        <TextField label="Name" required value={element.name} onChange={(name) => onChange({ ...element, name })} />
-        <TextField label="Role" value={element.role} onChange={(role) => onChange({ ...element, role })} placeholder="e.g. Co-founder" />
+        <TextField label={t('common.name')} required value={element.name} onChange={(name) => onChange({ ...element, name })} />
+        <TextField label={t('table.role')} value={element.role} onChange={(role) => onChange({ ...element, role })} placeholder={t('pageBuilder.namePlaceholderCoFounder')} />
       </div>
-      <TextAreaField label="Bio" value={element.bio} onChange={(bio) => onChange({ ...element, bio })} rows={3} />
+      <TextAreaField label={t('pageBuilder.bio')} value={element.bio} onChange={(bio) => onChange({ ...element, bio })} rows={3} />
 
       <div>
         <Label className="mb-1.5 text-sm font-medium text-muted-foreground">
-          Social links ({element.socialLinks.length})
+          {t('pageBuilder.socialLinks', { count: element.socialLinks.length })}
         </Label>
         <div className="space-y-2">
           {element.socialLinks.map((link, i) => (
             <div key={i} className="flex items-center gap-2">
               <div className="w-36 shrink-0">
                 <SelectField
-                  label="Platform"
+                  label={t('pageBuilder.platform')}
                   value={link.platform}
                   onChange={(platform) => updateLink(i, { platform })}
                   options={PLATFORM_OPTIONS}
@@ -60,7 +62,7 @@ export default function TeamMemberElementEditor({
               <Input
                 value={link.url}
                 onChange={(e) => updateLink(i, { url: e.target.value })}
-                placeholder="https://…"
+                placeholder={t('contentBuilder.linkUrlPlaceholder')}
                 className="flex-1"
               />
               <Button
@@ -68,7 +70,7 @@ export default function TeamMemberElementEditor({
                 variant="ghost"
                 size="icon-sm"
                 onClick={() => removeLink(i)}
-                title="Remove"
+                title={t('common.remove')}
                 className="icon-btn-danger shrink-0 hover:bg-transparent"
               >
                 <TrashIcon size={14} />
@@ -78,7 +80,7 @@ export default function TeamMemberElementEditor({
         </div>
         {element.socialLinks.length < MAX_SOCIAL_LINKS && (
           <Button type="button" variant="link" onClick={addLink} className="h-auto gap-1.5 p-0 text-sm font-medium mt-2 hover:no-underline">
-            <PlusIcon size={14} /> Add social link
+            <PlusIcon size={14} /> {t('pageBuilder.addSocialLink')}
           </Button>
         )}
       </div>

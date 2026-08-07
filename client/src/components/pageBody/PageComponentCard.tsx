@@ -7,10 +7,11 @@ import PageComponentCardHeader from './PageComponentCardHeader'
 import SortablePageElementList from './SortablePageElementList'
 import PageElementRow from './PageElementRow'
 import { useStableSortableIds } from '../../hooks/useStableSortableIds'
-import { PAGE_COMPONENT_LAYOUTS, PAGE_ELEMENT_TYPE_LABELS } from '../../constants/pageSections'
+import { PAGE_COMPONENT_LAYOUTS, PAGE_ELEMENT_TYPE_KEYS } from '../../constants/pageSections'
 import { createEmptyElementOfType } from '../../factories/pageElements'
 import type { PageComponent, PageElement, PageComponentType } from '../../types/page'
 import { randomUUID } from '@/utils/randomUUID'
+import { useLocale } from '../../i18n/useLocale'
 
 // Component types whose items are short, uniform tiles (cards, slides,
 // gallery items) — stacked one-per-row they turn into a very long scroll
@@ -36,9 +37,10 @@ export default function PageComponentCard({
   onChange: (next: PageComponent) => void
   onRemove: () => void
 }) {
+  const { t } = useLocale()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
   const layout = PAGE_COMPONENT_LAYOUTS[component.type]
-  const itemLabel = PAGE_ELEMENT_TYPE_LABELS[layout.elementType]
+  const itemLabel = t(PAGE_ELEMENT_TYPE_KEYS[layout.elementType])
   // UI-only, never persisted — same rationale as PageSectionCard's `open`:
   // defaults closed so a section with several components loads as a
   // scannable list of headers rather than every component's editor at once.
@@ -113,7 +115,7 @@ export default function PageComponentCard({
 
           {component.elements.length < layout.max && (
             <Button type="button" variant="link" onClick={addElement} className="h-auto gap-1.5 p-0 text-sm font-medium mt-3 hover:no-underline">
-              <PlusIcon size={14} /> Add {itemLabel.toLowerCase()}
+              <PlusIcon size={14} /> {t('pageBuilder.addItem', { item: itemLabel.toLowerCase() })}
             </Button>
           )}
         </div>

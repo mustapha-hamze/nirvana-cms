@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import StatusToggle from "./ui/StatusToggle";
+import { useLocale } from "../i18n/useLocale";
 import type { Application } from "../types/application";
 
 export type { Application };
@@ -24,6 +25,7 @@ export default function AppCard({
   toggleError?: string;
 }) {
   const navigate = useNavigate();
+  const { t } = useLocale();
 
   return (
     <Card className="cursor-default gap-4 rounded-2xl p-5 transition-all hover:bg-(--color-surface-hover)">
@@ -53,7 +55,7 @@ export default function AppCard({
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold truncate text-foreground">{app.name}</h3>
           <p className="text-sm mt-0.5 leading-relaxed line-clamp-2 text-muted-foreground">
-            {app.description || "No description"}
+            {app.description || t("common.noDescription")}
           </p>
         </div>
 
@@ -62,14 +64,14 @@ export default function AppCard({
             variant={app.status === "active" ? "success" : "neutral"}
             className="text-[11px] font-semibold"
           >
-            {app.status}
+            {app.status === "active" ? t("common.active") : t("common.inactive")}
           </Badge>
           <StatusToggle
             checked={app.status === "active"}
             disabled={toggling}
             onToggle={onToggleStatus}
-            offLabel="Deactivate application"
-            onLabel="Activate application"
+            offLabel={t("applications.deactivateApplication")}
+            onLabel={t("applications.activateApplication")}
           />
         </div>
       </div>
@@ -93,8 +95,8 @@ export default function AppCard({
             variant="ghost"
             size="icon-sm"
             onClick={onSettings}
-            title="Settings"
-            aria-label="Settings"
+            title={t("common.settings")}
+            aria-label={t("common.settings")}
             className="icon-btn-accent hover:bg-transparent"
           >
             <GearIcon />
@@ -104,8 +106,8 @@ export default function AppCard({
             variant="ghost"
             size="icon-sm"
             onClick={onDelete}
-            title="Delete"
-            aria-label="Delete"
+            title={t("common.delete")}
+            aria-label={t("common.delete")}
             className="icon-btn-danger hover:bg-transparent"
           >
             <TrashIcon />
@@ -116,7 +118,7 @@ export default function AppCard({
             onClick={() => navigate(`/applications/${app._id}/dashboard`)}
           >
             <LoginIcon />
-            Log in
+            {t("common.logIn")}
           </Button>
         </div>
       </div>

@@ -3,21 +3,28 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { uploadContentVideo, uploadPageVideo, uploadPageDocument } from '../../api/client'
 import { resolveMediaUrl } from '../../utils/mediaUrl'
+import { useLocale } from '../../i18n/useLocale'
+import type { TranslationKey } from '../../i18n/types'
 
-const KIND_CONFIG = {
+const KIND_CONFIG: Record<'video' | 'document', {
+  accept: string
+  hintKey: TranslationKey
+  maxBytes: number
+  tooLargeKey: TranslationKey
+}> = {
   video: {
     accept: 'video/mp4,video/webm,video/quicktime',
-    hint: 'MP4, WEBM, or MOV — up to 50MB.',
+    hintKey: 'contentBuilder.videoFormatsHint',
     maxBytes: 50 * 1024 * 1024,
-    tooLargeMessage: 'Video must be smaller than 50MB',
+    tooLargeKey: 'contentBuilder.videoTooLarge',
   },
   document: {
     accept: 'application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    hint: 'PDF, DOC, or DOCX — up to 10MB.',
+    hintKey: 'contentBuilder.documentFormatsHint',
     maxBytes: 10 * 1024 * 1024,
-    tooLargeMessage: 'Document must be smaller than 10MB',
+    tooLargeKey: 'contentBuilder.documentTooLarge',
   },
-} as const
+}
 
 // Sibling to ImageUploadField for the two other self-hosted file kinds — a
 // video is never processed server-side (see rawFileUpload.js), just
@@ -38,6 +45,7 @@ export default function FileUploadField({
   onUploaded: (url: string) => void
   label?: string
 }) {
+  const { t } = useLocale()
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const config = KIND_CONFIG[kind]
@@ -47,7 +55,7 @@ export default function FileUploadField({
     e.target.value = '' // allow re-selecting the same file to re-upload/replace
     if (!file) return
     if (file.size > config.maxBytes) {
-      setError(config.tooLargeMessage)
+      setError(t(config.tooLargeKey))
       return
     }
     setError('')
@@ -60,7 +68,7 @@ export default function FileUploadField({
       const { filename } = await upload(applicationId, file)
       onUploaded(filename)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed')
+      setError(err instanceof Error ? err.message : t('contentBuilder.uploadFailed'))
     } finally {
       setUploading(false)
     }
@@ -69,8 +77,8 @@ export default function FileUploadField({
   return (
     <div>
       <Label className="mb-1.5 text-sm font-medium text-muted-foreground">
-        {label ?? (kind === 'video' ? 'Upload video' : 'Upload document')}{' '}
-        {uploading && <span className="text-(--color-text-tertiary)">— uploading…</span>}
+        {label ?? (kind === 'video' ? t('contentBuilder.uploadVideo') : t('contentBuilder.uploadDocument'))}{' '}
+        {uploading && <span className="text-(--color-text-tertiary)">{t('contentBuilder.uploadingSuffix')}</span>}
       </Label>
       <Input
         type="file"
@@ -80,7 +88,7 @@ export default function FileUploadField({
         className="h-auto py-1.5"
       />
       <p className="text-xs mt-1 text-(--color-text-tertiary)">
-        {config.hint}
+        {t(config.hintKey)}
       </p>
       {error && (
         <p className="text-xs mt-1 text-destructive">

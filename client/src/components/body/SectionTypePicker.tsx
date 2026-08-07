@@ -15,7 +15,8 @@ import {
   DocumentPlainIcon,
 } from '../icons'
 import type { SectionType } from '../../types/content'
-import { SECTION_TYPE_VALUES, SECTION_TYPE_LABELS } from '../../constants/contentSections'
+import { SECTION_TYPE_VALUES, SECTION_TYPE_KEYS } from '../../constants/contentSections'
+import { useLocale } from '../../i18n/useLocale'
 
 const SECTION_ICONS: Record<SectionType, ComponentType<{ size?: number }>> = {
   'text-1-col': TextOneColIcon,
@@ -31,12 +32,13 @@ const SECTION_ICONS: Record<SectionType, ComponentType<{ size?: number }>> = {
 }
 
 export default function SectionTypePicker({ onPick }: { onPick: (type: SectionType) => void }) {
+  const { t } = useLocale()
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button type="button">
           <PlusIcon />
-          Add Section
+          {t('builder.addSection')}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="grid w-96 grid-cols-2 gap-1.5 p-3">
@@ -51,7 +53,7 @@ export default function SectionTypePicker({ onPick }: { onPick: (type: SectionTy
               <span className="text-primary">
                 <Icon size={20} />
               </span>
-              {SECTION_TYPE_LABELS[type]}
+              {t(SECTION_TYPE_KEYS[type])}
             </DropdownMenuItem>
           )
         })}

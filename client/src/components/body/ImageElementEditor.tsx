@@ -1,5 +1,6 @@
 import { TextField, TextAreaField } from '../ui/FormField'
 import ImageUploadField from './ImageUploadField'
+import { useLocale } from '../../i18n/useLocale'
 import type { ImageElement } from '../../types/content'
 
 export default function ImageElementEditor({
@@ -11,17 +12,18 @@ export default function ImageElementEditor({
   element: ImageElement
   onChange: (next: ImageElement) => void
 }) {
+  const { t } = useLocale()
   return (
     <div className="space-y-3">
       <ImageUploadField applicationId={applicationId} url={element.url} onUploaded={(url) => onChange({ ...element, url })} />
       <TextField
-        label="Alt text"
+        label={t('contentBuilder.altText')}
         required
         value={element.alt}
         onChange={(alt) => onChange({ ...element, alt })}
-        placeholder="Describe the image for accessibility"
+        placeholder={t('contentBuilder.altTextPlaceholder')}
       />
-      <TextAreaField label="Caption" value={element.caption} onChange={(caption) => onChange({ ...element, caption })} rows={2} />
+      <TextAreaField label={t('contentBuilder.caption')} value={element.caption} onChange={(caption) => onChange({ ...element, caption })} rows={2} />
     </div>
   )
 }

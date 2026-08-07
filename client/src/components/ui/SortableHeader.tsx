@@ -11,20 +11,20 @@ export default function SortableHeader({
   active,
   direction,
   onClick,
-  align = 'left',
+  align = 'start',
 }: {
   label: string
   active: boolean
   direction: SortDirection
   onClick: () => void
-  align?: 'left' | 'right'
+  align?: 'start' | 'end'
 }) {
   return (
-    <TableHead className={`h-auto px-5 py-3 font-semibold ${align === 'right' ? 'text-right' : 'text-left'}`}>
+    <TableHead className={`h-auto px-5 py-3 font-semibold ${align === 'end' ? 'text-end' : 'text-start'}`}>
       <button
         type="button"
         onClick={onClick}
-        className={`flex items-center gap-1 transition-colors ${active ? 'text-(--color-text-secondary)' : 'text-(--color-text-tertiary)'} hover:text-(--color-text-primary) ${align === 'right' ? 'ml-auto' : ''}`}
+        className={`flex items-center gap-1 transition-colors ${active ? 'text-(--color-text-secondary)' : 'text-(--color-text-tertiary)'} hover:text-(--color-text-primary) ${align === 'end' ? 'ms-auto' : ''}`}
       >
         {label}
         {active ? (

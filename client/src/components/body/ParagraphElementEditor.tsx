@@ -1,4 +1,5 @@
 import { TextAreaField } from '../ui/FormField'
+import { useLocale } from '../../i18n/useLocale'
 import type { ParagraphElement } from '../../types/content'
 
 export default function ParagraphElementEditor({
@@ -8,14 +9,15 @@ export default function ParagraphElementEditor({
   element: ParagraphElement
   onChange: (next: ParagraphElement) => void
 }) {
+  const { t } = useLocale()
   return (
     <TextAreaField
-      label="Text"
+      label={t('contentBuilder.text')}
       required
       value={element.text}
       onChange={(text) => onChange({ ...element, text })}
       rows={4}
-      placeholder="Write a paragraph…"
+      placeholder={t('contentBuilder.paragraphPlaceholder')}
     />
   )
 }

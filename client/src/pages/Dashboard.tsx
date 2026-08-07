@@ -2,29 +2,31 @@ import { useOutletContext } from 'react-router-dom'
 import type { AdminOutletContext } from '../components/AdminLayout'
 import { Card, CardContent } from '@/components/ui/card'
 import AdminPageHeader from '../components/ui/AdminPageHeader'
+import { useLocale } from '../i18n/useLocale'
 
 export default function Dashboard() {
   const { app } = useOutletContext<AdminOutletContext>()
+  const { t } = useLocale()
 
   return (
     <div className="mx-10 my-10">
       <AdminPageHeader
-        title="Dashboard"
-        subtitle={app ? `Overview for ${app.name}` : 'Loading application…'}
+        title={t('dashboard.title')}
+        subtitle={app ? t('dashboard.overviewFor', { name: app.name }) : t('dashboard.loadingApplication')}
       />
 
       {app && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           <StatCard
-            label="Status"
-            value={app.status === 'active' ? 'Active' : 'Inactive'}
+            label={t('dashboard.status')}
+            value={app.status === 'active' ? t('common.active') : t('common.inactive')}
             valueClassName={app.status === 'active' ? 'text-(--color-success)' : 'text-muted-foreground'}
           />
           <StatCard
-            label="Created"
+            label={t('dashboard.created')}
             value={new Date(app.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
           />
-          <StatCard label="Description" value={app.description || '—'} />
+          <StatCard label={t('dashboard.description')} value={app.description || '—'} />
         </div>
       )}
     </div>

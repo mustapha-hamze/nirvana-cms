@@ -11,9 +11,11 @@ import ConfirmModal from '../components/ui/ConfirmModal'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useLocale } from '../i18n/useLocale'
 
 export default function Applications() {
   const navigate = useNavigate()
+  const { t } = useLocale()
   const [apps, setApps] = useState<Application[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
@@ -43,7 +45,7 @@ export default function Applications() {
     } catch (err) {
       setToggleErrors((prev) => ({
         ...prev,
-        [app._id]: err instanceof Error ? err.message : 'Failed to update status',
+        [app._id]: err instanceof Error ? err.message : t('common.failedToUpdateStatus'),
       }))
     } finally {
       setTogglingId(null)
@@ -57,20 +59,20 @@ export default function Applications() {
         <div className="flex items-start justify-between mb-10">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Applications
+              {t('applications.title')}
             </h1>
             <p className="mt-1 text-[15px] text-muted-foreground">
-              {loading ? '…' : `${apps.length} website${apps.length !== 1 ? 's' : ''} managed`}
+              {loading ? '…' : t(apps.length === 1 ? 'applications.subtitleOne' : 'applications.subtitleOther', { count: apps.length })}
             </p>
           </div>
           <div className="flex items-center gap-3">
             <Button type="button" variant="outline" onClick={() => navigate('/super-admins')}>
               <ShieldIcon />
-              Manage Super Admins
+              {t('applications.manageSuperAdmins')}
             </Button>
             <Button type="button" onClick={() => setShowCreate(true)}>
               <PlusIcon />
-              Create Application
+              {t('applications.createApplication')}
             </Button>
           </div>
         </div>
@@ -83,9 +85,9 @@ export default function Applications() {
         ) : apps.length === 0 ? (
           <EmptyState
             icon={<BigGridIcon />}
-            title="No applications yet"
-            description="Create your first application to start managing content for a website."
-            actionLabel="Create Application"
+            title={t('applications.noApplicationsTitle')}
+            description={t('applications.noApplicationsDescription')}
+            actionLabel={t('applications.createApplication')}
             onAction={() => setShowCreate(true)}
           />
         ) : (
@@ -117,10 +119,10 @@ export default function Applications() {
       )}
       {deleteApp && (
         <ConfirmModal
-          title={`Delete "${deleteApp.name}"?`}
-          message="This will remove the application and its settings. Users assigned to it will lose access. This action cannot be undone."
-          confirmLabel="Delete Application"
-          loadingLabel="Deleting…"
+          title={t('applications.deleteConfirmTitle', { name: deleteApp.name })}
+          message={t('applications.deleteConfirmMessage')}
+          confirmLabel={t('applications.deleteConfirmLabel')}
+          loadingLabel={t('common.deleting')}
           onConfirm={() => api.delete(`/applications/${deleteApp._id}`).then(fetchApps)}
           onClose={() => setDeleteApp(null)}
         />

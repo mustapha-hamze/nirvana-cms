@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button'
 import { DragHandleIcon, TrashIcon } from '../icons'
 import { ElementEditor } from './elementEditorRegistry'
 import type { ContentSection, ContentElement, ElementType } from '../../types/content'
-import { SECTION_TYPE_LABELS, ELEMENT_TYPE_LABELS, getSlotElementTypes } from '../../constants/contentSections'
+import { SECTION_TYPE_KEYS, ELEMENT_TYPE_KEYS, getSlotElementTypes } from '../../constants/contentSections'
 import { convertElementType } from '../../factories/contentElements'
+import { useLocale } from '../../i18n/useLocale'
 
 export default function SectionCard({
   id,
@@ -21,6 +22,7 @@ export default function SectionCard({
   onChange: (next: ContentSection) => void
   onRemove: () => void
 }) {
+  const { t } = useLocale()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
 
   function updateElement(index: number, next: ContentElement) {
@@ -55,7 +57,7 @@ export default function SectionCard({
             <DragHandleIcon />
           </button>
           <Badge variant="accent" className="text-xs font-semibold">
-            {SECTION_TYPE_LABELS[section.type]}
+            {t(SECTION_TYPE_KEYS[section.type])}
           </Badge>
         </div>
         <Button
@@ -63,7 +65,7 @@ export default function SectionCard({
           variant="ghost"
           size="icon-sm"
           onClick={onRemove}
-          title="Remove section"
+          title={t('contentBuilder.removeSection')}
           className="icon-btn-danger hover:bg-transparent"
         >
           <TrashIcon size={14} />
@@ -76,18 +78,18 @@ export default function SectionCard({
             <div key={i} className="space-y-2">
               {allowedTypes.length > 1 && (
                 <div className="flex flex-wrap gap-1.5">
-                  {allowedTypes.map((t) => {
-                    const active = t === element.elementType
+                  {allowedTypes.map((elType) => {
+                    const active = elType === element.elementType
                     return (
                       <Button
-                        key={t}
+                        key={elType}
                         type="button"
                         variant={active ? 'default' : 'outline'}
                         size="sm"
                         className="h-auto rounded-full px-2.5 py-1 text-xs"
-                        onClick={() => changeElementType(i, t)}
+                        onClick={() => changeElementType(i, elType)}
                       >
-                        {ELEMENT_TYPE_LABELS[t]}
+                        {t(ELEMENT_TYPE_KEYS[elType])}
                       </Button>
                     )
                   })}

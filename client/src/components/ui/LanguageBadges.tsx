@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import { LANGUAGE_LABELS, type LangKey } from '../../types/content'
+import { useLocale } from '../../i18n/useLocale'
 
 // Language pills for Contents/Pages rows — one per translation, colored by
 // that translation's own publish status.
@@ -8,12 +9,13 @@ export function LanguageStatusBadges({
 }: {
   details: { langKey: LangKey; status: 'draft' | 'published' }[]
 }) {
+  const { t } = useLocale()
   return (
     <div className="flex items-center gap-1.5">
       {details.map((d) => (
         <Badge
           key={d.langKey}
-          title={`${LANGUAGE_LABELS[d.langKey]} — ${d.status}`}
+          title={`${LANGUAGE_LABELS[d.langKey]} — ${d.status === 'published' ? t('table.published') : t('table.draft')}`}
           variant={d.status === 'published' ? 'success' : 'neutral'}
           className="rounded-full text-[11px] font-semibold"
         >

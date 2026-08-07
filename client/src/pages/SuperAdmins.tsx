@@ -16,6 +16,7 @@ import AdminTableActionButton from "../components/ui/AdminTableActionButton";
 import { TableHeader, TableBody } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useLocale } from "../i18n/useLocale";
 
 type SuperAdminUser = {
   _id: string;
@@ -26,6 +27,7 @@ type SuperAdminUser = {
 
 export default function SuperAdmins() {
   const navigate = useNavigate();
+  const { t } = useLocale();
   const currentUser = useAppSelector(selectUser);
   const [admins, setAdmins] = useState<SuperAdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,13 +53,13 @@ export default function SuperAdmins() {
       <div className="max-w-7xl mx-auto px-6 py-10">
         <Button variant="link" className="mb-6 h-auto p-0 text-muted-foreground hover:text-foreground" onClick={() => navigate("/applications")}>
           <BackIcon size={16} />
-          Applications
+          {t('nav.applications')}
         </Button>
 
         <AdminPageHeader
-          title="Super Admins"
-          subtitle={loading ? "…" : `${admins.length} account${admins.length !== 1 ? "s" : ""} with full platform access`}
-          actionLabel="Add Super Admin"
+          title={t('superAdmins.title')}
+          subtitle={loading ? "…" : t(admins.length === 1 ? 'superAdmins.subtitleOne' : 'superAdmins.subtitleOther', { count: admins.length })}
+          actionLabel={t('superAdmins.addSuperAdmin')}
           onAction={() => setShowCreate(true)}
         />
 
@@ -67,10 +69,10 @@ export default function SuperAdmins() {
           <AdminTable>
             <TableHeader>
               <tr>
-                <AdminTableHeadCell>Name</AdminTableHeadCell>
-                <AdminTableHeadCell>Email</AdminTableHeadCell>
-                <AdminTableHeadCell>Joined</AdminTableHeadCell>
-                <AdminTableHeadCell align="right">Actions</AdminTableHeadCell>
+                <AdminTableHeadCell>{t('common.name')}</AdminTableHeadCell>
+                <AdminTableHeadCell>{t('table.email')}</AdminTableHeadCell>
+                <AdminTableHeadCell>{t('table.joined')}</AdminTableHeadCell>
+                <AdminTableHeadCell align="end">{t('common.actions')}</AdminTableHeadCell>
               </tr>
             </TableHeader>
             <TableBody>
@@ -84,14 +86,14 @@ export default function SuperAdmins() {
                         <span className="font-medium text-foreground">
                           {admin.name}
                           {isSelf && (
-                            <Badge variant="accent" className="ml-2 text-[11px] font-semibold">
-                              You
+                            <Badge variant="accent" className="ms-2 text-[11px] font-semibold">
+                              {t('common.you')}
                             </Badge>
                           )}
                         </span>
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-muted-foreground">
+                    <td className="px-5 py-3 text-muted-foreground" dir="ltr">
                       {admin.displayEmail}
                     </td>
                     <td className="px-5 py-3 text-(--color-text-tertiary)">
@@ -103,12 +105,12 @@ export default function SuperAdmins() {
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex items-center justify-end gap-1">
-                        <AdminTableActionButton onClick={() => setEditAdmin(admin)} title="Edit" variant="accent">
+                        <AdminTableActionButton onClick={() => setEditAdmin(admin)} title={t('common.edit')} variant="accent">
                           <EditIcon />
                         </AdminTableActionButton>
                         <AdminTableActionButton
                           onClick={() => setDeleteAdmin(admin)}
-                          title={isSelf ? "You can't delete your own account" : "Delete"}
+                          title={isSelf ? t('superAdmins.cantDeleteOwnAccount') : t('common.delete')}
                           variant="danger"
                           disabled={isSelf}
                         >
@@ -139,10 +141,10 @@ export default function SuperAdmins() {
       )}
       {deleteAdmin && (
         <ConfirmModal
-          title={`Delete "${deleteAdmin.name}"?`}
-          message="This will permanently revoke their Super Admin access. This action cannot be undone."
-          confirmLabel="Delete Super Admin"
-          loadingLabel="Deleting…"
+          title={t('superAdmins.deleteConfirmTitle', { name: deleteAdmin.name })}
+          message={t('superAdmins.deleteConfirmMessage')}
+          confirmLabel={t('superAdmins.deleteConfirmLabel')}
+          loadingLabel={t('common.deleting')}
           onConfirm={() =>
             api.delete(`/users/${deleteAdmin._id}`).then(fetchAdmins)
           }

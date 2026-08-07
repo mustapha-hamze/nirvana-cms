@@ -14,6 +14,8 @@ import AdminTable, { AdminTableRow, AdminTableHeadCell } from '../components/ui/
 import AdminTableActionButton from '../components/ui/AdminTableActionButton'
 import { TableHeader, TableBody } from '@/components/ui/table'
 import { Badge, type BadgeProps } from '@/components/ui/badge'
+import { useLocale } from '../i18n/useLocale'
+import type { TranslationKey } from '../i18n/types'
 
 type AppRole = 'WebSiteAdmin' | 'WebSiteContentCreator' | 'WebsiteUser'
 
@@ -26,10 +28,10 @@ type AppUser = {
   createdAt: string
 }
 
-const ROLE_LABELS: Record<AppRole, string> = {
-  WebSiteAdmin: 'Website Admin',
-  WebSiteContentCreator: 'Content Creator',
-  WebsiteUser: 'Website User',
+const ROLE_LABEL_KEYS: Record<AppRole, TranslationKey> = {
+  WebSiteAdmin: 'appUsers.roleWebSiteAdmin',
+  WebSiteContentCreator: 'appUsers.roleContentCreator',
+  WebsiteUser: 'appUsers.roleWebsiteUser',
 }
 
 const ROLE_BADGE_VARIANT: Record<AppRole, BadgeProps['variant']> = {
@@ -40,6 +42,7 @@ const ROLE_BADGE_VARIANT: Record<AppRole, BadgeProps['variant']> = {
 
 export default function AppUsers() {
   const { app } = useOutletContext<AdminOutletContext>()
+  const { t } = useLocale()
   const [users, setUsers] = useState<AppUser[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
@@ -70,7 +73,7 @@ export default function AppUsers() {
     } catch (err) {
       setToggleErrors((prev) => ({
         ...prev,
-        [user._id]: err instanceof Error ? err.message : 'Failed to update status',
+        [user._id]: err instanceof Error ? err.message : t('common.failedToUpdateStatus'),
       }))
     } finally {
       setTogglingId(null)
@@ -80,9 +83,9 @@ export default function AppUsers() {
   return (
     <div className="mx-10 my-10">
       <AdminPageHeader
-        title="Users"
-        subtitle={loading || !app ? '…' : `${users.length} user${users.length !== 1 ? 's' : ''} in ${app.name}`}
-        actionLabel="Create User"
+        title={t('appUsers.title')}
+        subtitle={loading || !app ? '…' : t(users.length === 1 ? 'appUsers.subtitleOne' : 'appUsers.subtitleOther', { count: users.length, app: app.name })}
+        actionLabel={t('appUsers.createUser')}
         onAction={() => setShowCreate(true)}
         actionDisabled={!app}
       />
@@ -92,21 +95,21 @@ export default function AppUsers() {
       ) : users.length === 0 ? (
         <EmptyState
           icon={<BigUsersIcon />}
-          title="No users yet"
-          description="Create the first user for this application."
-          actionLabel="Create User"
+          title={t('appUsers.noUsersTitle')}
+          description={t('appUsers.noUsersDescription')}
+          actionLabel={t('appUsers.createUser')}
           onAction={() => setShowCreate(true)}
         />
       ) : (
         <AdminTable>
           <TableHeader>
             <tr>
-              <AdminTableHeadCell>Name</AdminTableHeadCell>
-              <AdminTableHeadCell>Email</AdminTableHeadCell>
-              <AdminTableHeadCell>Role</AdminTableHeadCell>
-              <AdminTableHeadCell>Status</AdminTableHeadCell>
-              <AdminTableHeadCell>Joined</AdminTableHeadCell>
-              <AdminTableHeadCell align="right">Actions</AdminTableHeadCell>
+              <AdminTableHeadCell>{t('common.name')}</AdminTableHeadCell>
+              <AdminTableHeadCell>{t('table.email')}</AdminTableHeadCell>
+              <AdminTableHeadCell>{t('table.role')}</AdminTableHeadCell>
+              <AdminTableHeadCell>{t('common.status')}</AdminTableHeadCell>
+              <AdminTableHeadCell>{t('table.joined')}</AdminTableHeadCell>
+              <AdminTableHeadCell align="end">{t('common.actions')}</AdminTableHeadCell>
             </tr>
           </TableHeader>
           <TableBody>
@@ -118,10 +121,10 @@ export default function AppUsers() {
                     <span className="font-medium text-foreground">{u.name}</span>
                   </div>
                 </td>
-                <td className="px-5 py-3 text-muted-foreground">{u.displayEmail}</td>
+                <td className="px-5 py-3 text-muted-foreground" dir="ltr">{u.displayEmail}</td>
                 <td className="px-5 py-3">
                   <Badge variant={ROLE_BADGE_VARIANT[u.role]} className="text-[11px] font-semibold">
-                    {ROLE_LABELS[u.role]}
+                    {t(ROLE_LABEL_KEYS[u.role])}
                   </Badge>
                 </td>
                 <td className="px-5 py-3">
@@ -130,11 +133,11 @@ export default function AppUsers() {
                       checked={u.status === 'active'}
                       disabled={togglingId === u._id}
                       onToggle={() => handleToggleStatus(u)}
-                      offLabel="Deactivate user"
-                      onLabel="Activate user"
+                      offLabel={t('appUsers.deactivateUser')}
+                      onLabel={t('appUsers.activateUser')}
                     />
                     <span className={`text-xs ${u.status === 'active' ? 'text-(--color-success)' : 'text-(--color-text-tertiary)'}`}>
-                      {u.status === 'active' ? 'Active' : 'Inactive'}
+                      {u.status === 'active' ? t('common.active') : t('common.inactive')}
                     </span>
                   </div>
                   {toggleErrors[u._id] && (
@@ -146,7 +149,7 @@ export default function AppUsers() {
                 </td>
                 <td className="px-5 py-3">
                   <div className="flex items-center justify-end">
-                    <AdminTableActionButton onClick={() => setEditUser(u)} title="Edit" variant="accent">
+                    <AdminTableActionButton onClick={() => setEditUser(u)} title={t('common.edit')} variant="accent">
                       <EditIcon />
                     </AdminTableActionButton>
                   </div>

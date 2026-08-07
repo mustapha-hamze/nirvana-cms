@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { PlusIcon } from '../icons'
 import PageSectionCard from '../pageBody/PageSectionCard'
 import SortableSectionList from '../ui/SortableSectionList'
+import { useLocale } from '../../i18n/useLocale'
 import type { PageSection } from '../../types/page'
 
 // Page's "Sections" area — always shown (not a single collapsible block like
@@ -25,13 +26,14 @@ export default function PageSectionsPanel({
   onRemoveSection: (index: number) => void
   onReorder: (next: PageSection[]) => void
 }) {
+  const { t } = useLocale()
   return (
     <>
       <Separator />
 
       <div>
         <div className="flex items-center gap-1.5 text-sm font-medium mb-4 text-foreground">
-          Sections
+          {t('builder.sections')}
           {sections.length > 0 && (
             <Badge variant="accent" className="text-xs font-semibold">
               {sections.length}
@@ -41,7 +43,7 @@ export default function PageSectionsPanel({
         <div className="space-y-3">
           {sections.length === 0 ? (
             <p className="text-sm text-(--color-text-tertiary)">
-              No sections yet. Use "Add Section" to build this page, then fill each one in with components.
+              {t('builder.noSectionsYetPage')}
             </p>
           ) : (
             <SortableSectionList
@@ -65,7 +67,7 @@ export default function PageSectionsPanel({
           <div className="flex justify-end">
             <Button type="button" onClick={onAddSection}>
               <PlusIcon />
-              Add Section
+              {t('builder.addSection')}
             </Button>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { TextField, TextAreaField } from '../ui/FormField'
 import FileUploadField from './FileUploadField'
+import { useLocale } from '../../i18n/useLocale'
 import type { VideoEmbedElement } from '../../types/content'
 
 export default function VideoEmbedElementEditor({
@@ -11,20 +12,21 @@ export default function VideoEmbedElementEditor({
   element: VideoEmbedElement
   onChange: (next: VideoEmbedElement) => void
 }) {
+  const { t } = useLocale()
   return (
     <div className="space-y-2">
       <TextField
-        label="Video URL"
+        label={t('contentBuilder.videoUrl')}
         required
         value={element.url}
         onChange={(url) => onChange({ ...element, url })}
-        placeholder="Paste a YouTube or Vimeo URL"
+        placeholder={t('contentBuilder.videoUrlPlaceholder')}
       />
       <p className="text-xs text-(--color-text-tertiary)">
-        Not validated as an embeddable link server-side yet — double-check it plays before publishing.
+        {t('contentBuilder.videoNotValidatedHint')}
       </p>
       <p className="text-xs text-(--color-text-tertiary)">
-        Or upload a video file instead of pasting a link — it fills the same URL field above.
+        {t('contentBuilder.videoUploadAltHint')}
       </p>
       <FileUploadField
         applicationId={applicationId}
@@ -34,7 +36,7 @@ export default function VideoEmbedElementEditor({
         onUploaded={(url) => onChange({ ...element, url })}
       />
       <div className="pt-1">
-        <TextAreaField label="Caption" value={element.caption} onChange={(caption) => onChange({ ...element, caption })} rows={2} />
+        <TextAreaField label={t('contentBuilder.caption')} value={element.caption} onChange={(caption) => onChange({ ...element, caption })} rows={2} />
       </div>
     </div>
   )

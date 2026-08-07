@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { PlusIcon, TrashIcon } from '../icons'
 import { getTextDirection } from '../../utils/rtl'
+import { useLocale } from '../../i18n/useLocale'
 
 // Plain add/remove list of short strings — used where order doesn't carry
 // enough weight to justify drag-and-drop (a pricing plan's feature bullets, a
@@ -22,6 +23,7 @@ export default function StringListField({
   placeholder?: string
   max?: number
 }) {
+  const { t } = useLocale()
   function updateAt(index: number, value: string) {
     const next = values.slice()
     next[index] = value
@@ -52,7 +54,7 @@ export default function StringListField({
               variant="ghost"
               size="icon-sm"
               onClick={() => removeAt(i)}
-              title="Remove"
+              title={t('common.remove')}
               className="icon-btn-danger shrink-0 hover:bg-transparent"
             >
               <TrashIcon size={14} />
@@ -62,7 +64,7 @@ export default function StringListField({
       </div>
       {values.length < max && (
         <Button type="button" variant="link" onClick={() => onChange([...values, ''])} className="h-auto gap-1.5 p-0 text-sm font-medium mt-2 hover:no-underline">
-          <PlusIcon size={14} /> Add
+          <PlusIcon size={14} /> {t('common.add')}
         </Button>
       )}
     </div>

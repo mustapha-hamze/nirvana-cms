@@ -2,11 +2,13 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { SunIcon, MoonIcon } from '../icons'
 import { useThemeMode } from './useThemeMode'
+import { useLocale } from '../../i18n/useLocale'
 
 export default function ThemeToggle() {
   const { mode, toggleMode } = useThemeMode()
+  const { t } = useLocale()
   const isDark = mode === 'dark'
-  const label = isDark ? 'Switch to light theme' : 'Switch to dark theme'
+  const label = isDark ? t('common.switchToLightTheme') : t('common.switchToDarkTheme')
 
   return (
     <Tooltip>

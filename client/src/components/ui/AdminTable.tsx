@@ -17,10 +17,10 @@ export function AdminTableRow({ children }: { children: ReactNode }) {
   return <TableRow className="row-hover">{children}</TableRow>
 }
 
-export function AdminTableHeadCell({ children, align = 'left' }: { children: ReactNode; align?: 'left' | 'right' }) {
+export function AdminTableHeadCell({ children, align = 'start' }: { children: ReactNode; align?: 'start' | 'end' }) {
   return (
     <TableHead
-      className={`h-auto whitespace-normal px-5 py-3 font-semibold text-(--color-text-tertiary) ${align === 'right' ? 'text-right' : 'text-left'}`}
+      className={`h-auto whitespace-normal px-5 py-3 font-semibold text-(--color-text-tertiary) ${align === 'end' ? 'text-end' : 'text-start'}`}
     >
       {children}
     </TableHead>
