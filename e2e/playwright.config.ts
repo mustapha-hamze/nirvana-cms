@@ -32,13 +32,19 @@ export default defineConfig({
     storageState: STORAGE_STATE_PATH,
     trace: "on-first-retry",
   },
+  // Both entries below start in parallel, and each `build && start`/`preview`
+  // command does a real tsc/vite build before its server comes up — on a
+  // shared, low-core CI runner the two builds contend for CPU with each
+  // other (plus Chrome/Mongo already running), so build time alone can push
+  // past a timeout that's comfortably generous when run locally/uncontended.
+  // These timeouts carry that CI-contention margin, not just local build time.
   webServer: [
     {
       command: "npm run build --prefix server && npm run start --prefix server",
       cwd: REPO_ROOT,
       url: `${SERVER_URL}/api/health`,
       reuseExistingServer: !process.env.CI,
-      timeout: 30_000,
+      timeout: 90_000,
       env: {
         PORT: String(SERVER_PORT),
         MONGO_URI,
@@ -53,7 +59,7 @@ export default defineConfig({
       cwd: REPO_ROOT,
       url: CLIENT_URL,
       reuseExistingServer: !process.env.CI,
-      timeout: 120_000,
+      timeout: 240_000,
       env: {
         API_PROXY_TARGET: SERVER_URL,
       },
