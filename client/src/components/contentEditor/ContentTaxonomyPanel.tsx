@@ -2,12 +2,14 @@ import { Link } from 'react-router-dom'
 import { Separator } from '@/components/ui/separator'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { SelectField } from '../ui/FormField'
 import CollapsibleSectionHeader from '../ui/CollapsibleSectionHeader'
 import { SearchIcon } from '../icons'
 import { getTitleForLang } from '../../utils/translations'
 import { useLocale } from '../../i18n/useLocale'
 import type { Category } from '../../types/category'
 import type { Tag } from '../../types/tag'
+import type { Author } from '../../types/author'
 import type { LangKey } from '../../types/content'
 
 // Categories/Tags — admin-only, shared across every language of a content
@@ -34,6 +36,9 @@ export default function ContentTaxonomyPanel({
   onTagSearchChange,
   selectedTagIds,
   onToggleTag,
+  authors,
+  selectedAuthorId,
+  onSelectAuthor,
 }: {
   applicationId: string
   activeLang: LangKey | null
@@ -54,6 +59,9 @@ export default function ContentTaxonomyPanel({
   onTagSearchChange: (value: string) => void
   selectedTagIds: string[]
   onToggleTag: (id: string) => void
+  authors: Author[]
+  selectedAuthorId: string
+  onSelectAuthor: (id: string) => void
 }) {
   const { t } = useLocale()
   return (
@@ -172,6 +180,30 @@ export default function ContentTaxonomyPanel({
               </div>
             )}
           </div>
+        )}
+      </div>
+
+      <Separator />
+
+      <div>
+        {authors.length === 0 ? (
+          <p className="text-sm text-(--color-text-tertiary)">
+            {t('builder.noAuthorsYet')}{' '}
+            <Link to={`/applications/${applicationId}/authors`} className="text-primary underline">
+              {t('builder.createOne')}
+            </Link>
+            .
+          </p>
+        ) : (
+          <SelectField
+            label={t('authors.selectAuthor')}
+            value={selectedAuthorId}
+            onChange={onSelectAuthor}
+            options={[
+              { value: '', label: t('authors.noneOption') },
+              ...authors.map((a) => ({ value: a._id, label: a.displayName })),
+            ]}
+          />
         )}
       </div>
     </>

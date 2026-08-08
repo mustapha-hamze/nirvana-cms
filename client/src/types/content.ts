@@ -91,5 +91,10 @@ export type ContentItem = {
   // types), not one flat title.
   categories: { _id: string; translations: { langKey: LangKey; title: string; slug: string }[]; parentId: string | null }[]
   tags: { _id: string; translations: { langKey: LangKey; title: string; slug: string }[] }[]
+  // Populated by the server — a single writer shared across every language
+  // translation, same rationale as categories/tags. Distinct from the
+  // free-text per-language ContentMetadata.author byline (see Author model
+  // comment server-side).
+  author: { _id: string; firstName: string; lastName: string; displayName: string; avatar: string; slug: string } | null
   details: ContentDetail[]
 }

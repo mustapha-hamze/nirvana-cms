@@ -87,6 +87,7 @@ export default function Contents() {
               <AdminTableHeadCell>{t('table.languages')}</AdminTableHeadCell>
               {canManage && <AdminTableHeadCell>{t('nav.categories')}</AdminTableHeadCell>}
               {canManage && <AdminTableHeadCell>{t('nav.tags')}</AdminTableHeadCell>}
+              {canManage && <AdminTableHeadCell>{t('authors.selectAuthor')}</AdminTableHeadCell>}
               <SortableHeader label={t('table.created')} active={sortBy === "createdAt"} direction={sortOrder} onClick={() => toggleSort("createdAt")} />
               <AdminTableHeadCell align="end">{t('common.actions')}</AdminTableHeadCell>
             </tr>
@@ -134,6 +135,15 @@ export default function Contents() {
                             </Badge>
                           ))}
                         </div>
+                      )}
+                    </td>
+                  )}
+                  {canManage && (
+                    <td className="px-5 py-3">
+                      {content.author ? (
+                        <span className="text-foreground">{content.author.displayName}</span>
+                      ) : (
+                        <span className="text-(--color-text-tertiary)">{t('authors.noAuthorAssigned')}</span>
                       )}
                     </td>
                   )}

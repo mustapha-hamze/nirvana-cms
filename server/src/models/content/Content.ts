@@ -5,6 +5,7 @@ export interface ContentDoc extends mongoose.Document {
   application: mongoose.Types.ObjectId;
   categories: mongoose.Types.ObjectId[];
   tags: mongoose.Types.ObjectId[];
+  author: mongoose.Types.ObjectId | null;
   isDeleted: boolean;
 }
 
@@ -26,6 +27,15 @@ const contentSchema = new mongoose.Schema<ContentDoc>(
     tags: {
       type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Tag" }],
       default: [],
+    },
+    // The content's writer — a single admin-managed Author entity, not the
+    // free-text per-language byline in ContentDetails.metadata.author (which
+    // stays independent; see Author model comment). Shared across every
+    // language translation, same rationale as categories/tags.
+    author: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Author",
+      default: null,
     },
   },
   { timestamps: true },

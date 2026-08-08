@@ -4,6 +4,7 @@ const Application = { findOne: jest.fn() };
 const ApplicationSetting = { findOne: jest.fn() };
 const Category = { find: jest.fn(), findOne: jest.fn() };
 const Tag = { find: jest.fn(), findOne: jest.fn() };
+const Author = { find: jest.fn(), findOne: jest.fn() };
 const Content = { find: jest.fn(), findOne: jest.fn() };
 const ContentDetails = { find: jest.fn(), findOne: jest.fn() };
 const Page = { find: jest.fn(), findOne: jest.fn() };
@@ -13,6 +14,7 @@ jest.unstable_mockModule("../src/models/application/Application.js", () => ({ de
 jest.unstable_mockModule("../src/models/application/ApplicationSetting.js", () => ({ default: ApplicationSetting }));
 jest.unstable_mockModule("../src/models/Category.js", () => ({ default: Category }));
 jest.unstable_mockModule("../src/models/Tag.js", () => ({ default: Tag }));
+jest.unstable_mockModule("../src/models/Author.js", () => ({ default: Author }));
 jest.unstable_mockModule("../src/models/content/Content.js", () => ({ default: Content }));
 jest.unstable_mockModule("../src/models/content/ContentDetails.js", () => ({ default: ContentDetails }));
 jest.unstable_mockModule("../src/models/page/Page.js", () => ({ default: Page }));
@@ -23,6 +25,9 @@ const {
   getFrontendSettings,
   getFrontendCategories,
   getFrontendTags,
+  getFrontendAuthors,
+  getFrontendAuthor,
+  getFrontendAuthorContents,
   getFrontendContents,
   getFrontendContent,
   getFrontendPages,
@@ -194,6 +199,125 @@ describe("frontendController", () => {
     });
   });
 
+  describe("getFrontendAuthors", () => {
+    test("shapes active authors for the resolved language, excluding admin-only fields", async () => {
+      Author.find.mockReturnValue(
+        queryChain([
+          {
+            publicId: "pub-1",
+            slug: "jane-doe",
+            displayName: "Jane Doe",
+            avatar: "jane.png",
+            jobTitle: "Editor",
+            websiteUrl: "https://jane.example.com",
+            email: "jane@example.com",
+            translations: [{ langKey: "en", bio: "Hello" }],
+          },
+        ]),
+      );
+      const req = { frontendApp: app, langKey: "en" };
+      const res = mockResponse();
+
+      await getFrontendAuthors(req, res);
+
+      expect(Author.find).toHaveBeenCalledWith({ application: "app-1", status: "active" });
+      const payload = res.json.mock.calls[0][0];
+      expect(payload).toEqual([
+        {
+          publicId: "pub-1",
+          slug: "jane-doe",
+          displayName: "Jane Doe",
+          avatar: "jane.png",
+          jobTitle: "Editor",
+          bio: "Hello",
+          websiteUrl: "https://jane.example.com",
+        },
+      ]);
+      expect(payload[0]).not.toHaveProperty("email");
+    });
+  });
+
+  describe("getFrontendAuthor", () => {
+    test("404s when no active author matches the publicId/slug", async () => {
+      Author.findOne.mockResolvedValue(null);
+      const req = { frontendApp: app, langKey: "en", params: { idOrSlug: "missing" } };
+      const res = mockResponse();
+
+      await getFrontendAuthor(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({ message: "Author not found" });
+    });
+
+    test("returns the author profile, including social links", async () => {
+      Author.findOne.mockResolvedValue({
+        publicId: "pub-1",
+        slug: "jane-doe",
+        displayName: "Jane Doe",
+        avatar: "",
+        jobTitle: "",
+        websiteUrl: "",
+        translations: [],
+        socialLinks: { linkedin: "https://linkedin.com/in/jane", x: "", instagram: "" },
+      });
+      const req = { frontendApp: app, langKey: "en", params: { idOrSlug: "jane-doe" } };
+      const res = mockResponse();
+
+      await getFrontendAuthor(req, res);
+
+      expect(Author.findOne).toHaveBeenCalledWith({
+        application: "app-1",
+        status: "active",
+        $or: [{ publicId: "jane-doe" }, { slug: "jane-doe" }],
+      });
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          publicId: "pub-1",
+          displayName: "Jane Doe",
+          socialLinks: { linkedin: "https://linkedin.com/in/jane", x: "", instagram: "" },
+        }),
+      );
+    });
+  });
+
+  describe("getFrontendAuthorContents", () => {
+    test("404s when the author doesn't resolve", async () => {
+      Author.findOne.mockResolvedValue(null);
+      const req = { frontendApp: app, langKey: "en", params: { idOrSlug: "missing" }, query: {} };
+      const res = mockResponse();
+
+      await getFrontendAuthorContents(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(Content.find).not.toHaveBeenCalled();
+    });
+
+    test("lists only the resolved author's published content", async () => {
+      Author.findOne.mockResolvedValue({ _id: "author-1" });
+      Content.find.mockReturnValue(queryChain([{ _id: "content-1", categories: [], tags: [], author: null }]));
+      ContentDetails.find.mockResolvedValue([
+        {
+          content: "content-1",
+          langKey: "en",
+          status: "published",
+          slug: "hello",
+          title: "Hello",
+          headline: "",
+          abstract: "",
+          publishedAt: "2026-01-01T00:00:00.000Z",
+        },
+      ]);
+      const req = { frontendApp: app, langKey: "en", params: { idOrSlug: "jane-doe" }, query: {} };
+      const res = mockResponse();
+
+      await getFrontendAuthorContents(req, res);
+
+      expect(Content.find).toHaveBeenCalledWith(expect.objectContaining({ author: "author-1" }));
+      const payload = res.json.mock.calls[0][0];
+      expect(payload.items).toHaveLength(1);
+    });
+  });
+
   describe("getFrontendContents", () => {
     test("returns an empty page when the category filter doesn't resolve", async () => {
       Category.findOne.mockResolvedValue(null);
@@ -204,6 +328,50 @@ describe("frontendController", () => {
 
       expect(res.json).toHaveBeenCalledWith({ items: [], total: 0, page: 1, limit: 20, totalPages: 1 });
       expect(Content.find).not.toHaveBeenCalled();
+    });
+
+    test("returns an empty page when the author filter doesn't resolve", async () => {
+      Author.findOne.mockResolvedValue(null);
+      const req = { frontendApp: app, langKey: "en", query: { author: "missing" } };
+      const res = mockResponse();
+
+      await getFrontendContents(req, res);
+
+      expect(res.json).toHaveBeenCalledWith({ items: [], total: 0, page: 1, limit: 20, totalPages: 1 });
+      expect(Content.find).not.toHaveBeenCalled();
+    });
+
+    test("includes the author summary for an active author, and hides an inactive one", async () => {
+      const contents = [
+        {
+          _id: "content-1",
+          categories: [],
+          tags: [],
+          author: { publicId: "pub-1", slug: "jane", displayName: "Jane", avatar: "", jobTitle: "", websiteUrl: "", translations: [], status: "active" },
+        },
+        {
+          _id: "content-2",
+          categories: [],
+          tags: [],
+          author: { publicId: "pub-2", slug: "john", displayName: "John", avatar: "", jobTitle: "", websiteUrl: "", translations: [], status: "inactive" },
+        },
+      ];
+      Content.find.mockReturnValue(queryChain(contents));
+      ContentDetails.find.mockResolvedValue([
+        { content: "content-1", langKey: "en", status: "published", slug: "one", title: "One", headline: "", abstract: "", publishedAt: "2026-01-01" },
+        { content: "content-2", langKey: "en", status: "published", slug: "two", title: "Two", headline: "", abstract: "", publishedAt: "2026-01-02" },
+      ]);
+      const req = { frontendApp: app, langKey: "en", query: {} };
+      const res = mockResponse();
+
+      await getFrontendContents(req, res);
+
+      const payload = res.json.mock.calls[0][0];
+      const byId = Object.fromEntries(payload.items.map((c: any) => [c.id, c.author]));
+      expect(byId["content-1"]).toEqual(
+        expect.objectContaining({ publicId: "pub-1", displayName: "Jane" }),
+      );
+      expect(byId["content-2"]).toBeNull();
     });
 
     test("excludes content with no published detail in the requested language", async () => {

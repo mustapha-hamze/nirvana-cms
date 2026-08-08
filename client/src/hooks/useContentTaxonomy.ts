@@ -3,6 +3,7 @@ import { api } from '../api/client'
 import { getTitleForLang } from '../utils/translations'
 import type { Category } from '../types/category'
 import type { Tag } from '../types/tag'
+import type { Author } from '../types/author'
 import type { PaginatedResult } from '../types/pagination'
 import type { ContentItem, LangKey } from '../types/content'
 
@@ -31,8 +32,11 @@ export function useContentTaxonomy({
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(() =>
     (content?.tags ?? []).map((t) => t._id),
   )
+  const [authors, setAuthors] = useState<Author[]>([])
+  const [selectedAuthorId, setSelectedAuthorId] = useState<string>(content?.author?._id ?? '')
   const [categorySearch, setCategorySearch] = useState('')
   const [tagSearch, setTagSearch] = useState('')
+  const [authorSearch, setAuthorSearch] = useState('')
 
   useEffect(() => {
     if (!canManage || !isEdit) return
@@ -43,6 +47,10 @@ export function useContentTaxonomy({
     api
       .get<PaginatedResult<Tag>>(`/tags?application=${applicationId}&limit=100`)
       .then((res) => setTags(res.items))
+      .catch(() => {})
+    api
+      .get<PaginatedResult<Author>>(`/authors?application=${applicationId}&limit=100`)
+      .then((res) => setAuthors(res.items))
       .catch(() => {})
   }, [applicationId, canManage, isEdit])
 
@@ -74,20 +82,29 @@ export function useContentTaxonomy({
   const filteredTags = tags.filter((tag) =>
     getTitleForLang(tag.translations, activeLang).toLowerCase().includes(tagSearch.trim().toLowerCase()),
   )
+  const filteredAuthors = authors.filter((a) =>
+    a.displayName.toLowerCase().includes(authorSearch.trim().toLowerCase()),
+  )
 
   return {
     categories,
     tags,
+    authors,
     selectedCategoryIds,
     selectedTagIds,
+    selectedAuthorId,
+    setSelectedAuthorId,
     categorySearch,
     setCategorySearch,
     tagSearch,
     setTagSearch,
+    authorSearch,
+    setAuthorSearch,
     toggleCategory,
     toggleTag,
     categoryLabel,
     filteredCategories,
     filteredTags,
+    filteredAuthors,
   }
 }

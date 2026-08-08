@@ -1,5 +1,6 @@
 import Category from "../models/Category.js";
 import Tag from "../models/Tag.js";
+import Author from "../models/Author.js";
 
 // Accepts either a Category/Tag's publicId or its per-language slug, so the
 // frontend can link to a category/tag page however it wants — a stable
@@ -20,5 +21,17 @@ export function resolveTagRef(applicationId: any, ref: string | undefined | null
     application: applicationId,
     status: "active",
     $or: [{ publicId: ref }, { translations: { $elemMatch: { langKey, slug: ref } } }],
+  });
+}
+
+// Author's slug isn't per-language (see Author model comment — only bio
+// varies by language, not the identity fields), so unlike resolveCategoryRef/
+// resolveTagRef this doesn't need a langKey-scoped $elemMatch.
+export function resolveAuthorRef(applicationId: any, ref: string | undefined | null) {
+  if (!ref) return null;
+  return Author.findOne({
+    application: applicationId,
+    status: "active",
+    $or: [{ publicId: ref }, { slug: ref }],
   });
 }
