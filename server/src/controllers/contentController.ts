@@ -1,9 +1,11 @@
 import type { Request, Response } from "express";
+import mongoose from "mongoose";
 import Content from "../models/content/Content.js";
 import ContentDetails from "../models/content/ContentDetails.js";
 import Application from "../models/application/Application.js";
 import Category from "../models/Category.js";
 import Tag from "../models/Tag.js";
+import Author from "../models/Author.js";
 import { userCanAccessApplication, userIsAppAdmin } from "../middleware/auth.js";
 import { LANGUAGE_VALUES } from "../constants/languages.js";
 import { slugify } from "../utils/slugify.js";
@@ -35,6 +37,14 @@ function validateCategoryIds(categoryIds: unknown, applicationId: unknown) {
 
 function validateTagIds(tagIds: unknown, applicationId: unknown) {
   return validateIdsInApplication(Tag as any, tagIds, applicationId);
+}
+
+// Single ref, not an array — unlike validateIdsInApplication, `null`/`undefined`
+// (clearing/omitting the author) is valid and short-circuits without a query.
+async function validateAuthorId(authorId: unknown, applicationId: any): Promise<boolean> {
+  if (authorId === null || authorId === undefined) return true;
+  if (typeof authorId !== "string" || !mongoose.isValidObjectId(authorId)) return false;
+  return Boolean(await Author.exists({ _id: authorId, application: applicationId }));
 }
 
 // Only replaces `sections` when the caller actually sent it, matching
@@ -104,7 +114,8 @@ async function listContents(filter: Record<string, unknown>, { application, lang
     const contents = await Content.find(filter)
       .sort({ createdAt: -1 })
       .populate("categories", "translations parentId")
-      .populate("tags", "translations");
+      .populate("tags", "translations")
+      .populate("author", "firstName lastName displayName avatar slug status");
     const withDetails: any[] = await attachDetails(contents, { application, langKey, status });
     return paginateList(withDetails, {
       idOf: (c) => c._id.toString(),
@@ -128,7 +139,8 @@ async function listContents(filter: Record<string, unknown>, { application, lang
     .skip((effectivePage - 1) * effectiveLimit)
     .limit(effectiveLimit)
     .populate("categories", "translations parentId")
-    .populate("tags", "translations");
+    .populate("tags", "translations")
+    .populate("author", "firstName lastName displayName avatar slug status");
   const items = await attachDetails(contents, { application, langKey, status });
 
   return { items, total, page: effectivePage, limit: effectiveLimit, totalPages };
@@ -137,7 +149,8 @@ async function listContents(filter: Record<string, unknown>, { application, lang
 export async function getContent(req: Request, res: Response) {
   const content = await Content.findById(req.params.id)
     .populate("categories", "translations parentId")
-    .populate("tags", "translations");
+    .populate("tags", "translations")
+    .populate("author", "firstName lastName displayName avatar slug status");
   if (!content) return res.status(404).json({ message: "Content not found" });
   if (!userCanAccessApplication(req.user!, content.application)) {
     return res.status(403).json({ message: "Insufficient permissions" });
@@ -150,7 +163,7 @@ export async function getContent(req: Request, res: Response) {
 }
 
 export async function createContent(req: Request, res: Response) {
-  const { application, details, categories = [], tags = [] } = req.body;
+  const { application, details, categories = [], tags = [], author = null } = req.body;
 
   if (!application)
     return res.status(400).json({ message: "application is required" });
@@ -175,10 +188,15 @@ export async function createContent(req: Request, res: Response) {
       .status(400)
       .json({ message: "tags must reference existing tags in the same application" });
   }
-  // Assigning categories/tags is admin-only, same as their own endpoints.
-  if ((categories.length > 0 || tags.length > 0) && !userIsAppAdmin(req.user!, application)) {
+  if (!(await validateAuthorId(author, application))) {
+    return res
+      .status(400)
+      .json({ message: "author must reference an existing author in the same application" });
+  }
+  // Assigning categories/tags/author is admin-only, same as their own endpoints.
+  if ((categories.length > 0 || tags.length > 0 || author) && !userIsAppAdmin(req.user!, application)) {
     return res.status(403).json({
-      message: "Only a SuperAdmin or WebSite Admin can assign categories or tags to content",
+      message: "Only a SuperAdmin or WebSite Admin can assign categories, tags, or an author to content",
     });
   }
   const allowedLanguages = await getAllowedLanguages(application);
@@ -218,7 +236,7 @@ export async function createContent(req: Request, res: Response) {
     }
   }
 
-  const content = await Content.create({ application, categories, tags });
+  const content = await Content.create({ application, categories, tags, author });
 
   try {
     // create() (not insertMany) so the pre('save') hook stamps publishedAt when created as published.
@@ -244,6 +262,7 @@ export async function createContent(req: Request, res: Response) {
     );
     await content.populate("categories", "translations parentId");
     await content.populate("tags", "translations");
+    await content.populate("author", "firstName lastName displayName avatar slug status");
     res.status(201).json({ ...content.toObject(), details: created });
   } catch (err: any) {
     await Content.findByIdAndDelete(content._id);
@@ -260,11 +279,11 @@ export async function createContent(req: Request, res: Response) {
   }
 }
 
-// Parent-level fields only — categories/tags today. Per-language fields (title,
-// metadata, status, ...) go through upsertContentDetails instead. Assigning
-// categories/tags is admin-only, same as their own endpoints.
+// Parent-level fields only — categories/tags/author today. Per-language fields
+// (title, metadata, status, ...) go through upsertContentDetails instead.
+// Assigning categories/tags/author is admin-only, same as their own endpoints.
 export async function updateContent(req: Request, res: Response) {
-  const { categories, tags } = req.body;
+  const { categories, tags, author } = req.body;
 
   const content = await Content.findById(req.params.id);
   if (!content) return res.status(404).json({ message: "Content not found" });
@@ -288,10 +307,19 @@ export async function updateContent(req: Request, res: Response) {
     }
     content.tags = tags;
   }
+  if (author !== undefined) {
+    if (!(await validateAuthorId(author, content.application))) {
+      return res
+        .status(400)
+        .json({ message: "author must reference an existing author in the same application" });
+    }
+    content.author = author;
+  }
 
   await content.save();
   await content.populate("categories", "translations parentId");
   await content.populate("tags", "translations");
+  await content.populate("author", "firstName lastName displayName avatar slug status");
   res.json(content);
 }
 

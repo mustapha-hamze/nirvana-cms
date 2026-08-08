@@ -13,6 +13,7 @@ import Pages from './pages/Pages'
 import PageForm from './pages/PageForm'
 import Categories from './pages/Categories'
 import Tags from './pages/Tags'
+import Authors from './pages/Authors'
 import AdminLayout from './components/AdminLayout'
 
 function ProtectedRoute({ children, roles }: { children: ReactNode; roles?: string[] }) {
@@ -100,6 +101,14 @@ export default function App() {
             element={
               <ProtectedRoute roles={['SuperAdmin', 'WebSiteAdmin']}>
                 <Tags />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="authors"
+            element={
+              <ProtectedRoute roles={['SuperAdmin', 'WebSiteAdmin']}>
+                <Authors />
               </ProtectedRoute>
             }
           />

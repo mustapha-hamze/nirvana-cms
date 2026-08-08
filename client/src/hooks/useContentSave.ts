@@ -13,6 +13,7 @@ export function useContentSave({
   setSavedContent,
   selectedCategoryIds,
   selectedTagIds,
+  selectedAuthorId,
   onCreated,
 }: {
   applicationId: string
@@ -21,6 +22,7 @@ export function useContentSave({
   setSavedContent: (updater: (prev: ContentItem | null) => ContentItem | null) => void
   selectedCategoryIds: string[]
   selectedTagIds: string[]
+  selectedAuthorId: string
   onCreated: (created: ContentItem) => void
 }) {
   const { t } = useLocale()
@@ -39,14 +41,15 @@ export function useContentSave({
     setLoading(true)
     try {
       if (savedContent) {
-        // Category/tag assignment is admin-only server-side — a ContentCreator
-        // can't call this endpoint at all, so skip it entirely rather than send a
-        // request that would 403 and fail the whole save.
+        // Category/tag/author assignment is admin-only server-side — a
+        // ContentCreator can't call this endpoint at all, so skip it entirely
+        // rather than send a request that would 403 and fail the whole save.
         const [updatedContent, updatedDetails] = await Promise.all([
           canManage
             ? api.put<ContentItem>(`/content/${savedContent._id}`, {
                 categories: selectedCategoryIds,
                 tags: selectedTagIds,
+                author: selectedAuthorId || null,
               })
             : null,
           Promise.all(
@@ -66,6 +69,7 @@ export function useContentSave({
             ...prev,
             categories: updatedContent ? updatedContent.categories : prev.categories,
             tags: updatedContent ? updatedContent.tags : prev.tags,
+            author: updatedContent ? updatedContent.author : prev.author,
             details: [...byLang.values()],
           }
         })
@@ -75,6 +79,7 @@ export function useContentSave({
           application: applicationId,
           categories: selectedCategoryIds,
           tags: selectedTagIds,
+          author: selectedAuthorId || null,
           details: entries.map(([langKey, d]) => ({
             langKey,
             ...d,

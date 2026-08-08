@@ -1,14 +1,22 @@
 import type { Request, Response } from "express";
 import Category from "../models/Category.js";
 import Tag from "../models/Tag.js";
+import Author from "../models/Author.js";
 import Content from "../models/content/Content.js";
 import ContentDetails from "../models/content/ContentDetails.js";
 import Page from "../models/page/Page.js";
 import PageDetails from "../models/page/PageDetails.js";
 import { LANGUAGE_VALUES } from "../constants/languages.js";
 import { paginateList, SORT_ORDER_VALUES } from "../utils/paginateList.js";
-import { shapeTaxonomyRef, shapeCategory, shapeContent, shapePage } from "../services/frontendShapeService.js";
-import { resolveCategoryRef, resolveTagRef } from "../services/taxonomyResolverService.js";
+import {
+  shapeTaxonomyRef,
+  shapeCategory,
+  shapeContent,
+  shapePage,
+  shapeAuthorRef,
+  shapeAuthorProfile,
+} from "../services/frontendShapeService.js";
+import { resolveCategoryRef, resolveTagRef, resolveAuthorRef } from "../services/taxonomyResolverService.js";
 
 // "publishedAt", not admin's "createdAt" — a public listing's natural default
 // date sort is when something went live, not when the draft was first created.
@@ -61,10 +69,30 @@ export async function getFrontendTags(req: Request, res: Response) {
   res.json(tags.map((t) => shapeTaxonomyRef(t, req.langKey!)));
 }
 
-// ── Contents ─────────────────────────────────────────────────────────────────
+// ── Authors ──────────────────────────────────────────────────────────────────
 
-export async function getFrontendContents(req: Request, res: Response) {
-  const { category, tag, page, limit, sortBy, sortOrder } = req.query;
+export async function getFrontendAuthors(req: Request, res: Response) {
+  const authors = await Author.find({ application: req.frontendApp!._id, status: "active" }).sort({ createdAt: 1 });
+  res.json(authors.map((a) => shapeAuthorRef(a, req.langKey!)));
+}
+
+export async function getFrontendAuthor(req: Request, res: Response) {
+  const { idOrSlug } = req.params as { idOrSlug: string };
+  const applicationId = req.frontendApp!._id;
+
+  const author = await Author.findOne({
+    application: applicationId,
+    status: "active",
+    $or: [{ publicId: idOrSlug }, { slug: idOrSlug }],
+  });
+  if (!author) return res.status(404).json({ message: "Author not found" });
+
+  res.json(shapeAuthorProfile(author, req.langKey!));
+}
+
+export async function getFrontendAuthorContents(req: Request, res: Response) {
+  const { idOrSlug } = req.params as { idOrSlug: string };
+  const { page, limit, sortBy, sortOrder } = req.query;
   const applicationId = req.frontendApp!._id;
   const langKey = req.langKey!;
 
@@ -75,19 +103,27 @@ export async function getFrontendContents(req: Request, res: Response) {
     return res.status(400).json({ message: `sortOrder must be one of: ${SORT_ORDER_VALUES.join(", ")}` });
   }
 
-  const contentFilter: Record<string, unknown> = { application: applicationId };
+  const author = await resolveAuthorRef(applicationId, idOrSlug);
+  if (!author) return res.status(404).json({ message: "Author not found" });
 
-  if (category !== undefined) {
-    const categoryDoc = await resolveCategoryRef(applicationId, category as string, langKey);
-    if (!categoryDoc) return res.json(EMPTY_PAGE(limit));
-    contentFilter.categories = categoryDoc._id;
-  }
-  if (tag !== undefined) {
-    const tagDoc = await resolveTagRef(applicationId, tag as string, langKey);
-    if (!tagDoc) return res.json(EMPTY_PAGE(limit));
-    contentFilter.tags = tagDoc._id;
-  }
+  res.json(
+    await queryPublishedContents(applicationId, langKey, { author: author._id }, { page, limit, sortBy, sortOrder }),
+  );
+}
 
+// ── Contents ─────────────────────────────────────────────────────────────────
+
+// Shared by getFrontendContents and getFrontendAuthorContents — both list
+// published Content in a resolved language, filtered by an already-resolved
+// Mongo filter, shaped and paginated the same way. Mirrors the
+// Content/Page controller pair's "extend the shared helper" convention (see
+// CLAUDE.md).
+async function queryPublishedContents(
+  applicationId: any,
+  langKey: string,
+  contentFilter: Record<string, unknown>,
+  { page, limit, sortBy, sortOrder }: { page?: unknown; limit?: unknown; sortBy?: unknown; sortOrder?: unknown },
+) {
   // Start from ContentDetails (indexed on application+langKey, and small once
   // scoped to "published") rather than from Content — a taxonomy-unfiltered
   // list would otherwise populate() every Content item in the application,
@@ -96,9 +132,10 @@ export async function getFrontendContents(req: Request, res: Response) {
   const details = await ContentDetails.find({ application: applicationId, langKey, status: "published" });
   const detailByContentId = new Map(details.map((d) => [d.content.toString(), d]));
 
-  const contents = await Content.find({ ...contentFilter, _id: { $in: [...detailByContentId.keys()] } })
+  const contents = await Content.find({ ...contentFilter, application: applicationId, _id: { $in: [...detailByContentId.keys()] } })
     .populate("categories", "publicId translations status parentId")
-    .populate("tags", "publicId translations status");
+    .populate("tags", "publicId translations status")
+    .populate("author", "publicId slug displayName avatar jobTitle websiteUrl translations status");
 
   // A content item not yet published (or not translated) in the requested
   // language simply doesn't exist from this language's point of view. (The
@@ -112,19 +149,50 @@ export async function getFrontendContents(req: Request, res: Response) {
     })
     .filter((c): c is NonNullable<typeof c> => Boolean(c));
 
-  res.json(
-    paginateList(shaped, {
-      idOf: (c: any) => c.id.toString(),
-      titleOf: (c: any) => c.title,
-      // paginateList only special-cases sortBy === "title"; anything else
-      // (including our "publishedAt") falls through to createdAtOf below.
-      createdAtOf: (c: any) => c.publishedAt,
-      sortBy: sortBy as any,
-      sortOrder: sortOrder as any,
-      page,
-      limit,
-    }),
-  );
+  return paginateList(shaped, {
+    idOf: (c: any) => c.id.toString(),
+    titleOf: (c: any) => c.title,
+    // paginateList only special-cases sortBy === "title"; anything else
+    // (including our "publishedAt") falls through to createdAtOf below.
+    createdAtOf: (c: any) => c.publishedAt,
+    sortBy: sortBy as any,
+    sortOrder: sortOrder as any,
+    page,
+    limit,
+  });
+}
+
+export async function getFrontendContents(req: Request, res: Response) {
+  const { category, tag, author, page, limit, sortBy, sortOrder } = req.query;
+  const applicationId = req.frontendApp!._id;
+  const langKey = req.langKey!;
+
+  if (sortBy && !CONTENT_SORT_BY_VALUES.includes(sortBy as string)) {
+    return res.status(400).json({ message: `sortBy must be one of: ${CONTENT_SORT_BY_VALUES.join(", ")}` });
+  }
+  if (sortOrder && !(SORT_ORDER_VALUES as readonly string[]).includes(sortOrder as string)) {
+    return res.status(400).json({ message: `sortOrder must be one of: ${SORT_ORDER_VALUES.join(", ")}` });
+  }
+
+  const contentFilter: Record<string, unknown> = {};
+
+  if (category !== undefined) {
+    const categoryDoc = await resolveCategoryRef(applicationId, category as string, langKey);
+    if (!categoryDoc) return res.json(EMPTY_PAGE(limit));
+    contentFilter.categories = categoryDoc._id;
+  }
+  if (tag !== undefined) {
+    const tagDoc = await resolveTagRef(applicationId, tag as string, langKey);
+    if (!tagDoc) return res.json(EMPTY_PAGE(limit));
+    contentFilter.tags = tagDoc._id;
+  }
+  if (author !== undefined) {
+    const authorDoc = await resolveAuthorRef(applicationId, author as string);
+    if (!authorDoc) return res.json(EMPTY_PAGE(limit));
+    contentFilter.author = authorDoc._id;
+  }
+
+  res.json(await queryPublishedContents(applicationId, langKey, contentFilter, { page, limit, sortBy, sortOrder }));
 }
 
 export async function getFrontendContent(req: Request, res: Response) {

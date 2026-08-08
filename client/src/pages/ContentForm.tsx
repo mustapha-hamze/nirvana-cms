@@ -127,6 +127,7 @@ function ContentEditor({
     setSavedContent,
     selectedCategoryIds: taxonomy.selectedCategoryIds,
     selectedTagIds: taxonomy.selectedTagIds,
+    selectedAuthorId: taxonomy.selectedAuthorId,
     onCreated,
   });
 
@@ -246,6 +247,9 @@ function ContentEditor({
                   onTagSearchChange={taxonomy.setTagSearch}
                   selectedTagIds={taxonomy.selectedTagIds}
                   onToggleTag={taxonomy.toggleTag}
+                  authors={taxonomy.authors}
+                  selectedAuthorId={taxonomy.selectedAuthorId}
+                  onSelectAuthor={taxonomy.setSelectedAuthorId}
                 />
               )}
 

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { uploadContentImage, uploadPageImage } from '../../api/client'
+import { uploadContentImage, uploadPageImage, uploadAuthorImage } from '../../api/client'
 import { resolveMediaUrl } from '../../utils/mediaUrl'
 import { useLocale } from '../../i18n/useLocale'
 
@@ -13,16 +13,17 @@ export default function ImageUploadField({
   onUploaded,
   label,
   // Which editor domain this upload belongs to — determines storage location
-  // server-side (storage/images/content vs storage/images/page). Defaults to
-  // 'content' since that's this shared component's original/majority caller;
-  // every pageBody/* usage passes 'page' explicitly.
+  // server-side (storage/images/content vs storage/images/page vs
+  // storage/images/authors). Defaults to 'content' since that's this shared
+  // component's original/majority caller; every pageBody/* usage passes
+  // 'page' explicitly, and AuthorModal passes 'author'.
   domain = 'content',
 }: {
   applicationId: string
   url: string
   onUploaded: (url: string) => void
   label?: string
-  domain?: 'content' | 'page'
+  domain?: 'content' | 'page' | 'author'
 }) {
   const { t } = useLocale()
   const [uploading, setUploading] = useState(false)
@@ -39,7 +40,7 @@ export default function ImageUploadField({
     setError('')
     setUploading(true)
     try {
-      const upload = domain === 'page' ? uploadPageImage : uploadContentImage
+      const upload = domain === 'page' ? uploadPageImage : domain === 'author' ? uploadAuthorImage : uploadContentImage
       // `url` prop/onUploaded value is really "whatever's stored" — a bare
       // filename for a fresh upload here, or (for existing data) a full URL;
       // resolveMediaUrl below is what turns either into something <img> can load.

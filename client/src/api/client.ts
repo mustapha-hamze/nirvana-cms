@@ -214,6 +214,11 @@ export function uploadPageDocument(applicationId: string, file: File): Promise<{
   return uploadFile('/pages/documents', 'document', applicationId, file)
 }
 
+// Author avatar — stored under storage/images/authors.
+export function uploadAuthorImage(applicationId: string, file: File): Promise<{ filename: string }> {
+  return uploadFile('/authors/images', 'image', applicationId, file)
+}
+
 // Generates a draft translation from an existing language on this content
 // item, via the application's AI API key — returns the draft only, it is
 // never persisted server-side. The caller inserts it into local draft state

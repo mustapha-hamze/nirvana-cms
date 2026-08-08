@@ -26,6 +26,54 @@ export function shapeTaxonomyRef(item: { publicId: string; translations: Transla
   return { publicId: item.publicId, title: translation?.title ?? "", slug: translation?.slug ?? "" };
 }
 
+interface AuthorTranslation {
+  langKey: string;
+  bio: string;
+}
+
+interface AuthorLike {
+  publicId: string;
+  slug: string;
+  displayName: string;
+  avatar: string;
+  jobTitle: string;
+  websiteUrl: string;
+  translations: AuthorTranslation[];
+}
+
+// Public byline shape embedded in a shaped Content item, or returned by the
+// author list/profile endpoints — deliberately excludes admin-only fields
+// (email, firstName/lastName, status) that the public API has no reason to
+// leak.
+export function shapeAuthorRef(author: AuthorLike, langKey: string) {
+  const translation = pickTranslation(author.translations ?? [], langKey);
+  return {
+    publicId: author.publicId,
+    slug: author.slug,
+    displayName: author.displayName,
+    avatar: author.avatar || null,
+    jobTitle: author.jobTitle || "",
+    bio: translation?.bio ?? "",
+    websiteUrl: author.websiteUrl || "",
+  };
+}
+
+// Fuller shape for the standalone author profile endpoint — adds social
+// links, which a content item's embedded byline doesn't need.
+export function shapeAuthorProfile(
+  author: AuthorLike & { socialLinks?: { linkedin?: string; x?: string; instagram?: string } },
+  langKey: string,
+) {
+  return {
+    ...shapeAuthorRef(author, langKey),
+    socialLinks: {
+      linkedin: author.socialLinks?.linkedin || "",
+      x: author.socialLinks?.x || "",
+      instagram: author.socialLinks?.instagram || "",
+    },
+  };
+}
+
 export function shapeCategory(
   category: { publicId: string; translations: Translation[]; parentId: unknown },
   langKey: string,
@@ -56,6 +104,11 @@ export function shapeContent(
       .filter((c: any) => c.status === "active")
       .map((c: any) => shapeTaxonomyRef(c, langKey)),
     tags: (content.tags ?? []).filter((t: any) => t.status === "active").map((t: any) => shapeTaxonomyRef(t, langKey)),
+    // An inactive (or soft-deleted, which never survives populate() at all —
+    // see softDeletePlugin) author is hidden entirely rather than shown as a
+    // minimal/non-clickable byline — a simpler, unambiguous contract for
+    // frontend consumers than two different "author present" shapes.
+    author: content.author && content.author.status === "active" ? shapeAuthorRef(content.author, langKey) : null,
   };
   if (includeDetail) {
     shaped.metadata = detail.metadata;

@@ -11,6 +11,7 @@ import contentRoutes from './routes/contentRoutes.js'
 import pageRoutes from './routes/pageRoutes.js'
 import categoryRoutes from './routes/categoryRoutes.js'
 import tagRoutes from './routes/tagRoutes.js'
+import authorRoutes from './routes/authorRoutes.js'
 import frontendRoutes from './routes/frontendRoutes.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -121,6 +122,7 @@ export function createApp() {
   app.use('/api/pages', pageRoutes)
   app.use('/api/categories', categoryRoutes)
   app.use('/api/tags', tagRoutes)
+  app.use('/api/authors', authorRoutes)
   app.use('/api/frontend', publicCors, frontendRoutes)
 
   app.use((err: any, req: Request, res: Response, next: NextFunction) => {

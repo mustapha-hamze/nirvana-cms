@@ -5,6 +5,9 @@ import {
   getFrontendSettings,
   getFrontendCategories,
   getFrontendTags,
+  getFrontendAuthors,
+  getFrontendAuthor,
+  getFrontendAuthorContents,
   getFrontendContents,
   getFrontendContent,
   getFrontendPages,
@@ -27,6 +30,9 @@ router.use(resolveFrontendApp);
 router.get("/settings", getFrontendSettings);
 router.get("/categories", getFrontendCategories);
 router.get("/tags", getFrontendTags);
+router.get("/authors", getFrontendAuthors);
+router.get("/authors/:idOrSlug/contents", getFrontendAuthorContents);
+router.get("/authors/:idOrSlug", getFrontendAuthor);
 router.get("/contents", getFrontendContents);
 router.get("/contents/:idOrSlug", getFrontendContent);
 router.get("/pages", getFrontendPages);

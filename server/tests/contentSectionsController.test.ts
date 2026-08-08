@@ -34,13 +34,16 @@ function makeContentInstance(fields: any = {}) {
     application: fields.application ?? "app-1",
     categories: fields.categories ?? [],
     tags: fields.tags ?? [],
+    author: fields.author ?? null,
     populate: jest.fn().mockResolvedValue(undefined),
+    save: jest.fn().mockResolvedValue(undefined),
   };
   instance.toObject = jest.fn(() => ({
     _id: instance._id,
     application: instance.application,
     categories: instance.categories,
     tags: instance.tags,
+    author: instance.author,
   }));
   return instance;
 }
@@ -59,6 +62,10 @@ const ApplicationSetting = {
   findOne: jest.fn(() => ({ select: jest.fn().mockResolvedValue(null) })),
 };
 
+const Author = {
+  exists: jest.fn(),
+};
+
 const userCanAccessApplication = jest.fn();
 const userIsAppAdmin = jest.fn();
 
@@ -66,9 +73,10 @@ jest.unstable_mockModule("../src/models/content/Content.js", () => ({ default: C
 jest.unstable_mockModule("../src/models/content/ContentDetails.js", () => ({ default: ContentDetailsCtor }));
 jest.unstable_mockModule("../src/models/application/Application.js", () => ({ default: Application }));
 jest.unstable_mockModule("../src/models/application/ApplicationSetting.js", () => ({ default: ApplicationSetting }));
+jest.unstable_mockModule("../src/models/Author.js", () => ({ default: Author }));
 jest.unstable_mockModule("../src/middleware/auth.js", () => ({ userCanAccessApplication, userIsAppAdmin }));
 
-const { createContent, upsertContentDetails } = (await import("../src/controllers/contentController.js")) as any;
+const { createContent, updateContent, upsertContentDetails } = (await import("../src/controllers/contentController.js")) as any;
 
 function mockResponse() {
   const res: any = {
@@ -216,7 +224,7 @@ describe("contentController — dynamic section validation", () => {
         res,
       );
 
-      expect(Content.create).toHaveBeenCalledWith({ application: "app-1", categories: [], tags: [] });
+      expect(Content.create).toHaveBeenCalledWith({ application: "app-1", categories: [], tags: [], author: null });
       expect(ContentDetailsCtor).toHaveBeenCalledTimes(1);
       const createdDetail = ContentDetailsCtor.mock.results[0].value;
       expect(createdDetail.sections).toEqual([validTextImageSection]);
@@ -257,6 +265,151 @@ describe("contentController — dynamic section validation", () => {
       expect(res.json).toHaveBeenCalledWith({
         message: expect.stringContaining("Path `alt` is required"),
       });
+    });
+
+    test("rejects an author that doesn't belong to the same application", async () => {
+      Application.exists.mockResolvedValue(true);
+      Author.exists.mockResolvedValue(false);
+      const res = mockResponse();
+
+      await createContent(
+        {
+          body: {
+            application: "app-1",
+            details: [{ langKey: "en", title: "T" }],
+            author: "507f1f77bcf86cd799439011",
+          },
+          user: mockUser(),
+        },
+        res,
+      );
+
+      expect(Author.exists).toHaveBeenCalledWith({
+        _id: "507f1f77bcf86cd799439011",
+        application: "app-1",
+      });
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "author must reference an existing author in the same application",
+      });
+      expect(Content.create).not.toHaveBeenCalled();
+    });
+
+    test("requires app-admin to assign an author", async () => {
+      Application.exists.mockResolvedValue(true);
+      Author.exists.mockResolvedValue(true);
+      userIsAppAdmin.mockReturnValue(false);
+      const res = mockResponse();
+
+      await createContent(
+        {
+          body: {
+            application: "app-1",
+            details: [{ langKey: "en", title: "T" }],
+            author: "507f1f77bcf86cd799439011",
+          },
+          user: mockUser(),
+        },
+        res,
+      );
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(Content.create).not.toHaveBeenCalled();
+    });
+
+    test("creates content with a valid author assigned", async () => {
+      Application.exists.mockResolvedValue(true);
+      Author.exists.mockResolvedValue(true);
+      const contentInstance = makeContentInstance({ author: "507f1f77bcf86cd799439011" });
+      Content.create.mockResolvedValue(contentInstance);
+      const res = mockResponse();
+
+      await createContent(
+        {
+          body: {
+            application: "app-1",
+            details: [{ langKey: "en", title: "T" }],
+            author: "507f1f77bcf86cd799439011",
+          },
+          user: mockUser(),
+        },
+        res,
+      );
+
+      expect(Content.create).toHaveBeenCalledWith({
+        application: "app-1",
+        categories: [],
+        tags: [],
+        author: "507f1f77bcf86cd799439011",
+      });
+      expect(contentInstance.populate).toHaveBeenCalledWith(
+        "author",
+        "firstName lastName displayName avatar slug status",
+      );
+      expect(res.status).toHaveBeenCalledWith(201);
+    });
+  });
+
+  describe("updateContent — author assignment", () => {
+    test("rejects an author that doesn't belong to the same application", async () => {
+      const contentInstance = makeContentInstance({});
+      Content.findById.mockResolvedValue(contentInstance);
+      Author.exists.mockResolvedValue(false);
+      const res = mockResponse();
+
+      await updateContent(
+        { params: { id: "content-1" }, body: { author: "507f1f77bcf86cd799439011" }, user: mockUser() },
+        res,
+      );
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(contentInstance.save).not.toHaveBeenCalled();
+    });
+
+    test("assigns a valid author", async () => {
+      const contentInstance = makeContentInstance({});
+      Content.findById.mockResolvedValue(contentInstance);
+      Author.exists.mockResolvedValue(true);
+      const res = mockResponse();
+
+      await updateContent(
+        { params: { id: "content-1" }, body: { author: "507f1f77bcf86cd799439011" }, user: mockUser() },
+        res,
+      );
+
+      expect(contentInstance.author).toBe("507f1f77bcf86cd799439011");
+      expect(contentInstance.save).toHaveBeenCalled();
+      expect(res.json).toHaveBeenCalledWith(contentInstance);
+    });
+
+    test("clears an assigned author when sent null", async () => {
+      const contentInstance = makeContentInstance({ author: "507f1f77bcf86cd799439011" });
+      Content.findById.mockResolvedValue(contentInstance);
+      const res = mockResponse();
+
+      await updateContent(
+        { params: { id: "content-1" }, body: { author: null }, user: mockUser() },
+        res,
+      );
+
+      expect(Author.exists).not.toHaveBeenCalled();
+      expect(contentInstance.author).toBeNull();
+      expect(contentInstance.save).toHaveBeenCalled();
+    });
+
+    test("requires app-admin access", async () => {
+      const contentInstance = makeContentInstance({});
+      Content.findById.mockResolvedValue(contentInstance);
+      userIsAppAdmin.mockReturnValue(false);
+      const res = mockResponse();
+
+      await updateContent(
+        { params: { id: "content-1" }, body: { author: "507f1f77bcf86cd799439011" }, user: mockUser() },
+        res,
+      );
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(contentInstance.save).not.toHaveBeenCalled();
     });
   });
 
