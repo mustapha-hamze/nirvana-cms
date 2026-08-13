@@ -32,15 +32,20 @@ export default defineConfig({
     storageState: STORAGE_STATE_PATH,
     trace: "on-first-retry",
   },
-  // Both entries below start in parallel, and each `build && start`/`preview`
-  // command does a real tsc/vite build before its server comes up — on a
-  // shared, low-core CI runner the two builds contend for CPU with each
-  // other (plus Chrome/Mongo already running), so build time alone can push
-  // past a timeout that's comfortably generous when run locally/uncontended.
-  // These timeouts carry that CI-contention margin, not just local build time.
+  // Both entries below start in parallel. Building both apps *inside* the
+  // webServer command used to mean two real tsc/vite builds contending for
+  // CPU on a shared, low-core CI runner (plus Chrome/Mongo already running),
+  // which could push build time alone past even a generous timeout. In CI,
+  // ci.yml's e2e job now builds both apps as explicit prior steps (full CPU
+  // each, no contention) — here the command just starts the already-built
+  // artifacts, so these timeouts are headroom, not a contention budget.
+  // Locally there's no prebuild step, so the command still builds inline —
+  // `npm run test:e2e` keeps working standalone without extra setup.
   webServer: [
     {
-      command: "npm run build --prefix server && npm run start --prefix server",
+      command: process.env.CI
+        ? "npm run start --prefix server"
+        : "npm run build --prefix server && npm run start --prefix server",
       cwd: REPO_ROOT,
       url: `${SERVER_URL}/api/health`,
       reuseExistingServer: !process.env.CI,
@@ -55,7 +60,9 @@ export default defineConfig({
       },
     },
     {
-      command: `bun --cwd=client run build && bun --cwd=client run preview -- --host 127.0.0.1 --port ${CLIENT_PORT}`,
+      command: process.env.CI
+        ? `bun --cwd=client run preview -- --host 127.0.0.1 --port ${CLIENT_PORT}`
+        : `bun --cwd=client run build && bun --cwd=client run preview -- --host 127.0.0.1 --port ${CLIENT_PORT}`,
       cwd: REPO_ROOT,
       url: CLIENT_URL,
       reuseExistingServer: !process.env.CI,

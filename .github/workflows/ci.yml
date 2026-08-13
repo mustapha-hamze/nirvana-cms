@@ -164,6 +164,19 @@ jobs:
       - name: Install Chrome + OS dependencies
         run: npx playwright install --with-deps chrome
 
+      # Built as explicit, sequential steps (each gets full CPU) rather than
+      # inline inside playwright.config.ts's webServer commands — building
+      # both apps *there* meant two concurrent tsc/vite builds contending
+      # for CPU on this runner (plus Chrome/Mongo already running), which
+      # could push past even a generous webServer timeout. See
+      # playwright.config.ts's webServer comment: in CI it now only starts
+      # these already-built artifacts.
+      - name: Build server for e2e
+        run: npm run build --prefix server
+
+      - name: Build client for e2e
+        run: bun --cwd=client run build
+
       - name: Run Playwright e2e tests
         run: bun run test:e2e
 
