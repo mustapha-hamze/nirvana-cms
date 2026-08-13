@@ -25,6 +25,11 @@ const navItemClass = (active: boolean) =>
       : 'text-muted-foreground hover:bg-(--color-hover-bg-subtle) hover:text-muted-foreground',
   )
 
+// A link stays highlighted on its own nested routes (e.g. contents/:id/edit,
+// contents/create), not just on its exact list path.
+const isPathActive = (pathname: string, to: string) =>
+  pathname === to || pathname.startsWith(`${to}/`)
+
 // The nav itself — shared by the desktop <aside> (Sidebar, always mounted at
 // md+) and the mobile slide-over drawer (MobileSidebarDrawer, hidden at md+).
 // Keeping one copy of the links means the two surfaces can't drift apart.
@@ -40,7 +45,7 @@ function SidebarNav({ appId, onNavigate }: { appId: string; onNavigate?: () => v
   )
 
   const contentPaths = CONTENT_MANAGEMENT_ITEMS.map((item) => `/applications/${appId}/${item.segment}`)
-  const isContentSectionActive = contentPaths.includes(location.pathname)
+  const isContentSectionActive = contentPaths.some((path) => isPathActive(location.pathname, path))
   const [contentOpen, setContentOpen] = useState(isContentSectionActive)
 
   useEffect(() => {
@@ -71,7 +76,7 @@ function SidebarNav({ appId, onNavigate }: { appId: string; onNavigate?: () => v
           {contentOpen && (
             <div className="mt-1 ms-4.5 ps-3 space-y-1 border-s">
               {CONTENT_MANAGEMENT_ITEMS.map((item) => (
-                <SidebarLink key={item.segment} to={`/applications/${appId}/${item.segment}`} onNavigate={onNavigate}>
+                <SidebarLink key={item.segment} to={`/applications/${appId}/${item.segment}`} matchNested onNavigate={onNavigate}>
                   {t(item.labelKey)}
                 </SidebarLink>
               ))}
@@ -138,10 +143,10 @@ export function MobileSidebarDrawer({ appId, open, onClose }: { appId: string; o
 }
 
 function SidebarLink({
-  to, icon, children, onNavigate,
-}: { to: string; icon?: ReactNode; children: ReactNode; onNavigate?: () => void }) {
+  to, icon, children, matchNested, onNavigate,
+}: { to: string; icon?: ReactNode; children: ReactNode; matchNested?: boolean; onNavigate?: () => void }) {
   const location = useLocation()
-  const active = location.pathname === to
+  const active = matchNested ? isPathActive(location.pathname, to) : location.pathname === to
 
   return (
     <Button type="button" variant="ghost" asChild className={navItemClass(active)}>

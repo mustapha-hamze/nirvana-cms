@@ -543,7 +543,7 @@ const fa: Dictionary = {
     removeItemTitle: 'حذف این {item}',
     minimumReached: 'این بخش هم‌اکنون در حداقل خود است',
     backgroundColor: 'رنگ پس‌زمینه',
-    backgroundColorPlaceholder: 'پیش‌فرض — مثلاً #0d1635 یا transparent',
+    backgroundColorPlaceholder: 'پیش‌فرض — مثلاً #023047 یا transparent',
     spacing: 'فاصله‌گذاری',
     width: 'عرض',
     textAlignment: 'ترازبندی متن',

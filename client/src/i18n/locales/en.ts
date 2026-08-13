@@ -542,7 +542,7 @@ const en = {
     removeItemTitle: 'Remove this {item}',
     minimumReached: 'This section is already at its minimum',
     backgroundColor: 'Background color',
-    backgroundColorPlaceholder: 'Default — e.g. #0d1635 or transparent',
+    backgroundColorPlaceholder: 'Default — e.g. #023047 or transparent',
     spacing: 'Spacing',
     width: 'Width',
     textAlignment: 'Text alignment',

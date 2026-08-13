@@ -60,15 +60,15 @@ export default function Login() {
       {/* ── Left: brand panel ─────────────────────────────────────────── */}
       <div
         className="hidden lg:flex lg:w-[58%] relative overflow-hidden flex-col justify-between p-16"
-        style={{ background: 'linear-gradient(135deg, #1e0a3c 0%, #2d1065 30%, #1a1040 60%, #0d0d1a 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #022638 0%, #004262 30%, #011c29 60%, #000407 100%)' }}
       >
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -top-32 -left-32 w-125 h-125 rounded-full opacity-25"
-            style={{ background: 'radial-gradient(circle, #7c3aed, transparent 70%)' }} />
+            style={{ background: 'radial-gradient(circle, #219ebc, transparent 70%)' }} />
           <div className="absolute bottom-0 right-0 w-100 h-100 rounded-full opacity-20 translate-x-1/4 translate-y-1/4"
-            style={{ background: 'radial-gradient(circle, #4f46e5, transparent 70%)' }} />
+            style={{ background: 'radial-gradient(circle, #8ecae6, transparent 70%)' }} />
           <div className="absolute top-1/2 left-1/2 w-75 h-75 rounded-full opacity-15 -translate-x-1/2 -translate-y-1/2"
-            style={{ background: 'radial-gradient(circle, #8b5cf6, transparent 70%)' }} />
+            style={{ background: 'radial-gradient(circle, #ffb703, transparent 70%)' }} />
         </div>
         <div className="pointer-events-none absolute inset-0 opacity-[0.04]"
           style={{
@@ -78,7 +78,7 @@ export default function Login() {
 
         <div className="relative z-10 flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl flex items-center justify-center border border-white/10"
-            style={{ background: 'rgba(124, 58, 237, 0.4)', backdropFilter: 'blur(8px)' }}>
+            style={{ background: 'rgba(33, 158, 188, 0.4)', backdropFilter: 'blur(8px)' }}>
             <NLogo />
           </div>
           <span className="text-white/80 font-semibold text-lg tracking-wide">{t('nav.brandName')}</span>
@@ -92,12 +92,12 @@ export default function Login() {
             {t('auth.heroHeadlineLine1')}
           </h1>
           <h2 className="text-[3.25rem] font-bold leading-[1.15] tracking-tight"
-            style={{ background: 'linear-gradient(90deg, #c4b5fd, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            style={{ background: 'linear-gradient(90deg, #8ecae6, #69cde5)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             {t('auth.heroHeadlineLine2')}
           </h2>
-          <p className="text-2xl font-light pt-5" style={{ color: 'rgba(196, 181, 253, 0.6)' }}>
+          <p className="text-2xl font-light pt-5" style={{ color: 'rgba(142, 202, 230, 0.6)' }}>
             {t('auth.welcomeToNirvanaBefore')}
-            <span className="font-semibold" style={{ color: 'rgba(196, 181, 253, 0.9)' }}>{t('auth.welcomeToNirvanaBrand')}</span>
+            <span className="font-semibold" style={{ color: 'rgba(142, 202, 230, 0.9)' }}>{t('auth.welcomeToNirvanaBrand')}</span>
             {t('auth.welcomeToNirvanaAfter')}
           </p>
         </div>
@@ -119,7 +119,7 @@ export default function Login() {
 
           <div className="lg:hidden flex items-center gap-3 mb-10">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}>
+              style={{ background: 'linear-gradient(135deg, #219ebc, #023047)' }}>
               <NLogo />
             </div>
             <span className="text-slate-800 font-semibold text-lg">{t('nav.brandName')}</span>
@@ -131,8 +131,8 @@ export default function Login() {
           </div>
 
           {error && (
-            <Alert variant="destructive" className="mb-5 border-red-100 bg-red-50">
-              <AlertDescription className="text-red-600">{error}</AlertDescription>
+            <Alert variant="destructive" className="mb-5 border-[#feedd9] bg-[#fff8f0]">
+              <AlertDescription className="text-[#b05d00]">{error}</AlertDescription>
             </Alert>
           )}
 
@@ -143,14 +143,14 @@ export default function Login() {
                 id={emailId}
                 type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                 required autoComplete="email" placeholder="you@example.com" dir="ltr"
-                className="h-auto w-full rounded-xl border-slate-200 bg-white px-4 py-3 text-[15px] text-slate-900 placeholder:text-slate-400 focus-visible:border-violet-500 focus-visible:ring-violet-500/60"
+                className="h-auto w-full rounded-xl border-slate-200 bg-white px-4 py-3 text-[15px] text-slate-900 placeholder:text-slate-400 focus-visible:border-[#219ebc] focus-visible:ring-[#219ebc]/60"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label htmlFor={passwordId} className="block text-sm font-medium text-slate-700">{t('auth.password')}</label>
-                <button type="button" className="text-xs font-medium text-violet-600 hover:text-violet-800 transition">
+                <button type="button" className="text-xs font-medium text-[#219ebc] hover:text-[#023047] transition">
                   {t('auth.forgotPassword')}
                 </button>
               </div>
@@ -160,7 +160,7 @@ export default function Login() {
                   type={showPassword ? 'text' : 'password'} value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required autoComplete="current-password" placeholder="••••••••"
-                  className="h-auto w-full rounded-xl border-slate-200 bg-white px-4 py-3 pe-12 text-[15px] text-slate-900 placeholder:text-slate-400 focus-visible:border-violet-500 focus-visible:ring-violet-500/60"
+                  className="h-auto w-full rounded-xl border-slate-200 bg-white px-4 py-3 pe-12 text-[15px] text-slate-900 placeholder:text-slate-400 focus-visible:border-[#219ebc] focus-visible:ring-[#219ebc]/60"
                 />
                 <button type="button" onClick={() => setShowPassword((v) => !v)}
                   className="absolute end-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition">
@@ -171,7 +171,7 @@ export default function Login() {
 
             <Button type="submit" disabled={loading}
               className="mt-2 h-auto w-full rounded-xl py-3 text-[15px] font-semibold text-white transition-all active:scale-[0.98]"
-              style={{ background: 'linear-gradient(90deg, #7c3aed, #4f46e5)', boxShadow: '0 4px 24px rgba(124, 58, 237, 0.35)' }}>
+              style={{ background: 'linear-gradient(90deg, #219ebc, #023047)', boxShadow: '0 4px 24px rgba(33, 158, 188, 0.35)' }}>
               {loading
                 ? <span className="flex items-center justify-center gap-2"><Spinner /> {t('auth.signingIn')}</span>
                 : t('auth.signIn')}

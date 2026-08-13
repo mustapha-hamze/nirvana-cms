@@ -101,8 +101,6 @@ export default function ApplicationSettingsModal({ app, onClose, onSaved }: Prop
       <ModalPanel maxWidth="max-w-5xl">
         <ModalHeader title={t('settings.title')} subtitle={app.name} />
 
-        {/* No internal scroll container — the modal grows with its content
-            and the page (Backdrop) scrolls, same as ContentModal. */}
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Spinner className="text-primary" />
