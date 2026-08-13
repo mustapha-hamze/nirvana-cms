@@ -87,7 +87,7 @@ export default function ChartDataElementEditor({
                 />
                 <input
                   type="color"
-                  value={series.color || '#7c3aed'}
+                  value={series.color || '#219ebc'}
                   onChange={(e) => updateSeries(si, { color: e.target.value })}
                   title={t('pageBuilder.seriesColor')}
                   className="w-10 h-10 rounded-lg shrink-0 cursor-pointer border bg-transparent"

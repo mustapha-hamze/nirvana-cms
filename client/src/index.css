@@ -42,14 +42,14 @@ html[dir='rtl'] [dir='ltr'] {
    look; [data-theme="light"] (set on <html> by ThemeModeProvider) overrides
    them. Login has its own fixed light surface and doesn't use these. */
 :root {
-  --color-bg: #081028;
-  --color-header-bg: #050c1f;
-  --color-sidebar-bg: #0a1330;
-  --color-surface: #0d1635;
-  --color-surface-hover: #112040;
-  --color-row-hover: #112040;
+  --color-bg: #0a2947;
+  --color-header-bg: #08223d;
+  --color-sidebar-bg: #0b2f50;
+  --color-surface: #0d3456;
+  --color-surface-hover: #0f3d63;
+  --color-row-hover: #0f3d63;
   --color-border: rgba(255, 255, 255, 0.06);
-  --color-input-bg: #081028;
+  --color-input-bg: #0a2947;
   --color-input-border: rgba(255, 255, 255, 0.1);
 
   --color-text-primary: #f1f5f9;
@@ -65,32 +65,32 @@ html[dir='rtl'] [dir='ltr'] {
   --color-divider: rgba(255, 255, 255, 0.08);
   --color-overlay-subtle: rgba(255, 255, 255, 0.15);
 
-  --color-accent: #a78bfa;
-  --color-accent-hover: #c4b5fd;
-  --color-accent-bg: rgba(124, 58, 237, 0.15);
-  --color-accent-bg-soft: rgba(124, 58, 237, 0.1);
-  --color-accent-border-soft: rgba(124, 58, 237, 0.2);
-  --color-accent-gradient: linear-gradient(90deg, #7c3aed, #4f46e5);
-  --color-accent-gradient-diag: linear-gradient(135deg, #7c3aed, #4f46e5);
+  --color-accent: #219ebc;
+  --color-accent-hover: #4db8d6;
+  --color-accent-bg: rgba(33, 158, 188, 0.15);
+  --color-accent-bg-soft: rgba(33, 158, 188, 0.1);
+  --color-accent-border-soft: rgba(33, 158, 188, 0.2);
+  --color-accent-gradient: linear-gradient(90deg, #219ebc, #0a2947);
+  --color-accent-gradient-diag: linear-gradient(135deg, #219ebc, #0a2947);
 
-  --color-success: #34d399;
-  --color-success-bg: rgba(52, 211, 153, 0.1);
+  --color-success: #ffb703;
+  --color-success-bg: rgba(255, 183, 3, 0.1);
 
-  --color-danger: #f87171;
-  --color-danger-hover: #fca5a5;
-  --color-danger-bg: rgba(239, 68, 68, 0.1);
-  --color-danger-bg-hover: rgba(239, 68, 68, 0.12);
-  --color-danger-border: rgba(239, 68, 68, 0.2);
-  --color-danger-solid: #dc2626;
+  --color-danger: #fb8500;
+  --color-danger-hover: #ffa239;
+  --color-danger-bg: rgba(251, 133, 0, 0.1);
+  --color-danger-bg-hover: rgba(251, 133, 0, 0.12);
+  --color-danger-border: rgba(251, 133, 0, 0.2);
+  --color-danger-solid: #fb8500;
 }
 
 :root[data-theme="light"] {
-  --color-bg: #f4f6fb;
+  --color-bg: #eef7fb;
   --color-header-bg: #ffffff;
   --color-sidebar-bg: #ffffff;
   --color-surface: #ffffff;
-  --color-surface-hover: #f1f3f9;
-  --color-row-hover: #f8fafc;
+  --color-surface-hover: #f1f9fc;
+  --color-row-hover: #f7fbfd;
   --color-border: rgba(15, 23, 42, 0.08);
   --color-input-bg: #ffffff;
   --color-input-border: rgba(15, 23, 42, 0.12);
@@ -108,23 +108,23 @@ html[dir='rtl'] [dir='ltr'] {
   --color-divider: rgba(15, 23, 42, 0.1);
   --color-overlay-subtle: rgba(15, 23, 42, 0.08);
 
-  --color-accent: #7c3aed;
-  --color-accent-hover: #6d28d9;
-  --color-accent-bg: rgba(124, 58, 237, 0.1);
-  --color-accent-bg-soft: rgba(124, 58, 237, 0.07);
-  --color-accent-border-soft: rgba(124, 58, 237, 0.25);
-  --color-accent-gradient: linear-gradient(90deg, #7c3aed, #4f46e5);
-  --color-accent-gradient-diag: linear-gradient(135deg, #7c3aed, #4f46e5);
+  --color-accent: #219ebc;
+  --color-accent-hover: #1c86a0;
+  --color-accent-bg: rgba(33, 158, 188, 0.1);
+  --color-accent-bg-soft: rgba(33, 158, 188, 0.07);
+  --color-accent-border-soft: rgba(33, 158, 188, 0.25);
+  --color-accent-gradient: linear-gradient(90deg, #219ebc, #023047);
+  --color-accent-gradient-diag: linear-gradient(135deg, #219ebc, #023047);
 
-  --color-success: #059669;
-  --color-success-bg: rgba(5, 150, 105, 0.1);
+  --color-success: #8e6500;
+  --color-success-bg: rgba(255, 183, 3, 0.15);
 
-  --color-danger: #dc2626;
-  --color-danger-hover: #b91c1c;
-  --color-danger-bg: rgba(220, 38, 38, 0.08);
-  --color-danger-bg-hover: rgba(220, 38, 38, 0.12);
-  --color-danger-border: rgba(220, 38, 38, 0.2);
-  --color-danger-solid: #dc2626;
+  --color-danger: #b05d00;
+  --color-danger-hover: #8f4b00;
+  --color-danger-bg: rgba(251, 133, 0, 0.08);
+  --color-danger-bg-hover: rgba(251, 133, 0, 0.12);
+  --color-danger-border: rgba(251, 133, 0, 0.2);
+  --color-danger-solid: #fb8500;
 }
 
 /* shadcn/ui token bridge — shadcn components read these semantic variables
@@ -142,7 +142,7 @@ html[dir='rtl'] [dir='ltr'] {
   --popover: var(--color-surface);
   --popover-foreground: var(--color-text-primary);
   --primary: var(--color-accent);
-  --primary-foreground: #ffffff;
+  --primary-foreground: #0a2947;
   --secondary: var(--color-surface-hover);
   --secondary-foreground: var(--color-text-primary);
   --muted: var(--color-subtle-bg);
@@ -150,7 +150,7 @@ html[dir='rtl'] [dir='ltr'] {
   --accent: var(--color-accent-bg);
   --accent-foreground: var(--color-accent);
   --destructive: var(--color-danger);
-  --destructive-foreground: #ffffff;
+  --destructive-foreground: #0a2947;
   --border: var(--color-border);
   --input: var(--color-input-border);
   --ring: var(--color-accent);

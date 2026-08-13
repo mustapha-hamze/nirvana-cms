@@ -60,7 +60,7 @@ export default function SectionSettingsPanel({
   // A free-typed color renders fine in the native swatch only when it's a
   // hex value — anything else (a CSS name, `transparent`, blank) just falls
   // back to a neutral swatch rather than the browser rejecting the input.
-  const swatchValue = /^#[0-9a-f]{6}$/i.test(settings.backgroundColor) ? settings.backgroundColor : '#0d1635'
+  const swatchValue = /^#[0-9a-f]{6}$/i.test(settings.backgroundColor) ? settings.backgroundColor : '#023047'
 
   return (
     <div className="rounded-xl border bg-input/30 p-4 mb-3 space-y-3">
