@@ -14,6 +14,8 @@ import PageForm from './pages/PageForm'
 import Categories from './pages/Categories'
 import Tags from './pages/Tags'
 import Authors from './pages/Authors'
+import Menus from './pages/Menus'
+import MenuDetail from './pages/MenuDetail'
 import AdminLayout from './components/AdminLayout'
 
 function ProtectedRoute({ children, roles }: { children: ReactNode; roles?: string[] }) {
@@ -109,6 +111,26 @@ export default function App() {
             element={
               <ProtectedRoute roles={['SuperAdmin', 'WebSiteAdmin']}>
                 <Authors />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="menus"
+            element={
+              <ProtectedRoute roles={['SuperAdmin', 'WebSiteAdmin']}>
+                <Menus />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="menus/:menuId"
+            element={
+              // MenuDetail's own category management is admin-only (checked
+              // client-side via isAppAdmin), but ContentCreators need to
+              // reach this route too to manage item content/availability —
+              // see the permission decision in the plan.
+              <ProtectedRoute roles={['SuperAdmin', 'WebSiteAdmin', 'WebSiteContentCreator']}>
+                <MenuDetail />
               </ProtectedRoute>
             }
           />

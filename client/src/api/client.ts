@@ -219,6 +219,41 @@ export function uploadAuthorImage(applicationId: string, file: File): Promise<{ 
   return uploadFile('/authors/images', 'image', applicationId, file)
 }
 
+// Menu category image — PNG only, stored under storage/images/menu/categories.
+export function uploadMenuCategoryImage(applicationId: string, file: File): Promise<{ filename: string }> {
+  return uploadFile('/menu-categories/images', 'image', applicationId, file)
+}
+
+// Menu item image — PNG only, stored under storage/images/menu/items.
+export function uploadMenuItemImage(applicationId: string, file: File): Promise<{ filename: string }> {
+  return uploadFile('/menu-items/images', 'image', applicationId, file)
+}
+
+// The QR endpoint is JWT-authenticated (admin-only), so unlike a public
+// storage file it can't be loaded via a plain <img src>/<a href> — this
+// fetches it as a Blob (reusing the same auth-header/401-refresh handling as
+// request()/uploadRequest()) so the caller can turn it into an object URL
+// for preview and download.
+export async function getMenuQrCode(menuId: string, format: 'png' | 'svg', isRetry = false): Promise<Blob> {
+  const token = getAccessToken()
+  const res = await fetch(`/api/menus/${menuId}/qr-code?format=${format}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+
+  if (res.status === 401 && !isRetry) {
+    const newToken = await refreshAccessToken()
+    if (newToken) return getMenuQrCode(menuId, format, true)
+    clearAuthState()
+    throw new Error('Your session has expired. Please sign in again.')
+  }
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({ message: 'Failed to generate QR code' }))
+    throw new Error(data.message ?? 'Failed to generate QR code')
+  }
+  return res.blob()
+}
+
 // Generates a draft translation from an existing language on this content
 // item, via the application's AI API key — returns the draft only, it is
 // never persisted server-side. The caller inserts it into local draft state

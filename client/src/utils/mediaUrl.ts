@@ -9,7 +9,7 @@
 // YouTube link, or the value predates this filename-only convention) — used
 // as-is in that case, no reconstruction needed.
 export type MediaKind = 'images' | 'videos' | 'documents'
-export type MediaDomain = 'content' | 'page' | 'author'
+export type MediaDomain = 'content' | 'page' | 'author' | 'menuCategory' | 'menuItem'
 
 // `domain` stays singular everywhere it's used as an identifier (component
 // props, function params, ...) — only the on-disk/URL folder name is plural,
@@ -18,6 +18,8 @@ const DOMAIN_FOLDER: Record<MediaDomain, string> = {
   content: 'contents',
   page: 'pages',
   author: 'authors',
+  menuCategory: 'menu/categories',
+  menuItem: 'menu/items',
 }
 
 export function resolveMediaUrl(kind: MediaKind, domain: MediaDomain, value: string): string {

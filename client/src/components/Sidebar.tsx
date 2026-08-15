@@ -15,6 +15,7 @@ const ALL_CONTENT_MANAGEMENT_ITEMS: { labelKey: TranslationKey; segment: string;
   { labelKey: 'nav.categories', segment: 'categories', adminOnly: true },
   { labelKey: 'nav.tags', segment: 'tags', adminOnly: true },
   { labelKey: 'nav.authors', segment: 'authors', adminOnly: true },
+  { labelKey: 'nav.menus', segment: 'menus', adminOnly: true },
 ]
 
 const navItemClass = (active: boolean) =>
