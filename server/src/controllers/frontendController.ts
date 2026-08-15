@@ -6,8 +6,11 @@ import Content from "../models/content/Content.js";
 import ContentDetails from "../models/content/ContentDetails.js";
 import Page from "../models/page/Page.js";
 import PageDetails from "../models/page/PageDetails.js";
+import Menu, { type MenuDoc } from "../models/menu/Menu.js";
+import MenuCategory from "../models/menu/MenuCategory.js";
+import MenuItem from "../models/menu/MenuItem.js";
 import { LANGUAGE_VALUES } from "../constants/languages.js";
-import { paginateList, SORT_ORDER_VALUES } from "../utils/paginateList.js";
+import { paginateList, normalizePaging, SORT_ORDER_VALUES } from "../utils/paginateList.js";
 import {
   shapeTaxonomyRef,
   shapeCategory,
@@ -15,8 +18,16 @@ import {
   shapePage,
   shapeAuthorRef,
   shapeAuthorProfile,
+  shapeMenuCategory,
+  shapeMenuItem,
 } from "../services/frontendShapeService.js";
-import { resolveCategoryRef, resolveTagRef, resolveAuthorRef } from "../services/taxonomyResolverService.js";
+import {
+  resolveCategoryRef,
+  resolveTagRef,
+  resolveAuthorRef,
+  resolveMenuRef,
+  resolveMenuCategoryRef,
+} from "../services/taxonomyResolverService.js";
 
 // "publishedAt", not admin's "createdAt" — a public listing's natural default
 // date sort is when something went live, not when the draft was first created.
@@ -253,4 +264,163 @@ export async function getFrontendPage(req: Request, res: Response) {
   if (!page) return res.status(404).json({ message: "Page not found" });
 
   res.json(shapePage(page, detail, { detail: true }));
+}
+
+// ── Menu ─────────────────────────────────────────────────────────────────────
+
+// Menu items/categories have no independent per-language publish state (see
+// Menu model comments), so like Category/Tag/Author this whole section uses
+// pickTranslation's base-language fallback convention (via shapeMenuCategory/
+// shapeMenuItem), not Content/Page's strict "missing translation = doesn't
+// exist" rule.
+
+// A QR code encodes a menu's slug directly, so most real requests already
+// pass ?menu=; this only matters for exploratory/general-purpose calls
+// against the API without one. Ambiguous rather than picking silently, so a
+// caller relying on "the app's only menu" finds out immediately when that
+// stops being true instead of quietly hitting the wrong one.
+async function resolveRequestedMenu(
+  applicationId: any,
+  menuRef: unknown,
+): Promise<{ menu: MenuDoc } | { error: { status: number; message: string } }> {
+  if (menuRef) {
+    const menu = await resolveMenuRef(applicationId, menuRef as string);
+    if (!menu) return { error: { status: 404, message: "Menu not found" } };
+    return { menu };
+  }
+  const activeMenus = await Menu.find({ application: applicationId, status: "active" });
+  if (activeMenus.length === 0) return { error: { status: 404, message: "Menu not found" } };
+  if (activeMenus.length > 1) {
+    return {
+      error: {
+        status: 400,
+        message: "menu is required when an application has more than one active menu",
+      },
+    };
+  }
+  return { menu: activeMenus[0] };
+}
+
+// Shared by every menu endpoint below: active items only, plus dropping
+// unavailable/sold-out items unless the menu opts in to showing them.
+function buildActiveItemFilter(applicationId: any, menu: MenuDoc, extra: Record<string, unknown> = {}) {
+  const filter: Record<string, unknown> = {
+    application: applicationId,
+    menu: menu._id,
+    status: "active",
+    ...extra,
+  };
+  if (!menu.settings.showUnavailableItems) filter.availability = "available";
+  return filter;
+}
+
+export async function getFrontendMenu(req: Request, res: Response) {
+  const { menu: menuRef } = req.query;
+  const applicationId = req.frontendApp!._id;
+  const langKey = req.langKey!;
+
+  const resolved = await resolveRequestedMenu(applicationId, menuRef);
+  if ("error" in resolved) return res.status(resolved.error.status).json({ message: resolved.error.message });
+  const menu = resolved.menu;
+
+  const categories = await MenuCategory.find({ application: applicationId, menu: menu._id, status: "active" }).sort({
+    sortOrder: 1,
+    createdAt: 1,
+  });
+  const items = await MenuItem.find(
+    buildActiveItemFilter(applicationId, menu, { category: { $in: categories.map((c) => c._id) } }),
+  ).sort({ sortOrder: 1, createdAt: 1 });
+
+  const itemsByCategory = new Map<string, unknown[]>();
+  for (const item of items) {
+    const key = item.category.toString();
+    if (!itemsByCategory.has(key)) itemsByCategory.set(key, []);
+    itemsByCategory.get(key)!.push(shapeMenuItem(item, langKey, menu.settings));
+  }
+
+  res.json({
+    menu: { publicId: menu.publicId, slug: menu.slug, currency: menu.currency, settings: menu.settings },
+    categories: categories.map((category) => ({
+      ...shapeMenuCategory(category, langKey, menu.settings),
+      items: itemsByCategory.get(category._id.toString()) ?? [],
+    })),
+  });
+}
+
+export async function getFrontendMenuCategories(req: Request, res: Response) {
+  const { menu: menuRef } = req.query;
+  const applicationId = req.frontendApp!._id;
+  const langKey = req.langKey!;
+
+  const resolved = await resolveRequestedMenu(applicationId, menuRef);
+  if ("error" in resolved) return res.status(resolved.error.status).json({ message: resolved.error.message });
+  const menu = resolved.menu;
+
+  const categories = await MenuCategory.find({ application: applicationId, menu: menu._id, status: "active" }).sort({
+    sortOrder: 1,
+    createdAt: 1,
+  });
+  res.json(categories.map((category) => shapeMenuCategory(category, langKey, menu.settings)));
+}
+
+export async function getFrontendMenuCategory(req: Request, res: Response) {
+  const { slugOrPublicId } = req.params as { slugOrPublicId: string };
+  const { menu: menuRef } = req.query;
+  const applicationId = req.frontendApp!._id;
+  const langKey = req.langKey!;
+
+  const resolved = await resolveRequestedMenu(applicationId, menuRef);
+  if ("error" in resolved) return res.status(resolved.error.status).json({ message: resolved.error.message });
+  const menu = resolved.menu;
+
+  const category = await resolveMenuCategoryRef(applicationId, menu._id, slugOrPublicId, langKey);
+  if (!category) return res.status(404).json({ message: "Menu category not found" });
+
+  const items = await MenuItem.find(buildActiveItemFilter(applicationId, menu, { category: category._id })).sort({
+    sortOrder: 1,
+    createdAt: 1,
+  });
+
+  res.json({
+    ...shapeMenuCategory(category, langKey, menu.settings),
+    items: items.map((item) => shapeMenuItem(item, langKey, menu.settings)),
+  });
+}
+
+export async function getFrontendMenuItems(req: Request, res: Response) {
+  const { menu: menuRef, category: categoryRef, page, limit } = req.query;
+  const applicationId = req.frontendApp!._id;
+  const langKey = req.langKey!;
+
+  const resolved = await resolveRequestedMenu(applicationId, menuRef);
+  if ("error" in resolved) return res.status(resolved.error.status).json({ message: resolved.error.message });
+  const menu = resolved.menu;
+
+  const extra: Record<string, unknown> = {};
+  if (categoryRef !== undefined) {
+    const category = await resolveMenuCategoryRef(applicationId, menu._id, categoryRef as string, langKey);
+    if (!category) return res.json({ items: [], total: 0, page: 1, limit: Number(limit) || 20, totalPages: 1 });
+    extra.category = category._id;
+  }
+
+  // Items are already in display order from the DB (sortOrder, then
+  // createdAt) — pagination is applied directly rather than through
+  // paginateList, which would otherwise re-sort by createdAt (its only
+  // built-in sort key) and lose that ordering.
+  const items = await MenuItem.find(buildActiveItemFilter(applicationId, menu, extra)).sort({
+    sortOrder: 1,
+    createdAt: 1,
+  });
+  const shaped = items.map((item) => shapeMenuItem(item, langKey, menu.settings));
+
+  const { page: effectivePage, limit: effectiveLimit } = normalizePaging(page, limit);
+  const total = shaped.length;
+  const start = (effectivePage - 1) * effectiveLimit;
+  res.json({
+    items: shaped.slice(start, start + effectiveLimit),
+    total,
+    page: effectivePage,
+    limit: effectiveLimit,
+    totalPages: Math.max(1, Math.ceil(total / effectiveLimit)),
+  });
 }

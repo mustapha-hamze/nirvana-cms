@@ -12,6 +12,10 @@ import {
   getFrontendContent,
   getFrontendPages,
   getFrontendPage,
+  getFrontendMenu,
+  getFrontendMenuCategories,
+  getFrontendMenuCategory,
+  getFrontendMenuItems,
 } from "../controllers/frontendController.js";
 
 const router = Router();
@@ -37,5 +41,9 @@ router.get("/contents", getFrontendContents);
 router.get("/contents/:idOrSlug", getFrontendContent);
 router.get("/pages", getFrontendPages);
 router.get("/pages/:idOrSlug", getFrontendPage);
+router.get("/menu", getFrontendMenu);
+router.get("/menu/categories", getFrontendMenuCategories);
+router.get("/menu/categories/:slugOrPublicId", getFrontendMenuCategory);
+router.get("/menu/items", getFrontendMenuItems);
 
 export default router;
