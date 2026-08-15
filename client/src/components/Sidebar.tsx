@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useLocale } from '../i18n/useLocale'
 import type { TranslationKey } from '../i18n/types'
-import { DashboardIcon, ContentIcon, ChevronIcon, UsersIcon, GridIcon, CloseIcon } from './icons'
+import { DashboardIcon, ContentIcon, ChevronIcon, UsersIcon, GridIcon, QrCodeIcon, CloseIcon } from './icons'
 
 const ALL_CONTENT_MANAGEMENT_ITEMS: { labelKey: TranslationKey; segment: string; adminOnly?: boolean }[] = [
   { labelKey: 'nav.contents', segment: 'contents' },
@@ -15,7 +15,6 @@ const ALL_CONTENT_MANAGEMENT_ITEMS: { labelKey: TranslationKey; segment: string;
   { labelKey: 'nav.categories', segment: 'categories', adminOnly: true },
   { labelKey: 'nav.tags', segment: 'tags', adminOnly: true },
   { labelKey: 'nav.authors', segment: 'authors', adminOnly: true },
-  { labelKey: 'nav.menus', segment: 'menus', adminOnly: true },
 ]
 
 const navItemClass = (active: boolean) =>
@@ -84,6 +83,12 @@ function SidebarNav({ appId, onNavigate }: { appId: string; onNavigate?: () => v
             </div>
           )}
         </div>
+
+        {isAppAdminUser && (
+          <SidebarLink to={`/applications/${appId}/menus`} icon={<QrCodeIcon size={17} />} matchNested onNavigate={onNavigate}>
+            {t('nav.menus')}
+          </SidebarLink>
+        )}
       </nav>
 
       {role === 'SuperAdmin' && (
