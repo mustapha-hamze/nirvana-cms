@@ -9,6 +9,7 @@ import {
   deleteMenu,
   getMenuPublicUrl,
 } from "../controllers/menuController.js";
+import { getMenuQrCode } from "../controllers/menuQrController.js";
 
 const router = Router();
 
@@ -24,6 +25,6 @@ router.put("/:id", updateMenu);
 router.patch("/:id/status", updateMenuStatus);
 router.delete("/:id", deleteMenu);
 router.get("/:id/public-url", getMenuPublicUrl);
-// GET /:id/qr-code is added by the QR code phase (menuQrController.ts).
+router.get("/:id/qr-code", getMenuQrCode);
 
 export default router;
