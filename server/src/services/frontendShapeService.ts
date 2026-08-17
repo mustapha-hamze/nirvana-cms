@@ -117,6 +117,85 @@ export function shapeContent(
   return shaped;
 }
 
+interface MenuCategoryTranslation {
+  langKey: string;
+  title: string;
+  description: string;
+  slug: string;
+}
+
+interface MenuCategoryLike {
+  publicId: string;
+  image: string;
+  translations: MenuCategoryTranslation[];
+}
+
+export function shapeMenuCategory(
+  category: MenuCategoryLike,
+  langKey: string,
+  { showImages = true }: { showImages?: boolean } = {},
+) {
+  const translation = pickTranslation(category.translations, langKey);
+  const shaped: Record<string, unknown> = {
+    publicId: category.publicId,
+    title: translation?.title ?? "",
+    description: (translation as MenuCategoryTranslation | null)?.description ?? "",
+    slug: translation?.slug ?? "",
+  };
+  if (showImages) shaped.image = category.image || null;
+  return shaped;
+}
+
+interface MenuItemTranslation {
+  langKey: string;
+  title: string;
+  description: string;
+}
+
+interface MenuItemLike {
+  publicId: string;
+  image: string;
+  price: number;
+  calories?: number;
+  availability: string;
+  ingredients: string[];
+  allergens: string[];
+  isVegetarian: boolean;
+  isVegan: boolean;
+  isSpicy: boolean;
+  spicyLevel: number;
+  translations: MenuItemTranslation[];
+}
+
+// `menuSettings` controls whether image/calories are included at all —
+// distinct from availability filtering, which happens once in the
+// controller (see frontendController.ts) before any item reaches this
+// shaping step, shared by both the grouped menu endpoint and the flat items
+// listing.
+export function shapeMenuItem(
+  item: MenuItemLike,
+  langKey: string,
+  menuSettings: { showImages?: boolean; showCalories?: boolean } = {},
+) {
+  const translation = pickTranslation(item.translations, langKey);
+  const shaped: Record<string, unknown> = {
+    publicId: item.publicId,
+    title: translation?.title ?? "",
+    description: translation?.description ?? "",
+    price: item.price,
+    availability: item.availability,
+    ingredients: item.ingredients ?? [],
+    allergens: item.allergens ?? [],
+    isVegetarian: item.isVegetarian,
+    isVegan: item.isVegan,
+    isSpicy: item.isSpicy,
+    spicyLevel: item.spicyLevel,
+  };
+  if (menuSettings.showImages !== false) shaped.image = item.image || null;
+  if (menuSettings.showCalories !== false) shaped.calories = item.calories ?? null;
+  return shaped;
+}
+
 export function shapePage(
   page: any,
   detail: any,

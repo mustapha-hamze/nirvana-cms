@@ -97,9 +97,11 @@ yourself, matching the server's on-disk storage layout:
     under images/, a videoEmbed.url filename under videos/, a
     galleryItem.url filename for mediaType "document" under documents/.
   - The SECOND path segment is "contents" for anything returned from a
-    content item (#5 below) and "pages" for anything returned from a page
-    (#7 below) — it matches which endpoint you fetched the field from, not
-    anything present in the field value itself.
+    content item (#5 below), "pages" for anything returned from a page
+    (#7 below), "menu/categories" for a menu category's `image` field, and
+    "menu/items" for a menu item's `image` field (#8-11 below) — it matches
+    which endpoint you fetched the field from, not anything present in the
+    field value itself. Menu images are always PNG.
 
 Example: a page's banner.logo field comes back as "a1b2c3d4-....png" ->
   http://localhost:5001/storage/images/pages/a1b2c3d4-....png
@@ -337,6 +339,125 @@ Response 200:
 Not found -> 404 { "message": "Page not found" }
 
 
+--------------------------------------------------------------------------------
+8) GET /api/frontend/menu
+--------------------------------------------------------------------------------
+The complete grouped digital menu: active categories, each with its active
+items nested inside. This is the endpoint a QR code's public menu URL is
+meant to load.
+
+Query params:
+  appKey   required
+  lang     optional
+  menu     optional — a Menu's publicId OR its slug (not per-language — see
+           Menu's fields below). Required if the application has more than
+           one ACTIVE menu; if it has exactly one, this is resolved
+           automatically and `menu` may be omitted.
+
+Response 200:
+{
+  "menu": {
+    "publicId": "menu_ab12cd",
+    "slug": "main-menu",
+    "currency": "USD",
+    "settings": { "showCalories": true, "showImages": true, "showUnavailableItems": false }
+  },
+  "categories": [
+    {
+      "publicId": "mcat_ef34gh",
+      "title": "Appetizers",
+      "description": "Start your meal right.",
+      "slug": "appetizers",
+      "image": "3f9e2b1a-....png",     // omitted entirely when settings.showImages is false
+      "items": [
+        {
+          "publicId": "mitem_ij56kl",
+          "title": "Spring Rolls",
+          "description": "Crispy, served with sweet chili sauce.",
+          "price": 6.5,
+          "calories": 320,             // omitted entirely when settings.showCalories is false
+          "image": "9c8b7a6d-....png", // omitted entirely when settings.showImages is false
+          "availability": "available", // available | unavailable | sold_out
+          "ingredients": ["cabbage", "carrot", "rice paper"],
+          "allergens": ["gluten"],
+          "isVegetarian": true,
+          "isVegan": false,
+          "isSpicy": false,
+          "spicyLevel": 0
+        }
+      ]
+    }
+  ]
+}
+
+Items with availability "unavailable"/"sold_out" are excluded from
+`categories[].items` unless the menu's settings.showUnavailableItems is true
+— when included, they're still marked via their `availability` field so a
+renderer can show a "Sold out" badge instead of hiding them.
+
+Not found (no active menu, or `menu` doesn't resolve) -> 404
+  { "message": "Menu not found" }
+Ambiguous (more than one active menu, no `menu` given) -> 400
+  { "message": "menu is required when an application has more than one active menu" }
+
+
+--------------------------------------------------------------------------------
+9) GET /api/frontend/menu/categories
+--------------------------------------------------------------------------------
+Flat list of a menu's active categories (without their items — see #8 for the
+grouped shape, or #11 for a flat item listing).
+
+Query params:
+  appKey   required
+  lang     optional
+  menu     optional, same resolution rule as #8
+
+Response 200: array (NOT paginated)
+[
+  { "publicId": "mcat_ef34gh", "title": "Appetizers", "description": "...", "slug": "appetizers", "image": "..." }
+]
+
+
+--------------------------------------------------------------------------------
+10) GET /api/frontend/menu/categories/:slugOrPublicId
+--------------------------------------------------------------------------------
+Single active menu category, with its active items nested (same item shape
+and availability filtering as #8).
+
+Path param:
+  slugOrPublicId   a MenuCategory's publicId OR its per-language slug.
+
+Query params:
+  appKey   required
+  lang     optional
+  menu     optional, same resolution rule as #8
+
+Response 200: same shape as one entry of #8's `categories` array.
+
+Not found -> 404 { "message": "Menu category not found" }
+
+
+--------------------------------------------------------------------------------
+11) GET /api/frontend/menu/items
+--------------------------------------------------------------------------------
+Paginated, flat list of a menu's active items, optionally filtered to one
+category. Items are always ordered by their admin-configured sort order, not
+by title/date.
+
+Query params:
+  appKey     required
+  lang       optional
+  menu       optional, same resolution rule as #8
+  category   optional — a MenuCategory's publicId OR its per-language slug.
+             If given a value that doesn't resolve to any active category,
+             the response is an EMPTY page (items: [], total: 0), not a 404.
+  page       optional, default 1
+  limit      optional, default 20, max 100
+
+Response 200 (paginated envelope, see above). Each item in `items` has the
+same shape as one entry of #8's `categories[].items` array.
+
+
 ================================================================================
  CONTENT BODY SECTIONS  (returned by #5's `sections` array)
 ================================================================================
@@ -500,6 +621,9 @@ Element shapes:
 404  { "message": "Application not found" }       // bad/inactive appKey
 404  { "message": "Content not found" }            // #5, bad id/slug/lang or unpublished
 404  { "message": "Page not found" }               // #7, bad id/slug/lang or unpublished
+404  { "message": "Menu not found" }                // #8/9/10, no active menu or bad `menu`
+404  { "message": "Menu category not found" }       // #10, bad slugOrPublicId
+400  { "message": "menu is required when an application has more than one active menu" }
 
 
 ================================================================================
@@ -517,4 +641,27 @@ Element shapes:
 
 4. Render `sections` from step 3 by switching on each section's `type`,
    mapping to a component per type as documented above.
+================================================================================
+
+
+================================================================================
+ WORKED EXAMPLE — RENDERING A SCANNED MENU QR CODE
+================================================================================
+A printed QR code (generated admin-side, see the admin API — out of scope for
+this public doc) encodes a URL like:
+
+  https://your-site.com/menu/main-menu?appKey=KEY
+
+1. Your site's /menu/:slug route reads the appKey from the query string and
+   the menu's slug from the path, then fetches:
+     GET /api/frontend/menu?appKey=KEY&menu=main-menu
+
+2. Render `categories`, each with its nested `items`, respecting the
+   returned `menu.settings` flags (whether to show images/calories) and each
+   item's `availability` (e.g. strike through or badge "Sold out" items when
+   they're included at all — see #8's note on showUnavailableItems).
+
+3. If you don't encode a menu slug in the QR URL at all (single-menu
+   deployments only), omit `menu` from the request — it resolves
+   automatically as long as the application has exactly one active menu.
 ================================================================================
